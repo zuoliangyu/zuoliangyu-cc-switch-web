@@ -161,6 +161,7 @@ Local Rust Service
 - 已恢复 `About / 本地环境检查` 的 Web 能力（非 Windows 环境下可在浏览器中查看 CLI 工具版本与最新版本）
 - 已恢复 `Settings / Auth Center` 的 Web 能力（浏览器中可管理 GitHub Copilot 设备码登录、多账号、默认账号与注销）
 - 已恢复首页头部的 `Usage` 快捷入口（本地代理接管生效时，Web 模式可直接跳转到统计页）
+- 已恢复 `OpenCode / OpenClaw` 的 Provider 卡片主按钮（Web 模式下可直接添加到 live 配置或从配置中移除）
 - 已提供：
   - `pnpm dev` / `pnpm dev:web`
   - `pnpm build` / `pnpm build:d`
