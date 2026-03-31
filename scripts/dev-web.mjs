@@ -2,22 +2,38 @@ import { spawn } from "node:child_process";
 import process from "node:process";
 
 const isWindows = process.platform === "win32";
-const pnpmCmd = isWindows ? "pnpm.cmd" : "pnpm";
 const cargoCmd = isWindows ? "cargo.exe" : "cargo";
 
 const children = [];
 
 function startProcess(name, command, args, extraEnv = {}) {
-  const child = spawn(command, args, {
-    cwd: process.cwd(),
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      ...extraEnv,
-    },
+  const env = {
+    ...process.env,
+    ...extraEnv,
+  };
+
+  const child = isWindows && command === "pnpm"
+    ? spawn("cmd.exe", ["/d", "/s", "/c", command, ...args], {
+        cwd: process.cwd(),
+        stdio: "inherit",
+        env,
+      })
+    : spawn(command, args, {
+        cwd: process.cwd(),
+        stdio: "inherit",
+        env,
+      });
+
+  child.on("error", (error) => {
+    console.error(`[${name}] failed to start`, error);
+    shutdown(1);
   });
 
   child.on("exit", (code, signal) => {
+    if (shuttingDown) {
+      return;
+    }
+
     if (signal) {
       console.log(`[${name}] exited with signal ${signal}`);
       return;
@@ -75,7 +91,7 @@ startProcess("web-service", cargoCmd, [
 
 startProcess(
   "web-ui",
-  pnpmCmd,
+  "pnpm",
   ["exec", "vite", "--host", "127.0.0.1", "--port", "3000"],
   {
     VITE_LOCAL_API_BASE: apiBase,
