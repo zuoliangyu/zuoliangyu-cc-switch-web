@@ -997,7 +997,7 @@ function App() {
                     }}
                   />
                 )}
-                {isCurrentAppTakeoverActive && !isWebMode && (
+                {isCurrentAppTakeoverActive && (
                   <Button
                     variant="ghost"
                     size="icon"
