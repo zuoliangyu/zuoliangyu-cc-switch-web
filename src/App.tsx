@@ -420,6 +420,10 @@ function App() {
   }, [queryClient, t]);
 
   useEffect(() => {
+    if (isWebMode) {
+      return;
+    }
+
     const checkEnvOnStartup = async () => {
       try {
         const allConflicts = await checkAllEnvConflicts();
@@ -441,7 +445,7 @@ function App() {
     };
 
     checkEnvOnStartup();
-  }, []);
+  }, [isWebMode]);
 
   useEffect(() => {
     const checkMigration = async () => {
@@ -490,6 +494,10 @@ function App() {
   }, [t, queryClient]);
 
   useEffect(() => {
+    if (isWebMode) {
+      return;
+    }
+
     const checkEnvOnSwitch = async () => {
       try {
         const conflicts = await checkEnvConflicts(activeApp);
@@ -518,7 +526,7 @@ function App() {
     };
 
     checkEnvOnSwitch();
-  }, [activeApp]);
+  }, [activeApp, isWebMode]);
 
   const currentViewRef = useRef(currentView);
 
@@ -882,7 +890,7 @@ function App() {
         data-tauri-drag-region
         style={{ WebkitAppRegion: "drag", height: DRAG_BAR_HEIGHT } as any}
       />
-      {showEnvBanner && envConflicts.length > 0 && (
+      {!isWebMode && showEnvBanner && envConflicts.length > 0 && (
         <EnvWarningBanner
           conflicts={envConflicts}
           onDismiss={() => {
