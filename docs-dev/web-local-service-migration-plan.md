@@ -178,6 +178,7 @@ Local Rust Service
   - `docs-dev/web-distribution-startup-plan.md`
 - 已补充 Docker 内导出 Linux 发布包的本地脚本和命令入口
 - 已修正分发包专用启动脚本，发布包不再依赖源码仓库目录结构
+- 已将 `web-package` workflow 的 Linux 打包切换为复用 Docker 多阶段构建，避免维护重复的宿主机构建链路
 - 已在 README 三语文件中补充本地运行和 Docker 运行说明
 - 已在 Web 模式下收起一部分仍依赖桌面能力的入口，避免页面直接触发未迁移命令
 

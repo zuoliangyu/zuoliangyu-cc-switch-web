@@ -143,6 +143,12 @@ CC Switch Web 已启动
 - 构建平台二进制
 - 产出平台分发包并上传为 GitHub Actions artifact
 
+实现约束：
+
+- Linux 包构建优先复用 Docker 多阶段构建
+- 本地 `pnpm build:pkg:l` 与 GitHub Actions 的 Linux package 走同一条 Docker 导出链路
+- Windows / macOS 继续使用对应 runner 原生构建
+
 本地额外目标：
 
 - 支持开发者在任意宿主机上通过 Docker 直接导出 Linux 分发包

@@ -39,57 +39,40 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        if: runner.os != 'Linux'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Setup pnpm
+        if: runner.os != 'Linux'
         uses: pnpm/action-setup@v2
         with:
           version: 10.12.3
           run_install: false
 
       - name: Setup Rust
+        if: runner.os != 'Linux'
         uses: dtolnay/rust-toolchain@stable
 
       - name: Add macOS Rust targets
         if: runner.os == 'macOS'
         run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
-      - name: Install Linux system deps
+      - name: Setup Docker Buildx
         if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -euxo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            pkg-config \
-            curl \
-            wget \
-            file \
-            patchelf \
-            libssl-dev \
-            libgtk-3-dev \
-            librsvg2-dev \
-            libayatana-appindicator3-dev
-          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev \
-            || sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.0-dev
-          sudo apt-get install -y --no-install-recommends libsoup-3.0-dev \
-            || sudo apt-get install -y --no-install-recommends libsoup2.4-dev
+        uses: docker/setup-buildx-action@v3
 
       - name: Install dependencies
+        if: runner.os != 'Linux'
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend dist
+        if: runner.os != 'Linux'
         run: pnpm build:web
 
       - name: Build Windows service
         if: runner.os == 'Windows'
-        run: cargo build --locked --release --manifest-path src-tauri/Cargo.toml --bin cc-switch-web
-
-      - name: Build Linux service
-        if: runner.os == 'Linux'
         run: cargo build --locked --release --manifest-path src-tauri/Cargo.toml --bin cc-switch-web
 
       - name: Build macOS x86_64 service
@@ -118,14 +101,14 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          pkg_dir="${{ matrix.artifact_name }}"
-          rm -rf "$pkg_dir"
-          mkdir -p "$pkg_dir"
-          cp src-tauri/target/release/cc-switch-web "$pkg_dir/cc-switch-web"
-          cp scripts/run-web-release.sh "$pkg_dir/run-web.sh"
-          cp -R dist "$pkg_dir/dist"
-          chmod +x "$pkg_dir/cc-switch-web" "$pkg_dir/run-web.sh"
-          tar -czf "${{ matrix.archive_name }}" "$pkg_dir"
+          out_dir="$RUNNER_TEMP/linux-package"
+          rm -rf "$out_dir"
+          mkdir -p "$out_dir"
+          docker buildx build \
+            --target package-linux-tar \
+            --output "type=local,dest=$out_dir" \
+            .
+          mv "$out_dir/${{ matrix.archive_name }}" "${{ matrix.archive_name }}"
 
       - name: Package macOS universal archive
         if: runner.os == 'macOS'
