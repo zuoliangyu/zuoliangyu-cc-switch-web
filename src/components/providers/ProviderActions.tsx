@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AppId } from "@/lib/api";
+import { isWebRuntime } from "@/lib/runtime/tauri/env";
 
 interface ProviderActionsProps {
   appId?: AppId;
@@ -65,17 +66,23 @@ export function ProviderActions({
   onSetAsDefault,
 }: ProviderActionsProps) {
   const { t } = useTranslation();
+  const isWebMode = isWebRuntime();
   const iconButtonClass = "h-8 w-8 p-1";
 
   // 累加模式应用（OpenCode 非 OMO 和 OpenClaw）
   const isAdditiveMode =
     (appId === "opencode" && !isOmo) || appId === "openclaw";
+  const isAdditiveModeUnsupportedInWeb = isWebMode && isAdditiveMode;
 
   // 故障转移模式下的按钮逻辑（累加模式和 OMO 应用不支持故障转移）
   const isFailoverMode =
     !isAdditiveMode && !isOmo && isAutoFailoverEnabled && onToggleFailover;
 
   const handleMainButtonClick = () => {
+    if (isAdditiveModeUnsupportedInWeb) {
+      return;
+    }
+
     if (isOmo) {
       if (isCurrent) {
         onDisableOmo?.();
@@ -101,6 +108,17 @@ export function ProviderActions({
   };
 
   const getMainButtonState = () => {
+    if (isAdditiveModeUnsupportedInWeb) {
+      return {
+        disabled: true,
+        variant: "secondary" as const,
+        className:
+          "bg-gray-200 text-muted-foreground hover:bg-gray-200 hover:text-muted-foreground dark:bg-gray-700 dark:hover:bg-gray-700",
+        icon: <Minus className="h-4 w-4" />,
+        text: t("common.unavailable", { defaultValue: "待支持" }),
+      };
+    }
+
     if (isOmo) {
       if (isCurrent) {
         return {

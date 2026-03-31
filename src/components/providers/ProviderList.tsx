@@ -43,6 +43,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { settingsApi } from "@/lib/api/settings";
+import { isWebRuntime } from "@/lib/runtime/tauri/env";
 
 interface ProviderListProps {
   providers: Record<string, Provider>;
@@ -88,6 +89,7 @@ export function ProviderList({
   onSetAsDefault,
 }: ProviderListProps) {
   const { t } = useTranslation();
+  const isWebMode = isWebRuntime();
   const { checkProvider, isChecking } = useStreamCheck(appId);
   const { sortedProviders, sensors, handleDragEnd } = useDragSort(
     providers,
@@ -301,7 +303,7 @@ export function ProviderList({
       <ProviderEmptyState
         appId={appId}
         onCreate={onCreate}
-        onImport={() => importMutation.mutate()}
+        onImport={isWebMode ? undefined : () => importMutation.mutate()}
       />
     );
   }
@@ -347,9 +349,11 @@ export function ProviderList({
                 onDuplicate={onDuplicate}
                 onConfigureUsage={onConfigureUsage}
                 onOpenWebsite={onOpenWebsite}
-                onOpenTerminal={onOpenTerminal}
+                onOpenTerminal={isWebMode ? undefined : onOpenTerminal}
                 onTest={
-                  appId !== "opencode" && appId !== "openclaw"
+                  !isWebMode &&
+                  appId !== "opencode" &&
+                  appId !== "openclaw"
                     ? handleTest
                     : undefined
                 }
