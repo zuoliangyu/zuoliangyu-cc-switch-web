@@ -89,6 +89,18 @@ struct ProviderIdRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct TestUsageScriptRequest {
+    script_code: String,
+    timeout: Option<u64>,
+    api_key: Option<String>,
+    base_url: Option<String>,
+    access_token: Option<String>,
+    user_id: Option<String>,
+    template_type: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ToggleMcpAppRequest {
     enabled: bool,
 }
@@ -507,6 +519,45 @@ async fn stream_check_provider(
     )
     .await
     .map_err(|e| ApiError::internal(format!("failed to stream check provider: {e}")))?;
+    Ok(Json(result))
+}
+
+async fn query_provider_usage(
+    State(state): State<WebApiState>,
+    Path((app, id)): Path<(String, String)>,
+) -> Result<Json<crate::provider::UsageResult>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let result = crate::commands::query_provider_usage_internal(
+        state.app_state.as_ref(),
+        &state.copilot_auth_state,
+        app_type,
+        &id,
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to query provider usage: {e}")))?;
+    Ok(Json(result))
+}
+
+async fn test_usage_script(
+    State(state): State<WebApiState>,
+    Path((app, id)): Path<(String, String)>,
+    Json(payload): Json<TestUsageScriptRequest>,
+) -> Result<Json<crate::provider::UsageResult>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let result = crate::commands::test_usage_script_internal(
+        state.app_state.as_ref(),
+        app_type,
+        &id,
+        &payload.script_code,
+        payload.timeout,
+        payload.api_key.as_deref(),
+        payload.base_url.as_deref(),
+        payload.access_token.as_deref(),
+        payload.user_id.as_deref(),
+        payload.template_type.as_deref(),
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to test usage script: {e}")))?;
     Ok(Json(result))
 }
 
@@ -2390,6 +2441,11 @@ pub async fn run_web_server() -> Result<(), String> {
         .route(
             "/api/providers/:app/stream-check/:id",
             post(stream_check_provider),
+        )
+        .route("/api/providers/:app/:id/usage", get(query_provider_usage))
+        .route(
+            "/api/providers/:app/:id/usage/test",
+            post(test_usage_script),
         )
         .route("/api/providers/:app/live-provider-ids", get(get_live_provider_ids))
         .route("/api/providers/:app/import-live", post(import_providers_from_live))

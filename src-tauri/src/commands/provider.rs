@@ -10,6 +10,8 @@ use crate::services::{
 };
 use crate::store::AppState;
 use std::str::FromStr;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 // 常量定义
 const TEMPLATE_TYPE_GITHUB_COPILOT: &str = "github_copilot";
@@ -144,24 +146,17 @@ pub fn import_default_config(state: State<'_, AppState>, app: String) -> Result<
     import_default_config_internal(&state, app_type).map_err(Into::into)
 }
 
-#[allow(non_snake_case)]
-#[tauri::command]
-pub async fn queryProviderUsage(
-    state: State<'_, AppState>,
-    copilot_state: State<'_, CopilotAuthState>,
-    #[allow(non_snake_case)] providerId: String, // 使用 camelCase 匹配前端
-    app: String,
-) -> Result<crate::provider::UsageResult, String> {
-    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-
+pub async fn query_provider_usage_internal(
+    state: &AppState,
+    copilot_state: &Arc<RwLock<crate::proxy::providers::copilot_auth::CopilotAuthManager>>,
+    app_type: AppType,
+    provider_id: &str,
+) -> Result<crate::provider::UsageResult, AppError> {
     // 检查是否为 GitHub Copilot 模板类型，并解析绑定账号
     let (is_copilot_template, copilot_account_id) = {
-        let providers = state
-            .db
-            .get_all_providers(app_type.as_str())
-            .map_err(|e| format!("Failed to get providers: {e}"))?;
+        let providers = state.db.get_all_providers(app_type.as_str())?;
 
-        let provider = providers.get(&providerId);
+        let provider = providers.get(provider_id);
         let is_copilot = provider
             .and_then(|p| p.meta.as_ref())
             .and_then(|m| m.usage_script.as_ref())
@@ -177,16 +172,16 @@ pub async fn queryProviderUsage(
 
     if is_copilot_template {
         // 使用 Copilot 专用 API
-        let auth_manager = copilot_state.0.read().await;
+        let auth_manager = copilot_state.read().await;
         let usage = match copilot_account_id.as_deref() {
             Some(account_id) => auth_manager
                 .fetch_usage_for_account(account_id)
                 .await
-                .map_err(|e| format!("Failed to fetch Copilot usage: {e}"))?,
+                .map_err(|e| AppError::Message(format!("Failed to fetch Copilot usage: {e}")))?,
             None => auth_manager
                 .fetch_usage()
                 .await
-                .map_err(|e| format!("Failed to fetch Copilot usage: {e}"))?,
+                .map_err(|e| AppError::Message(format!("Failed to fetch Copilot usage: {e}")))?,
         };
         let premium = &usage.quota_snapshots.premium_interactions;
         let used = premium.entitlement - premium.remaining;
@@ -207,9 +202,49 @@ pub async fn queryProviderUsage(
         });
     }
 
-    ProviderService::query_usage(state.inner(), app_type, &providerId)
+    ProviderService::query_usage(state, app_type, provider_id).await
+}
+
+#[allow(non_snake_case)]
+#[tauri::command]
+pub async fn queryProviderUsage(
+    state: State<'_, AppState>,
+    copilot_state: State<'_, CopilotAuthState>,
+    #[allow(non_snake_case)] providerId: String, // 使用 camelCase 匹配前端
+    app: String,
+) -> Result<crate::provider::UsageResult, String> {
+    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
+    query_provider_usage_internal(state.inner(), &copilot_state.0, app_type, &providerId)
         .await
         .map_err(|e| e.to_string())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn test_usage_script_internal(
+    state: &AppState,
+    app_type: AppType,
+    provider_id: &str,
+    script_code: &str,
+    timeout: Option<u64>,
+    api_key: Option<&str>,
+    base_url: Option<&str>,
+    access_token: Option<&str>,
+    user_id: Option<&str>,
+    template_type: Option<&str>,
+) -> Result<crate::provider::UsageResult, AppError> {
+    ProviderService::test_usage_script(
+        state,
+        app_type,
+        provider_id,
+        script_code,
+        timeout.unwrap_or(10),
+        api_key,
+        base_url,
+        access_token,
+        user_id,
+        template_type,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -228,12 +263,12 @@ pub async fn testUsageScript(
     #[allow(non_snake_case)] templateType: Option<String>,
 ) -> Result<crate::provider::UsageResult, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    ProviderService::test_usage_script(
+    test_usage_script_internal(
         state.inner(),
         app_type,
         &providerId,
         &scriptCode,
-        timeout.unwrap_or(10),
+        timeout,
         apiKey.as_deref(),
         baseUrl.as_deref(),
         accessToken.as_deref(),

@@ -1,5 +1,5 @@
 import type { Settings } from "@/types";
-import type { Provider } from "@/types";
+import type { Provider, UsageResult } from "@/types";
 import type { McpServer, McpServersMap } from "@/types";
 import type { RemoteSnapshotInfo, WebDavSyncSettings } from "@/types";
 import type {
@@ -337,6 +337,35 @@ export async function streamCheckWebProvider(
   return requestWithBody<import("@/lib/api/model-test").StreamCheckResult>(
     `/api/providers/${appId}/stream-check/${encodeURIComponent(providerId)}`,
     "POST",
+  );
+}
+
+export async function getWebProviderUsage(
+  appId: AppId,
+  providerId: string,
+): Promise<UsageResult> {
+  return requestJson<UsageResult>(
+    `/api/providers/${appId}/${encodeURIComponent(providerId)}/usage`,
+  );
+}
+
+export async function testWebUsageScript(
+  appId: AppId,
+  providerId: string,
+  payload: {
+    scriptCode: string;
+    timeout?: number;
+    apiKey?: string;
+    baseUrl?: string;
+    accessToken?: string;
+    userId?: string;
+    templateType?: string;
+  },
+): Promise<UsageResult> {
+  return requestWithBody<UsageResult>(
+    `/api/providers/${appId}/${encodeURIComponent(providerId)}/usage/test`,
+    "POST",
+    payload,
   );
 }
 

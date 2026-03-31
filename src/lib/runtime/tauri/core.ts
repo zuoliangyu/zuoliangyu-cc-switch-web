@@ -30,6 +30,7 @@ import {
   getWebPricingModelSource,
   getWebMcpServers,
   getWebProviderHealth,
+  getWebProviderUsage,
   getWebProxyConfig,
   getWebProxyConfigForApp,
   getWebProxyStatus,
@@ -123,6 +124,7 @@ import {
   deleteWebSessions,
   deleteWebModelPricing,
   testWebdavConnection,
+  testWebUsageScript,
   toggleWebSkillApp,
   uploadWebdavSync,
   updateWebModelPricing,
@@ -199,6 +201,25 @@ export async function invoke<T>(
       return (await streamCheckWebProvider(
         args?.appType as AppId,
         args?.providerId as string,
+      )) as T;
+    case "queryProviderUsage":
+      return (await getWebProviderUsage(
+        args?.app as AppId,
+        args?.providerId as string,
+      )) as T;
+    case "testUsageScript":
+      return (await testWebUsageScript(
+        args?.app as AppId,
+        args?.providerId as string,
+        {
+          scriptCode: args?.scriptCode as string,
+          timeout: args?.timeout as number | undefined,
+          apiKey: args?.apiKey as string | undefined,
+          baseUrl: args?.baseUrl as string | undefined,
+          accessToken: args?.accessToken as string | undefined,
+          userId: args?.userId as string | undefined,
+          templateType: args?.templateType as string | undefined,
+        },
       )) as T;
     case "create_db_backup":
       return (await createWebDbBackup()) as T;
