@@ -15,8 +15,15 @@ import {
   getWebProviders,
   getWebSettings,
   saveWebSettings,
+  setWebProxyTakeoverForApp,
+  startWebProxyServer,
+  stopWebProxyWithRestore,
   switchWebProvider,
+  switchWebProxyProvider,
+  updateWebGlobalProxyConfig,
   updateWebProvider,
+  updateWebProxyConfig,
+  updateWebProxyConfigForApp,
 } from "./web";
 
 type AppId = "claude" | "codex" | "gemini" | "opencode" | "openclaw";
@@ -90,24 +97,44 @@ export async function invoke<T>(
     case "get_openclaw_live_provider_ids":
     case "get_tool_versions":
       return [] as T;
+    case "start_proxy_server":
+      return (await startWebProxyServer()) as T;
+    case "stop_proxy_with_restore":
+      return (await stopWebProxyWithRestore()) as T;
     case "get_proxy_status":
       return (await getWebProxyStatus()) as T;
     case "get_proxy_takeover_status":
       return (await getWebProxyTakeoverStatus()) as T;
+    case "set_proxy_takeover_for_app":
+      return (await setWebProxyTakeoverForApp(
+        args?.appType as AppId,
+        Boolean(args?.enabled),
+      )) as T;
     case "get_proxy_config":
       return (await getWebProxyConfig()) as T;
+    case "update_proxy_config":
+      return (await updateWebProxyConfig(args?.config as any)) as T;
     case "get_global_proxy_config":
       return (await getWebGlobalProxyConfig()) as T;
+    case "update_global_proxy_config":
+      return (await updateWebGlobalProxyConfig(args?.config as any)) as T;
     case "get_proxy_config_for_app": {
       const appType = args?.appType as AppId | undefined;
       return (appType
         ? await getWebProxyConfigForApp(appType)
         : getDefaultAppProxyConfig()) as T;
     }
+    case "update_proxy_config_for_app":
+      return (await updateWebProxyConfigForApp(args?.config as any)) as T;
     case "is_proxy_running":
       return (await getWebIsProxyRunning()) as T;
     case "is_live_takeover_active":
       return (await getWebIsLiveTakeoverActive()) as T;
+    case "switch_proxy_provider":
+      return (await switchWebProxyProvider(
+        args?.appType as AppId,
+        args?.providerId as string,
+      )) as T;
     case "get_app_config_dir_override":
       return null as T;
     case "get_config_dir":

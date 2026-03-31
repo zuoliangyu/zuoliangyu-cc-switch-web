@@ -6,6 +6,7 @@ import type {
   AppProxyConfig,
   GlobalProxyConfig,
   ProxyConfig,
+  ProxyServerInfo,
   ProxyStatus,
   ProxyTakeoverStatus,
 } from "@/types/proxy";
@@ -167,6 +168,53 @@ export async function getWebIsLiveTakeoverActive(): Promise<boolean> {
     console.warn("[runtime:web] failed to load live takeover state", error);
     return false;
   }
+}
+
+export async function startWebProxyServer(): Promise<ProxyServerInfo> {
+  return requestWithBody<ProxyServerInfo>("/api/proxy/start", "POST");
+}
+
+export async function stopWebProxyWithRestore(): Promise<void> {
+  return requestWithBody<void>("/api/proxy/stop-with-restore", "POST");
+}
+
+export async function setWebProxyTakeoverForApp(
+  appId: AppId,
+  enabled: boolean,
+): Promise<void> {
+  return requestWithBody<void>(`/api/proxy/apps/${appId}/takeover`, "PUT", {
+    enabled,
+  });
+}
+
+export async function switchWebProxyProvider(
+  appId: AppId,
+  providerId: string,
+): Promise<void> {
+  return requestWithBody<void>(
+    `/api/proxy/apps/${appId}/providers/${providerId}/switch`,
+    "POST",
+  );
+}
+
+export async function updateWebProxyConfig(config: ProxyConfig): Promise<void> {
+  return requestWithBody<void>("/api/proxy/config", "PUT", config);
+}
+
+export async function updateWebGlobalProxyConfig(
+  config: GlobalProxyConfig,
+): Promise<void> {
+  return requestWithBody<void>("/api/proxy/global-config", "PUT", config);
+}
+
+export async function updateWebProxyConfigForApp(
+  config: AppProxyConfig,
+): Promise<void> {
+  return requestWithBody<void>(
+    `/api/proxy/apps/${config.appType}/config`,
+    "PUT",
+    config,
+  );
 }
 
 export async function saveWebSettings(settings: Settings): Promise<boolean> {

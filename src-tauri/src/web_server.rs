@@ -8,14 +8,15 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, get_service, post, put};
 use axum::{Json, Router};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
 use crate::app_config::AppType;
 use crate::provider::Provider;
 use crate::proxy::types::{
-    AppProxyConfig, GlobalProxyConfig, ProxyConfig, ProxyStatus, ProxyTakeoverStatus,
+    AppProxyConfig, GlobalProxyConfig, ProxyConfig, ProxyServerInfo, ProxyStatus,
+    ProxyTakeoverStatus,
 };
 use crate::services::{ProviderService, SwitchResult};
 use crate::store::AppState;
@@ -52,6 +53,12 @@ struct ProvidersResponse {
 #[serde(rename_all = "camelCase")]
 struct ErrorResponse {
     error: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EnabledRequest {
+    enabled: bool,
 }
 
 fn merge_settings_for_save(
@@ -285,6 +292,99 @@ async fn is_live_takeover_active(
     Ok(Json(active))
 }
 
+async fn start_proxy_server(
+    State(state): State<WebApiState>,
+) -> Result<Json<ProxyServerInfo>, ApiError> {
+    let info = state
+        .app_state
+        .proxy_service
+        .start()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to start proxy server: {e}")))?;
+    Ok(Json(info))
+}
+
+async fn stop_proxy_with_restore(State(state): State<WebApiState>) -> Result<StatusCode, ApiError> {
+    state
+        .app_state
+        .proxy_service
+        .stop_with_restore()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to stop proxy server: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn update_proxy_config(
+    State(state): State<WebApiState>,
+    Json(config): Json<ProxyConfig>,
+) -> Result<StatusCode, ApiError> {
+    state
+        .app_state
+        .proxy_service
+        .update_config(&config)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to update proxy config: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn update_global_proxy_config(
+    State(state): State<WebApiState>,
+    Json(config): Json<GlobalProxyConfig>,
+) -> Result<StatusCode, ApiError> {
+    state
+        .app_state
+        .db
+        .update_global_proxy_config(config)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to update global proxy config: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn update_proxy_config_for_app(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+    Json(mut config): Json<AppProxyConfig>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    config.app_type = app_type.as_str().to_string();
+    state
+        .app_state
+        .db
+        .update_proxy_config_for_app(config)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to update app proxy config: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn set_proxy_takeover_for_app(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+    Json(payload): Json<EnabledRequest>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    state
+        .app_state
+        .proxy_service
+        .set_takeover_for_app(app_type.as_str(), payload.enabled)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to update proxy takeover: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn switch_proxy_provider(
+    State(state): State<WebApiState>,
+    Path((app, id)): Path<(String, String)>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    state
+        .app_state
+        .proxy_service
+        .switch_proxy_target(app_type.as_str(), &id)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to switch proxy provider: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 fn resolve_bind_addr() -> Result<SocketAddr, String> {
     let host = std::env::var("CC_SWITCH_WEB_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = std::env::var("CC_SWITCH_WEB_PORT")
@@ -332,13 +432,32 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/providers/:app/:id/switch", post(switch_provider))
         .route("/api/proxy/status", get(get_proxy_status))
         .route("/api/proxy/takeover-status", get(get_proxy_takeover_status))
-        .route("/api/proxy/config", get(get_proxy_config))
-        .route("/api/proxy/global-config", get(get_global_proxy_config))
-        .route("/api/proxy/apps/:app/config", get(get_proxy_config_for_app))
+        .route(
+            "/api/proxy/config",
+            get(get_proxy_config).put(update_proxy_config),
+        )
+        .route(
+            "/api/proxy/global-config",
+            get(get_global_proxy_config).put(update_global_proxy_config),
+        )
+        .route(
+            "/api/proxy/apps/:app/config",
+            get(get_proxy_config_for_app).put(update_proxy_config_for_app),
+        )
         .route("/api/proxy/running", get(is_proxy_running))
         .route(
             "/api/proxy/live-takeover-active",
             get(is_live_takeover_active),
+        )
+        .route("/api/proxy/start", post(start_proxy_server))
+        .route("/api/proxy/stop-with-restore", post(stop_proxy_with_restore))
+        .route(
+            "/api/proxy/apps/:app/takeover",
+            put(set_proxy_takeover_for_app),
+        )
+        .route(
+            "/api/proxy/apps/:app/providers/:id/switch",
+            post(switch_proxy_provider),
         )
         .layer(CorsLayer::permissive())
         .with_state(state);
