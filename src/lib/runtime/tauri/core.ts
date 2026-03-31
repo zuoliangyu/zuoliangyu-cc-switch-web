@@ -56,6 +56,8 @@ import {
   discoverWebAvailableSkills,
   deleteWebDailyMemoryFile,
   getWebDailyMemoryFile,
+  getWebSessionMessages,
+  getWebSessions,
   getWebWorkspaceDirectoryPath,
   getWebWorkspaceFile,
   installWebSkillArchives,
@@ -64,6 +66,8 @@ import {
   saveWebDailyMemoryFile,
   saveWebWorkspaceFile,
   searchWebDailyMemoryFiles,
+  deleteWebSession,
+  deleteWebSessions,
   toggleWebSkillApp,
   updateWebProvider,
   updateWebProxyConfig,
@@ -245,6 +249,27 @@ export async function invoke<T>(
     case "get_workspace_directory_path":
       return (await getWebWorkspaceDirectoryPath(
         args?.subdir as "workspace" | "memory",
+      )) as T;
+    case "list_sessions":
+      return (await getWebSessions()) as T;
+    case "get_session_messages":
+      return (await getWebSessionMessages(
+        args?.providerId as string,
+        args?.sourcePath as string,
+      )) as T;
+    case "delete_session":
+      return (await deleteWebSession({
+        providerId: args?.providerId as string,
+        sessionId: args?.sessionId as string,
+        sourcePath: args?.sourcePath as string,
+      })) as T;
+    case "delete_sessions":
+      return (await deleteWebSessions(
+        (args?.items as {
+          providerId: string;
+          sessionId: string;
+          sourcePath: string;
+        }[]) ?? [],
       )) as T;
     case "start_proxy_server":
       return (await startWebProxyServer()) as T;

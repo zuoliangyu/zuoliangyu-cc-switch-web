@@ -1,8 +1,10 @@
 import type { Settings } from "@/types";
 import type { Provider } from "@/types";
 import type { McpServer, McpServersMap } from "@/types";
+import type { SessionMessage, SessionMeta } from "@/types";
 import type { AppId } from "@/lib/api";
 import type { Prompt } from "@/lib/api";
+import type { DeleteSessionOptions, DeleteSessionResult } from "@/lib/api/sessions";
 import type {
   DiscoverableSkill,
   SkillArchiveInstallResult,
@@ -814,5 +816,34 @@ export async function getWebWorkspaceDirectoryPath(
 ): Promise<string> {
   return requestJson<string>(
     `/api/workspace/directories/${encodeURIComponent(subdir)}/path`,
+  );
+}
+
+export async function getWebSessions(): Promise<SessionMeta[]> {
+  return requestJson<SessionMeta[]>("/api/sessions");
+}
+
+export async function getWebSessionMessages(
+  providerId: string,
+  sourcePath: string,
+): Promise<SessionMessage[]> {
+  return requestJson<SessionMessage[]>(
+    `/api/sessions/messages?providerId=${encodeURIComponent(providerId)}&sourcePath=${encodeURIComponent(sourcePath)}`,
+  );
+}
+
+export async function deleteWebSession(
+  options: DeleteSessionOptions,
+): Promise<boolean> {
+  return requestWithBody<boolean>("/api/sessions", "DELETE", options);
+}
+
+export async function deleteWebSessions(
+  items: DeleteSessionOptions[],
+): Promise<DeleteSessionResult[]> {
+  return requestWithBody<DeleteSessionResult[]>(
+    "/api/sessions/delete-batch",
+    "POST",
+    items,
   );
 }

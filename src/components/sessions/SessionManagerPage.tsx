@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/tooltip";
 import { extractErrorMessage } from "@/utils/errorUtils";
 import { isMac } from "@/lib/platform";
+import { isWebRuntime } from "@/lib/runtime/tauri/env";
 import { ProviderIcon } from "@/components/ProviderIcon";
 import { SessionItem } from "./SessionItem";
 import { SessionMessageItem } from "./SessionMessageItem";
@@ -65,6 +66,7 @@ type ProviderFilter =
 
 export function SessionManagerPage({ appId }: { appId: string }) {
   const { t } = useTranslation();
+  const isWebMode = isWebRuntime();
   const queryClient = useQueryClient();
   const { data, isLoading, refetch } = useSessionsQuery();
   const sessions = data ?? [];
@@ -201,7 +203,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
   const handleResume = async () => {
     if (!selectedSession?.resumeCommand) return;
 
-    if (!isMac()) {
+    if (isWebMode || !isMac()) {
       await handleCopy(
         selectedSession.resumeCommand,
         t("sessionManager.resumeCommandCopied"),
@@ -871,7 +873,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
 
                       {/* 右侧：操作按钮组 */}
                       <div className="flex items-center gap-2 shrink-0">
-                        {isMac() && (
+                        {(isMac() || isWebMode) && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button

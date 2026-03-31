@@ -133,7 +133,6 @@ const VALID_VIEWS: View[] = [
 ];
 
 const WEB_BLOCKED_VIEWS: View[] = [
-  "sessions",
   "openclawEnv",
   "openclawTools",
   "openclawAgents",
@@ -1217,6 +1216,15 @@ function App() {
                               >
                                 <FolderOpen className="w-4 h-4" />
                               </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewChange("sessions")}
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                title={t("sessionManager.title")}
+                              >
+                                <History className="w-4 h-4" />
+                              </Button>
                               {!isWebMode && (
                                 <>
                                   <Button
@@ -1251,15 +1259,6 @@ function App() {
                                     title={t("openclaw.agents.title")}
                                   >
                                     <Cpu className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleViewChange("sessions")}
-                                    className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-                                    title={t("sessionManager.title")}
-                                  >
-                                    <History className="w-4 h-4" />
                                   </Button>
                                 </>
                               )}

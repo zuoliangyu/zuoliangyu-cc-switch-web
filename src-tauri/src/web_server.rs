@@ -116,6 +116,13 @@ struct DailyMemorySearchQuery {
     query: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SessionMessagesQuery {
+    provider_id: String,
+    source_path: String,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SkillArchiveInstallResult {
@@ -454,6 +461,40 @@ async fn get_workspace_directory_path(
     std::fs::create_dir_all(&path)
         .map_err(|e| ApiError::internal(format!("failed to prepare workspace directory: {e}")))?;
     Ok(Json(path.to_string_lossy().to_string()))
+}
+
+async fn list_sessions() -> Result<Json<Vec<crate::session_manager::SessionMeta>>, ApiError> {
+    let sessions = crate::list_sessions()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to list sessions: {e}")))?;
+    Ok(Json(sessions))
+}
+
+async fn get_session_messages(
+    Query(query): Query<SessionMessagesQuery>,
+) -> Result<Json<Vec<crate::session_manager::SessionMessage>>, ApiError> {
+    let messages = crate::get_session_messages(query.provider_id, query.source_path)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load session messages: {e}")))?;
+    Ok(Json(messages))
+}
+
+async fn delete_session(
+    Json(payload): Json<crate::session_manager::DeleteSessionRequest>,
+) -> Result<Json<bool>, ApiError> {
+    let deleted = crate::delete_session(payload.provider_id, payload.session_id, payload.source_path)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to delete session: {e}")))?;
+    Ok(Json(deleted))
+}
+
+async fn delete_sessions(
+    Json(items): Json<Vec<crate::session_manager::DeleteSessionRequest>>,
+) -> Result<Json<Vec<crate::session_manager::DeleteSessionOutcome>>, ApiError> {
+    let results = crate::delete_sessions(items)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to delete sessions: {e}")))?;
+    Ok(Json(results))
 }
 
 fn sanitize_uploaded_archive_name(file_name: &str, index: usize) -> String {
@@ -1264,6 +1305,9 @@ pub async fn run_web_server() -> Result<(), String> {
             "/api/workspace/directories/:subdir/path",
             get(get_workspace_directory_path),
         )
+        .route("/api/sessions", get(list_sessions).delete(delete_session))
+        .route("/api/sessions/messages", get(get_session_messages))
+        .route("/api/sessions/delete-batch", post(delete_sessions))
         .route("/api/prompts/:app", get(get_prompts))
         .route("/api/prompts/:app/import", post(import_prompt_from_file))
         .route(
