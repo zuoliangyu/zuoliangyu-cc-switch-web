@@ -1082,30 +1082,8 @@ function App() {
                     </Button>
                   </>
                 )}
-                {currentView === "skills" && !isWebMode && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        unifiedSkillsPanelRef.current?.openRestoreFromBackup()
-                      }
-                      className="hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <History className="w-4 h-4 mr-2" />
-                      {t("skills.restoreFromBackup.button")}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        unifiedSkillsPanelRef.current?.openInstallFromZip()
-                      }
-                      className="hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <FolderArchive className="w-4 h-4 mr-2" />
-                      {t("skills.installFromZip.button")}
-                    </Button>
+                {currentView === "skills" &&
+                  (isWebMode ? (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1117,17 +1095,52 @@ function App() {
                       <Download className="w-4 h-4 mr-2" />
                       {t("skills.import")}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentView("skillsDiscovery")}
-                      className="hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <Search className="w-4 h-4 mr-2" />
-                      {t("skills.discover")}
-                    </Button>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          unifiedSkillsPanelRef.current?.openRestoreFromBackup()
+                        }
+                        className="hover:bg-black/5 dark:hover:bg-white/5"
+                      >
+                        <History className="w-4 h-4 mr-2" />
+                        {t("skills.restoreFromBackup.button")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          unifiedSkillsPanelRef.current?.openInstallFromZip()
+                        }
+                        className="hover:bg-black/5 dark:hover:bg-white/5"
+                      >
+                        <FolderArchive className="w-4 h-4 mr-2" />
+                        {t("skills.installFromZip.button")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          unifiedSkillsPanelRef.current?.openImport()
+                        }
+                        className="hover:bg-black/5 dark:hover:bg-white/5"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        {t("skills.import")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentView("skillsDiscovery")}
+                        className="hover:bg-black/5 dark:hover:bg-white/5"
+                      >
+                        <Search className="w-4 h-4 mr-2" />
+                        {t("skills.discover")}
+                      </Button>
+                    </>
+                  ))}
                 {currentView === "skillsDiscovery" && (
                   <>
                     <Button

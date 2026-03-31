@@ -26,6 +26,7 @@ import {
   getWebCurrentPromptFileContent,
   getWebInstalledSkills,
   getWebSkillBackups,
+  getWebUnmanagedSkills,
   removeWebProviderFromFailoverQueue,
   saveWebSettings,
   setWebAutoFailoverEnabled,
@@ -39,6 +40,7 @@ import {
   switchWebProxyProvider,
   importWebMcpFromApps,
   importWebPromptFromFile,
+  importWebSkillsFromApps,
   upsertWebMcpServer,
   upsertWebPrompt,
   uninstallWebSkillUnified,
@@ -164,6 +166,10 @@ export async function invoke<T>(
       return (await getWebInstalledSkills()) as T;
     case "get_skill_backups":
       return (await getWebSkillBackups()) as T;
+    case "scan_unmanaged_skills":
+      return (await getWebUnmanagedSkills()) as T;
+    case "import_skills_from_apps":
+      return (await importWebSkillsFromApps(args?.imports as any[])) as T;
     case "uninstall_skill_unified":
       return (await uninstallWebSkillUnified(args?.id as string)) as T;
     case "toggle_skill_app":

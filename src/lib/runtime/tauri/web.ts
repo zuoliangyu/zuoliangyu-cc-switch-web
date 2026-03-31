@@ -4,9 +4,11 @@ import type { McpServer, McpServersMap } from "@/types";
 import type { AppId } from "@/lib/api";
 import type { Prompt } from "@/lib/api";
 import type {
+  ImportSkillSelection,
   InstalledSkill,
   SkillBackupEntry,
   SkillUninstallResult,
+  UnmanagedSkill,
 } from "@/lib/api/skills";
 import type { SwitchResult } from "@/lib/api/providers";
 import type {
@@ -620,4 +622,26 @@ export async function toggleWebSkillApp(
   return requestWithBody<boolean>(`/api/skills/${id}/apps/${app}`, "PUT", {
     enabled,
   });
+}
+
+export async function getWebUnmanagedSkills(): Promise<UnmanagedSkill[]> {
+  try {
+    return await requestJson<UnmanagedSkill[]>("/api/skills/unmanaged");
+  } catch (error) {
+    console.warn(
+      "[runtime:web] failed to scan unmanaged skills from local service",
+      error,
+    );
+    return [];
+  }
+}
+
+export async function importWebSkillsFromApps(
+  imports: ImportSkillSelection[],
+): Promise<InstalledSkill[]> {
+  return requestWithBody<InstalledSkill[]>(
+    "/api/skills/import",
+    "POST",
+    imports,
+  );
 }

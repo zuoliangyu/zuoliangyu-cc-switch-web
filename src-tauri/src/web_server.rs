@@ -21,7 +21,7 @@ use crate::proxy::types::{
     ProxyStatus, ProxyTakeoverStatus,
 };
 use crate::prompt::Prompt;
-use crate::services::skill::{SkillBackupEntry, SkillUninstallResult};
+use crate::services::skill::{ImportSkillSelection, SkillBackupEntry, SkillUninstallResult};
 use crate::services::{McpService, PromptService, ProviderService, SwitchResult};
 use crate::store::AppState;
 use crate::Database;
@@ -232,6 +232,23 @@ async fn toggle_skill_app(
     )
     .map_err(|e| ApiError::internal(format!("failed to toggle skill app: {e}")))?;
     Ok(Json(true))
+}
+
+async fn scan_unmanaged_skills(
+    State(state): State<WebApiState>,
+) -> Result<Json<Vec<crate::app_config::UnmanagedSkill>>, ApiError> {
+    let skills = crate::services::skill::SkillService::scan_unmanaged(&state.app_state.db)
+        .map_err(|e| ApiError::internal(format!("failed to scan unmanaged skills: {e}")))?;
+    Ok(Json(skills))
+}
+
+async fn import_skills_from_apps(
+    State(state): State<WebApiState>,
+    Json(imports): Json<Vec<ImportSkillSelection>>,
+) -> Result<Json<Vec<crate::app_config::InstalledSkill>>, ApiError> {
+    let skills = crate::services::skill::SkillService::import_from_apps(&state.app_state.db, imports)
+        .map_err(|e| ApiError::internal(format!("failed to import skills from apps: {e}")))?;
+    Ok(Json(skills))
 }
 
 fn merge_settings_for_save(
@@ -874,6 +891,8 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/providers/:app/current", get(get_current_provider))
         .route("/api/skills/installed", get(get_installed_skills))
         .route("/api/skills/backups", get(get_skill_backups))
+        .route("/api/skills/unmanaged", get(scan_unmanaged_skills))
+        .route("/api/skills/import", post(import_skills_from_apps))
         .route(
             "/api/skills/:id",
             axum::routing::delete(uninstall_skill_unified),
