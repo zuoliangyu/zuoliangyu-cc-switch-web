@@ -157,6 +157,7 @@ Local Rust Service
 - 已增加 GitHub Actions Web CI：
   - `macOS / Windows / Linux` 跨平台静态校验
   - Docker 镜像构建与容器健康检查
+- 已移除旧桌面端发布 workflow，当前仓库仅保留 Web 方向的 CI
 - 已在 README 三语文件中补充本地运行和 Docker 运行说明
 - 已在 Web 模式下收起一部分仍依赖桌面能力的入口，避免页面直接触发未迁移命令
 

@@ -30,6 +30,5 @@ copilot-api
 CODEBUDDY.md
 .github/*
 !.github/workflows/
-.github/workflows/*
-!.github/workflows/web-ci.yml
+!.github/workflows/*.yml
 docker-compose.host.yml
