@@ -4,7 +4,11 @@ import type { AppId } from "@/lib/api";
 import type { SwitchResult } from "@/lib/api/providers";
 import type {
   AppProxyConfig,
+  CircuitBreakerConfig,
+  CircuitBreakerStats,
+  FailoverQueueItem,
   GlobalProxyConfig,
+  ProviderHealth,
   ProxyConfig,
   ProxyServerInfo,
   ProxyStatus,
@@ -244,6 +248,151 @@ export async function setWebPricingModelSource(
     `/api/proxy/apps/${appId}/pricing-model-source`,
     "PUT",
     { value },
+  );
+}
+
+export async function getWebProviderHealth(
+  appId: AppId,
+  providerId: string,
+): Promise<ProviderHealth> {
+  try {
+    return await requestJson<ProviderHealth>(
+      `/api/failover/apps/${appId}/providers/${providerId}/health`,
+    );
+  } catch (error) {
+    console.warn(
+      `[runtime:web] failed to load provider health for ${appId}/${providerId}`,
+      error,
+    );
+    return {
+      provider_id: providerId,
+      app_type: appId,
+      is_healthy: true,
+      consecutive_failures: 0,
+      last_success_at: null,
+      last_failure_at: null,
+      last_error: null,
+      updated_at: new Date().toISOString(),
+    };
+  }
+}
+
+export async function getWebCircuitBreakerConfig(): Promise<CircuitBreakerConfig> {
+  try {
+    return await requestJson<CircuitBreakerConfig>(
+      "/api/failover/circuit-breaker-config",
+    );
+  } catch (error) {
+    console.warn(
+      "[runtime:web] failed to load circuit breaker config from local service",
+      error,
+    );
+    return {
+      failureThreshold: 4,
+      successThreshold: 2,
+      timeoutSeconds: 60,
+      errorRateThreshold: 0.6,
+      minRequests: 10,
+    };
+  }
+}
+
+export async function updateWebCircuitBreakerConfig(
+  config: CircuitBreakerConfig,
+): Promise<void> {
+  return requestWithBody<void>(
+    "/api/failover/circuit-breaker-config",
+    "PUT",
+    config,
+  );
+}
+
+export async function getWebCircuitBreakerStats(
+  appId: AppId,
+  providerId: string,
+): Promise<CircuitBreakerStats | null> {
+  try {
+    return await requestJson<CircuitBreakerStats | null>(
+      `/api/failover/apps/${appId}/providers/${providerId}/circuit-breaker-stats`,
+    );
+  } catch (error) {
+    console.warn(
+      `[runtime:web] failed to load circuit breaker stats for ${appId}/${providerId}`,
+      error,
+    );
+    return null;
+  }
+}
+
+export async function getWebFailoverQueue(
+  appId: AppId,
+): Promise<FailoverQueueItem[]> {
+  try {
+    return await requestJson<FailoverQueueItem[]>(`/api/failover/apps/${appId}/queue`);
+  } catch (error) {
+    console.warn(
+      `[runtime:web] failed to load failover queue for ${appId} from local service`,
+      error,
+    );
+    return [];
+  }
+}
+
+export async function getWebAvailableProvidersForFailover(
+  appId: AppId,
+): Promise<Provider[]> {
+  try {
+    return await requestJson<Provider[]>(
+      `/api/failover/apps/${appId}/available-providers`,
+    );
+  } catch (error) {
+    console.warn(
+      `[runtime:web] failed to load available failover providers for ${appId}`,
+      error,
+    );
+    return [];
+  }
+}
+
+export async function addWebProviderToFailoverQueue(
+  appId: AppId,
+  providerId: string,
+): Promise<void> {
+  return requestWithBody<void>(`/api/failover/apps/${appId}/queue`, "POST", {
+    providerId,
+  });
+}
+
+export async function removeWebProviderFromFailoverQueue(
+  appId: AppId,
+  providerId: string,
+): Promise<void> {
+  return requestWithBody<void>(
+    `/api/failover/apps/${appId}/queue/${providerId}`,
+    "DELETE",
+  );
+}
+
+export async function getWebAutoFailoverEnabled(appId: AppId): Promise<boolean> {
+  try {
+    return await requestJson<boolean>(`/api/failover/apps/${appId}/auto-enabled`);
+  } catch (error) {
+    console.warn(
+      `[runtime:web] failed to load auto failover flag for ${appId}`,
+      error,
+    );
+    return false;
+  }
+}
+
+export async function setWebAutoFailoverEnabled(
+  appId: AppId,
+  enabled: boolean,
+): Promise<void> {
+  return requestWithBody<void>(
+    `/api/failover/apps/${appId}/auto-enabled`,
+    "PUT",
+    { enabled },
   );
 }
 

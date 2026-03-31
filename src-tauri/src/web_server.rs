@@ -13,10 +13,12 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
 use crate::app_config::AppType;
+use crate::database::FailoverQueueItem;
 use crate::provider::Provider;
+use crate::proxy::circuit_breaker::{CircuitBreakerConfig, CircuitBreakerStats};
 use crate::proxy::types::{
-    AppProxyConfig, GlobalProxyConfig, ProxyConfig, ProxyServerInfo, ProxyStatus,
-    ProxyTakeoverStatus,
+    AppProxyConfig, GlobalProxyConfig, ProviderHealth, ProxyConfig, ProxyServerInfo,
+    ProxyStatus, ProxyTakeoverStatus,
 };
 use crate::services::{ProviderService, SwitchResult};
 use crate::store::AppState;
@@ -65,6 +67,12 @@ struct EnabledRequest {
 #[serde(rename_all = "camelCase")]
 struct ValueRequest {
     value: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProviderIdRequest {
+    provider_id: String,
 }
 
 fn merge_settings_for_save(
@@ -449,6 +457,222 @@ async fn set_pricing_model_source(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn get_provider_health(
+    State(state): State<WebApiState>,
+    Path((app, provider_id)): Path<(String, String)>,
+) -> Result<Json<ProviderHealth>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let value = state
+        .app_state
+        .db
+        .get_provider_health(&provider_id, app_type.as_str())
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load provider health: {e}")))?;
+    Ok(Json(value))
+}
+
+async fn get_circuit_breaker_config(
+    State(state): State<WebApiState>,
+) -> Result<Json<CircuitBreakerConfig>, ApiError> {
+    let value = state
+        .app_state
+        .db
+        .get_circuit_breaker_config()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load circuit breaker config: {e}")))?;
+    Ok(Json(value))
+}
+
+async fn update_circuit_breaker_config(
+    State(state): State<WebApiState>,
+    Json(config): Json<CircuitBreakerConfig>,
+) -> Result<StatusCode, ApiError> {
+    state
+        .app_state
+        .db
+        .update_circuit_breaker_config(&config)
+        .await
+        .map_err(|e| {
+            ApiError::internal(format!("failed to update circuit breaker config: {e}"))
+        })?;
+
+    state
+        .app_state
+        .proxy_service
+        .update_circuit_breaker_configs(config)
+        .await
+        .map_err(|e| {
+            ApiError::internal(format!("failed to hot reload circuit breaker config: {e}"))
+        })?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn get_circuit_breaker_stats(
+    Path((_app, _provider_id)): Path<(String, String)>,
+) -> Json<Option<CircuitBreakerStats>> {
+    Json(None)
+}
+
+async fn get_failover_queue(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+) -> Result<Json<Vec<FailoverQueueItem>>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let queue = state
+        .app_state
+        .db
+        .get_failover_queue(app_type.as_str())
+        .map_err(|e| ApiError::internal(format!("failed to load failover queue: {e}")))?;
+    Ok(Json(queue))
+}
+
+async fn get_available_providers_for_failover(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+) -> Result<Json<Vec<Provider>>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let providers = state
+        .app_state
+        .db
+        .get_available_providers_for_failover(app_type.as_str())
+        .map_err(|e| {
+            ApiError::internal(format!(
+                "failed to load available providers for failover: {e}"
+            ))
+        })?;
+    Ok(Json(providers))
+}
+
+async fn add_to_failover_queue(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+    Json(payload): Json<ProviderIdRequest>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    state
+        .app_state
+        .db
+        .add_to_failover_queue(app_type.as_str(), &payload.provider_id)
+        .map_err(|e| ApiError::internal(format!("failed to add provider to failover queue: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn remove_from_failover_queue(
+    State(state): State<WebApiState>,
+    Path((app, provider_id)): Path<(String, String)>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    state
+        .app_state
+        .db
+        .remove_from_failover_queue(app_type.as_str(), &provider_id)
+        .map_err(|e| {
+            ApiError::internal(format!("failed to remove provider from failover queue: {e}"))
+        })?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn get_auto_failover_enabled(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+) -> Result<Json<bool>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let enabled = state
+        .app_state
+        .db
+        .get_proxy_config_for_app(app_type.as_str())
+        .await
+        .map(|config| config.auto_failover_enabled)
+        .map_err(|e| ApiError::internal(format!("failed to load auto failover status: {e}")))?;
+    Ok(Json(enabled))
+}
+
+async fn set_auto_failover_enabled(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+    Json(payload): Json<EnabledRequest>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let app_type_str = app_type.as_str();
+
+    let p1_provider_id = if payload.enabled {
+        let mut queue = state
+            .app_state
+            .db
+            .get_failover_queue(app_type_str)
+            .map_err(|e| ApiError::internal(format!("failed to load failover queue: {e}")))?;
+
+        if queue.is_empty() {
+            let current_id =
+                crate::settings::get_effective_current_provider(state.app_state.db.as_ref(), &app_type)
+                    .map_err(|e| {
+                        ApiError::internal(format!(
+                            "failed to get current provider for failover: {e}"
+                        ))
+                    })?;
+
+            let Some(current_id) = current_id else {
+                return Err(ApiError::bad_request(
+                    "故障转移队列为空，且未设置当前供应商，无法开启故障转移",
+                ));
+            };
+
+            state
+                .app_state
+                .db
+                .add_to_failover_queue(app_type_str, &current_id)
+                .map_err(|e| {
+                    ApiError::internal(format!(
+                        "failed to add current provider into failover queue: {e}"
+                    ))
+                })?;
+
+            queue = state
+                .app_state
+                .db
+                .get_failover_queue(app_type_str)
+                .map_err(|e| ApiError::internal(format!("failed to reload failover queue: {e}")))?;
+        }
+
+        Some(
+            queue
+                .first()
+                .map(|item| item.provider_id.clone())
+                .ok_or_else(|| ApiError::bad_request("故障转移队列为空，无法开启故障转移"))?,
+        )
+    } else {
+        None
+    };
+
+    let mut config = state
+        .app_state
+        .db
+        .get_proxy_config_for_app(app_type_str)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load app proxy config: {e}")))?;
+    config.auto_failover_enabled = payload.enabled;
+    state
+        .app_state
+        .db
+        .update_proxy_config_for_app(config)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to update auto failover config: {e}")))?;
+
+    if let Some(provider_id) = p1_provider_id {
+        state
+            .app_state
+            .proxy_service
+            .switch_proxy_target(app_type_str, &provider_id)
+            .await
+            .map_err(|e| {
+                ApiError::internal(format!("failed to switch proxy target for failover: {e}"))
+            })?;
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 fn resolve_bind_addr() -> Result<SocketAddr, String> {
     let host = std::env::var("CC_SWITCH_WEB_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = std::env::var("CC_SWITCH_WEB_PORT")
@@ -530,6 +754,34 @@ pub async fn run_web_server() -> Result<(), String> {
         .route(
             "/api/proxy/apps/:app/pricing-model-source",
             get(get_pricing_model_source).put(set_pricing_model_source),
+        )
+        .route(
+            "/api/failover/apps/:app/queue",
+            get(get_failover_queue).post(add_to_failover_queue),
+        )
+        .route(
+            "/api/failover/apps/:app/queue/:provider_id",
+            axum::routing::delete(remove_from_failover_queue),
+        )
+        .route(
+            "/api/failover/apps/:app/available-providers",
+            get(get_available_providers_for_failover),
+        )
+        .route(
+            "/api/failover/apps/:app/auto-enabled",
+            get(get_auto_failover_enabled).put(set_auto_failover_enabled),
+        )
+        .route(
+            "/api/failover/apps/:app/providers/:provider_id/health",
+            get(get_provider_health),
+        )
+        .route(
+            "/api/failover/circuit-breaker-config",
+            get(get_circuit_breaker_config).put(update_circuit_breaker_config),
+        )
+        .route(
+            "/api/failover/apps/:app/providers/:provider_id/circuit-breaker-stats",
+            get(get_circuit_breaker_stats),
         )
         .layer(CorsLayer::permissive())
         .with_state(state);

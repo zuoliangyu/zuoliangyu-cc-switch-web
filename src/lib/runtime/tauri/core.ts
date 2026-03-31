@@ -3,20 +3,29 @@ import {
 } from "./defaults";
 import { isTauriRuntime } from "./env";
 import {
+  addWebProviderToFailoverQueue,
   addWebProvider,
   deleteWebProvider,
+  getWebAutoFailoverEnabled,
+  getWebAvailableProvidersForFailover,
+  getWebCircuitBreakerConfig,
+  getWebCircuitBreakerStats,
   getWebDefaultCostMultiplier,
+  getWebFailoverQueue,
   getWebGlobalProxyConfig,
   getWebIsLiveTakeoverActive,
   getWebIsProxyRunning,
   getWebPricingModelSource,
+  getWebProviderHealth,
   getWebProxyConfig,
   getWebProxyConfigForApp,
   getWebProxyStatus,
   getWebProxyTakeoverStatus,
   getWebProviders,
   getWebSettings,
+  removeWebProviderFromFailoverQueue,
   saveWebSettings,
+  setWebAutoFailoverEnabled,
   setWebDefaultCostMultiplier,
   setWebPricingModelSource,
   setWebProxyTakeoverForApp,
@@ -24,6 +33,7 @@ import {
   stopWebProxyWithRestore,
   switchWebProvider,
   switchWebProxyProvider,
+  updateWebCircuitBreakerConfig,
   updateWebGlobalProxyConfig,
   updateWebProvider,
   updateWebProxyConfig,
@@ -152,6 +162,43 @@ export async function invoke<T>(
       return (await switchWebProxyProvider(
         args?.appType as AppId,
         args?.providerId as string,
+      )) as T;
+    case "get_provider_health":
+      return (await getWebProviderHealth(
+        args?.appType as AppId,
+        args?.providerId as string,
+      )) as T;
+    case "get_circuit_breaker_config":
+      return (await getWebCircuitBreakerConfig()) as T;
+    case "update_circuit_breaker_config":
+      return (await updateWebCircuitBreakerConfig(args?.config as any)) as T;
+    case "get_circuit_breaker_stats":
+      return (await getWebCircuitBreakerStats(
+        args?.appType as AppId,
+        args?.providerId as string,
+      )) as T;
+    case "get_failover_queue":
+      return (await getWebFailoverQueue(args?.appType as AppId)) as T;
+    case "get_available_providers_for_failover":
+      return (await getWebAvailableProvidersForFailover(
+        args?.appType as AppId,
+      )) as T;
+    case "add_to_failover_queue":
+      return (await addWebProviderToFailoverQueue(
+        args?.appType as AppId,
+        args?.providerId as string,
+      )) as T;
+    case "remove_from_failover_queue":
+      return (await removeWebProviderFromFailoverQueue(
+        args?.appType as AppId,
+        args?.providerId as string,
+      )) as T;
+    case "get_auto_failover_enabled":
+      return (await getWebAutoFailoverEnabled(args?.appType as AppId)) as T;
+    case "set_auto_failover_enabled":
+      return (await setWebAutoFailoverEnabled(
+        args?.appType as AppId,
+        Boolean(args?.enabled),
       )) as T;
     case "get_app_config_dir_override":
       return null as T;
