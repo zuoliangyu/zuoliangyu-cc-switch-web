@@ -38,6 +38,35 @@ export const getWebApiBase = (): string => {
     : DEFAULT_WEB_API_BASE;
 };
 
+async function getErrorMessage(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  try {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const payload = (await response.json()) as {
+        error?: string;
+        message?: string;
+        detail?: string;
+      };
+      const detail = payload.error || payload.message || payload.detail;
+      if (detail && detail.trim()) {
+        return detail;
+      }
+    } else {
+      const text = await response.text();
+      if (text.trim()) {
+        return text.trim();
+      }
+    }
+  } catch (error) {
+    console.warn("[runtime:web] failed to parse error response", error);
+  }
+
+  return fallback;
+}
+
 async function requestJson<T>(path: string): Promise<T> {
   const response = await fetch(`${getWebApiBase()}${path}`, {
     headers: {
@@ -46,7 +75,8 @@ async function requestJson<T>(path: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${path}`);
+    const fallback = `HTTP ${response.status} for ${path}`;
+    throw new Error(await getErrorMessage(response, fallback));
   }
 
   return (await response.json()) as T;
@@ -67,7 +97,8 @@ async function requestWithBody<T>(
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${method} ${path}`);
+    const fallback = `HTTP ${response.status} for ${method} ${path}`;
+    throw new Error(await getErrorMessage(response, fallback));
   }
 
   if (response.status === 204) {
