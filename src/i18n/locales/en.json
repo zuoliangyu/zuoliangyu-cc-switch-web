@@ -40,7 +40,8 @@
     "deleting": "Deleting...",
     "auto": "Auto",
     "enabled": "Enabled",
-    "notSet": "Not Set"
+    "notSet": "Not Set",
+    "webFeaturePending": "This page is not available in the Web runtime yet"
   },
   "apiKeyInput": {
     "placeholder": "Enter API Key",

@@ -132,9 +132,27 @@ const VALID_VIEWS: View[] = [
   "openclawAgents",
 ];
 
+const WEB_BLOCKED_VIEWS: View[] = [
+  "prompts",
+  "skills",
+  "skillsDiscovery",
+  "mcp",
+  "sessions",
+  "workspace",
+  "openclawEnv",
+  "openclawTools",
+  "openclawAgents",
+];
+
+const isViewBlockedInWebMode = (view: View): boolean =>
+  WEB_BLOCKED_VIEWS.includes(view);
+
 const getInitialView = (): View => {
   const saved = localStorage.getItem(VIEW_STORAGE_KEY) as View | null;
   if (saved && VALID_VIEWS.includes(saved)) {
+    if (isWebRuntime() && isViewBlockedInWebMode(saved)) {
+      return "providers";
+    }
     return saved;
   }
   return "providers";
@@ -149,6 +167,19 @@ function App() {
   const [currentView, setCurrentView] = useState<View>(getInitialView);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState("general");
   const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const handleViewChange = (nextView: View) => {
+    if (isWebMode && isViewBlockedInWebMode(nextView)) {
+      toast.info(
+        t("common.webFeaturePending", {
+          defaultValue: "该页面尚未迁移到 Web 版本，暂不可用",
+        }),
+        { closeButton: true },
+      );
+      return;
+    }
+    setCurrentView(nextView);
+  };
 
   useEffect(() => {
     localStorage.setItem(VIEW_STORAGE_KEY, currentView);
@@ -500,19 +531,7 @@ function App() {
       return;
     }
 
-    const blockedViews: View[] = [
-      "prompts",
-      "skills",
-      "skillsDiscovery",
-      "mcp",
-      "sessions",
-      "workspace",
-      "openclawEnv",
-      "openclawTools",
-      "openclawAgents",
-    ];
-
-    if (blockedViews.includes(currentView)) {
+    if (isViewBlockedInWebMode(currentView)) {
       setCurrentView("providers");
     }
   }, [currentView, isWebMode]);
@@ -1152,7 +1171,7 @@ function App() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setCurrentView("workspace")}
+                                    onClick={() => handleViewChange("workspace")}
                                     className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                                     title={t("workspace.manage")}
                                   >
@@ -1161,7 +1180,9 @@ function App() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setCurrentView("openclawEnv")}
+                                    onClick={() =>
+                                      handleViewChange("openclawEnv")
+                                    }
                                     className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                                     title={t("openclaw.env.title")}
                                   >
@@ -1170,7 +1191,9 @@ function App() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setCurrentView("openclawTools")}
+                                    onClick={() =>
+                                      handleViewChange("openclawTools")
+                                    }
                                     className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                                     title={t("openclaw.tools.title")}
                                   >
@@ -1179,7 +1202,9 @@ function App() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setCurrentView("openclawAgents")}
+                                    onClick={() =>
+                                      handleViewChange("openclawAgents")
+                                    }
                                     className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                                     title={t("openclaw.agents.title")}
                                   >
@@ -1188,7 +1213,7 @@ function App() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setCurrentView("sessions")}
+                                    onClick={() => handleViewChange("sessions")}
                                     className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                                     title={t("sessionManager.title")}
                                   >
@@ -1203,7 +1228,7 @@ function App() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setCurrentView("skills")}
+                                  onClick={() => handleViewChange("skills")}
                                   className={cn(
                                     "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5",
                                     "transition-all duration-200 ease-in-out overflow-hidden",
@@ -1220,7 +1245,7 @@ function App() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setCurrentView("prompts")}
+                                  onClick={() => handleViewChange("prompts")}
                                   className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
                                   title={t("prompts.manage")}
                                 >
@@ -1231,7 +1256,7 @@ function App() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setCurrentView("sessions")}
+                                  onClick={() => handleViewChange("sessions")}
                                   className={cn(
                                     "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5",
                                     "transition-all duration-200 ease-in-out overflow-hidden",
@@ -1244,15 +1269,17 @@ function App() {
                                   <History className="flex-shrink-0 w-4 h-4" />
                                 </Button>
                               )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setCurrentView("mcp")}
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-                                title={t("mcp.title")}
-                              >
-                                <McpIcon size={16} />
-                              </Button>
+                              {!isWebMode && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleViewChange("mcp")}
+                                  className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                  title={t("mcp.title")}
+                                >
+                                  <McpIcon size={16} />
+                                </Button>
+                              )}
                             </>
                           )}
                         </motion.div>
