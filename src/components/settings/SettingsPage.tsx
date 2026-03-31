@@ -69,7 +69,6 @@ export function SettingsPage({
     settings,
     isLoading,
     isSaving,
-    isPortable,
     appConfigDir,
     resolvedDirs,
     updateSettings,
@@ -499,7 +498,7 @@ export function SettingsPage({
                 <UsageDashboard />
               </TabsContent>
               <TabsContent value="about" className="mt-0">
-                <AboutSection isPortable={isPortable} />
+                <AboutSection />
               </TabsContent>
             </div>
 
