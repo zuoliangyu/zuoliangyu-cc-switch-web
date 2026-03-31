@@ -80,6 +80,14 @@ If you are looking for the original CC Switch project, desktop application, or u
 
    Then open [http://localhost:8788](http://localhost:8788).
 
+   In local Web service mode, CC Switch Web stores its own data under the same default directory as the desktop/local branch:
+
+   ```text
+   ~/.cc-switch
+   ```
+
+   This includes files such as `config.json`, `settings.json`, `cc-switch.db`, backups, and the unified Skills storage.
+
 5. Build once and run the release binary directly:
 
    ```bash

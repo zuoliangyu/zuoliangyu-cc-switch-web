@@ -18,6 +18,12 @@
 - Windows 可直接运行
 - 支持 Docker 方式部署和启动
 
+补充约束：
+
+- 本地运行的 Web 版默认仍然使用 CC Switch 自身的本地数据目录 `~/.cc-switch`
+- 不应把 Web 版误做成仅依赖浏览器 `localStorage` 的前端壳
+- Docker 运行默认使用容器 volume，只有显式挂载宿主机目录时才与宿主机路径打通
+
 这意味着需要保留“本地服务能力”，但移除“桌面壳能力”。
 
 ## 2. 总目标
@@ -211,8 +217,14 @@ Local Rust Service
 
 当前仍未完成、需要继续迁移的重点：
 
-- Skills
+- 桌面残留 API 的收口与清理
+- 旧兼容层（Skills / MCP / Claude 集成等）的统一收敛
+- OMO / OMO Slim 相关残留能力是否继续保留的产品判断
 - Windows / Linux 直接运行的更完整包装方式（如脚本、服务化说明）
+
+补充审计文档：
+
+- `docs-dev/web-remaining-gap-audit.md`
 
 ## 7.1 阶段一：运行时解耦
 

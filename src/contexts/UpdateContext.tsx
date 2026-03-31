@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import type { UpdateInfo, UpdateHandle } from "../lib/updater";
 import { checkForUpdate } from "../lib/updater";
+import { isTauriRuntime } from "@/lib/runtime/tauri/env";
 
 interface UpdateContextValue {
   // 更新状态
@@ -121,6 +122,10 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
 
   // 应用启动时自动检查更新
   useEffect(() => {
+    if (!isTauriRuntime()) {
+      return;
+    }
+
     // 延迟1秒后检查，避免影响启动体验
     const timer = setTimeout(() => {
       checkUpdate().catch(console.error);

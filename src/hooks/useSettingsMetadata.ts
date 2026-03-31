@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { settingsApi } from "@/lib/api";
+import { isWebRuntime } from "@/lib/runtime/tauri/env";
 
 export interface UseSettingsMetadataResult {
   isPortable: boolean;
@@ -19,6 +20,7 @@ export function useSettingsMetadata(): UseSettingsMetadataResult {
   const [isPortable, setIsPortable] = useState(false);
   const [requiresRestart, setRequiresRestart] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const webRuntime = isWebRuntime();
 
   // 加载元数据
   useEffect(() => {
@@ -27,6 +29,12 @@ export function useSettingsMetadata(): UseSettingsMetadataResult {
 
     const load = async () => {
       try {
+        if (webRuntime) {
+          if (!active) return;
+          setIsPortable(false);
+          return;
+        }
+
         const portable = await settingsApi.isPortable();
 
         if (!active) return;
@@ -45,7 +53,7 @@ export function useSettingsMetadata(): UseSettingsMetadataResult {
     return () => {
       active = false;
     };
-  }, []);
+  }, [webRuntime]);
 
   const acknowledgeRestart = useCallback(() => {
     setRequiresRestart(false);
