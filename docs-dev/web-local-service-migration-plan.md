@@ -158,6 +158,7 @@ Local Rust Service
 - 已恢复 `Provider` 空状态页的“导入当前配置” Web 能力（Claude / Codex / Gemini 等应用可通过本地服务直接导入默认配置）
 - 已恢复 `Provider` 单项流式健康检查的 Web 能力（Claude / Codex / Gemini 可在浏览器中直接测试当前供应商连通性）
 - 已恢复 `Settings / 配置目录覆盖` 的 Web 基础能力（浏览器中可手动编辑各应用目录覆盖并保存，不依赖原生目录选择器）
+- 已恢复 `About / 本地环境检查` 的 Web 能力（非 Windows 环境下可在浏览器中查看 CLI 工具版本与最新版本）
 - 已提供：
   - `pnpm dev` / `pnpm dev:web`
   - `pnpm build` / `pnpm build:d`

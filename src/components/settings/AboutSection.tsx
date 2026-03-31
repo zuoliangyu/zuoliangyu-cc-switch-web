@@ -202,7 +202,7 @@ export function AboutSection({ isPortable }: AboutSectionProps) {
       try {
         const [appVersion] = await Promise.all([
           getVersion(),
-          ...(isWindows() || isWebMode ? [] : [loadAllToolVersions()]),
+          ...(isWindows() ? [] : [loadAllToolVersions()]),
         ]);
 
         if (active) {
@@ -428,7 +428,7 @@ export function AboutSection({ isPortable }: AboutSectionProps) {
         )}
       </motion.div>
 
-      {!isWebMode && !isWindows() && (
+      {!isWindows() && (
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-sm font-medium">
@@ -564,7 +564,7 @@ export function AboutSection({ isPortable }: AboutSectionProps) {
         </div>
       )}
 
-      {!isWebMode && !isWindows() && (
+      {!isWindows() && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

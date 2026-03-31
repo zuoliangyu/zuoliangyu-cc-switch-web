@@ -175,6 +175,14 @@ struct RequestLogsPayload {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct ToolVersionsRequest {
+    tools: Option<Vec<String>>,
+    wsl_shell_by_tool:
+        Option<HashMap<String, crate::commands::WslShellPreferenceInput>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct UpdateModelPricingPayload {
     display_name: String,
     input_cost: String,
@@ -1514,6 +1522,15 @@ async fn set_stream_check_config(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn get_tool_versions(
+    Json(payload): Json<ToolVersionsRequest>,
+) -> Result<Json<Vec<crate::commands::ToolVersion>>, ApiError> {
+    let versions = crate::commands::get_tool_versions(payload.tools, payload.wsl_shell_by_tool)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load tool versions: {e}")))?;
+    Ok(Json(versions))
+}
+
 async fn create_db_backup(
     State(state): State<WebApiState>,
 ) -> Result<Json<String>, ApiError> {
@@ -2163,6 +2180,7 @@ pub async fn run_web_server() -> Result<(), String> {
             "/api/settings/stream-check-config",
             get(get_stream_check_config).put(set_stream_check_config),
         )
+        .route("/api/settings/tool-versions", post(get_tool_versions))
         .route("/api/settings/config-dir/:app", get(get_config_dir))
         .route("/api/backups/db", get(list_db_backups).post(create_db_backup))
         .route("/api/backups/db/rename", put(rename_db_backup))

@@ -230,6 +230,28 @@ export async function getWebConfigDir(appId: AppId): Promise<string> {
   return requestJson<string>(`/api/settings/config-dir/${appId}`);
 }
 
+export async function getWebToolVersions(
+  tools?: string[],
+  wslShellByTool?: Record<
+    string,
+    { wslShell?: string | null; wslShellFlag?: string | null }
+  >,
+): Promise<
+  Array<{
+    name: string;
+    version: string | null;
+    latest_version: string | null;
+    error: string | null;
+    env_type: "windows" | "wsl" | "macos" | "linux" | "unknown";
+    wsl_distro: string | null;
+  }>
+> {
+  return requestWithBody("/api/settings/tool-versions", "POST", {
+    tools,
+    wslShellByTool,
+  });
+}
+
 export async function getWebLiveProviderIds(appId: AppId): Promise<string[]> {
   try {
     return await requestJson<string[]>(

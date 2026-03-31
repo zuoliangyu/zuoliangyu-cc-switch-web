@@ -19,6 +19,7 @@ import {
   getWebIsProxyRunning,
   getWebLogConfig,
   getWebConfigDir,
+  getWebToolVersions,
   getWebOpenClawAgentsDefaults,
   getWebOpenClawDefaultModel,
   getWebOpenClawEnv,
@@ -284,7 +285,15 @@ export async function invoke<T>(
     case "get_openclaw_live_provider":
       return (await getWebOpenClawLiveProvider(args?.providerId as string)) as T;
     case "get_tool_versions":
-      return [] as T;
+      return (await getWebToolVersions(
+        args?.tools as string[] | undefined,
+        args?.wslShellByTool as
+          | Record<
+              string,
+              { wslShell?: string | null; wslShellFlag?: string | null }
+            >
+          | undefined,
+      )) as T;
     case "get_mcp_servers":
       return (await getWebMcpServers()) as T;
     case "upsert_mcp_server":
