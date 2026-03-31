@@ -7,6 +7,12 @@ export interface ConfigTransferResult {
   message: string;
   filePath?: string;
   backupId?: string;
+  warning?: string;
+}
+
+export interface ConfigDownloadResult {
+  fileName: string;
+  blob: Blob;
 }
 
 export interface WebDavTestResult {
@@ -100,6 +106,16 @@ export const settingsApi = {
 
   async importConfigFromFile(filePath: string): Promise<ConfigTransferResult> {
     return await invoke("import_config_from_file", { filePath });
+  },
+
+  async downloadConfigExport(
+    defaultName: string,
+  ): Promise<ConfigDownloadResult> {
+    return await invoke("export_config_download", { defaultName });
+  },
+
+  async importConfigFromUpload(file: File): Promise<ConfigTransferResult> {
+    return await invoke("import_config_upload", { file });
   },
 
   // ─── WebDAV sync ──────────────────────────────────────────

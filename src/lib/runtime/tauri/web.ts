@@ -15,6 +15,8 @@ import type { AppId } from "@/lib/api";
 import type { Prompt } from "@/lib/api";
 import type {
   BackupEntry,
+  ConfigDownloadResult,
+  ConfigTransferResult,
   LogConfig,
   OptimizerConfig,
   RectifierConfig,
@@ -167,6 +169,31 @@ async function requestFormData<T>(path: string, formData: FormData): Promise<T> 
   }
 
   return (await response.json()) as T;
+}
+
+function parseDownloadFilename(
+  contentDisposition: string | null,
+  fallback: string,
+): string {
+  if (!contentDisposition) {
+    return fallback;
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const plainMatch = contentDisposition.match(/filename="([^"]+)"/i);
+  if (plainMatch?.[1]) {
+    return plainMatch[1];
+  }
+
+  return fallback;
 }
 
 export async function getWebSettings(): Promise<Settings> {
@@ -540,6 +567,40 @@ export async function setWebAutoFailoverEnabled(
 
 export async function saveWebSettings(settings: Settings): Promise<boolean> {
   return requestWithBody<boolean>("/api/settings", "PUT", settings);
+}
+
+export async function downloadWebConfigExport(
+  defaultName: string,
+): Promise<ConfigDownloadResult> {
+  const response = await fetch(
+    `${getWebApiBase()}/api/config/export?filename=${encodeURIComponent(defaultName)}`,
+    {
+      headers: {
+        Accept: "application/sql,text/plain,*/*",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const fallback = `HTTP ${response.status} for GET /api/config/export`;
+    throw new Error(await getErrorMessage(response, fallback));
+  }
+
+  return {
+    fileName: parseDownloadFilename(
+      response.headers.get("content-disposition"),
+      defaultName,
+    ),
+    blob: await response.blob(),
+  };
+}
+
+export async function importWebConfigUpload(
+  file: File,
+): Promise<ConfigTransferResult> {
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+  return requestFormData<ConfigTransferResult>("/api/config/import", formData);
 }
 
 export async function getWebRectifierConfig(): Promise<RectifierConfig> {

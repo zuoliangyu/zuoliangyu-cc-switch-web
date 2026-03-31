@@ -153,6 +153,7 @@ Local Rust Service
 - 已补齐 `OpenCode / OpenClaw` 的 live provider IDs、从 live 导入、从 live 配置移除等 Web 路径
 - 已恢复 `Proxy` 页中的 `Rectifier / Optimizer / Global Outbound Proxy` Web 入口与本地服务 API
 - 已恢复 `Settings / Advanced` 中的基础 Web 能力（数据库备份、日志配置、流式检查配置）
+- 已恢复 `Settings / Advanced` 中的配置导入/导出 Web 能力（浏览器上传 `.sql` 导入、浏览器下载 `.sql` 导出）
 - 已提供：
   - `pnpm dev` / `pnpm dev:web`
   - `pnpm build` / `pnpm build:d`

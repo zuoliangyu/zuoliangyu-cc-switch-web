@@ -4,6 +4,7 @@ import {
   addWebProviderToFailoverQueue,
   addWebProvider,
   createWebDbBackup,
+  downloadWebConfigExport,
   deleteWebProvider,
   deleteWebDbBackup,
   getWebLiveProviderIds,
@@ -61,6 +62,7 @@ import {
   switchWebProvider,
   switchWebProxyProvider,
   importWebMcpFromApps,
+  importWebConfigUpload,
   importWebPromptFromFile,
   importWebSkillsFromApps,
   installWebSkillUnified,
@@ -140,6 +142,10 @@ export async function invoke<T>(
       return (await getWebSettings()) as T;
     case "save_settings":
       return (await saveWebSettings(args?.settings as any)) as T;
+    case "export_config_download":
+      return (await downloadWebConfigExport(args?.defaultName as string)) as T;
+    case "import_config_upload":
+      return (await importWebConfigUpload(args?.file as File)) as T;
     case "get_rectifier_config":
       return (await getWebRectifierConfig()) as T;
     case "set_rectifier_config":

@@ -91,6 +91,7 @@ export function SettingsPage({
     errorMessage,
     backupId,
     isImporting,
+    selectImportUpload,
     selectImportFile,
     importConfig,
     exportConfig,
@@ -348,39 +349,39 @@ export function SettingsPage({
                         </AccordionItem>
                       )}
 
-                      {!isWebMode && (
-                        <AccordionItem
-                          value="data"
-                          className="rounded-xl glass-card overflow-hidden"
-                        >
-                          <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                            <div className="flex items-center gap-3">
-                              <Database className="h-5 w-5 text-blue-500" />
-                              <div className="text-left">
-                                <h3 className="text-base font-semibold">
-                                  {t("settings.advanced.data.title")}
-                                </h3>
-                                <p className="text-sm text-muted-foreground font-normal">
-                                  {t("settings.advanced.data.description")}
-                                </p>
-                              </div>
+                      <AccordionItem
+                        value="data"
+                        className="rounded-xl glass-card overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            <Database className="h-5 w-5 text-blue-500" />
+                            <div className="text-left">
+                              <h3 className="text-base font-semibold">
+                                {t("settings.advanced.data.title")}
+                              </h3>
+                              <p className="text-sm text-muted-foreground font-normal">
+                                {t("settings.advanced.data.description")}
+                              </p>
                             </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-6 pb-6 pt-4 border-t border-border/50">
-                            <ImportExportSection
-                              status={importStatus}
-                              selectedFile={selectedFile}
-                              errorMessage={errorMessage}
-                              backupId={backupId}
-                              isImporting={isImporting}
-                              onSelectFile={selectImportFile}
-                              onImport={importConfig}
-                              onExport={exportConfig}
-                              onClear={clearSelection}
-                            />
-                          </AccordionContent>
-                        </AccordionItem>
-                      )}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6 pt-4 border-t border-border/50">
+                          <ImportExportSection
+                            isWebMode={isWebMode}
+                            status={importStatus}
+                            selectedFile={selectedFile}
+                            errorMessage={errorMessage}
+                            backupId={backupId}
+                            isImporting={isImporting}
+                            onSelectUpload={selectImportUpload}
+                            onSelectFile={selectImportFile}
+                            onImport={importConfig}
+                            onExport={exportConfig}
+                            onClear={clearSelection}
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
 
                       <AccordionItem
                         value="backup"

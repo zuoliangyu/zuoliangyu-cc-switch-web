@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -12,11 +12,13 @@ import { useTranslation } from "react-i18next";
 import type { ImportStatus } from "@/hooks/useImportExport";
 
 interface ImportExportSectionProps {
+  isWebMode?: boolean;
   status: ImportStatus;
   selectedFile: string;
   errorMessage: string | null;
   backupId: string | null;
   isImporting: boolean;
+  onSelectUpload?: (file: File | null) => void;
   onSelectFile: () => Promise<void>;
   onImport: () => Promise<void>;
   onExport: () => Promise<void>;
@@ -24,23 +26,34 @@ interface ImportExportSectionProps {
 }
 
 export function ImportExportSection({
+  isWebMode = false,
   status,
   selectedFile,
   errorMessage,
   backupId,
   isImporting,
+  onSelectUpload,
   onSelectFile,
   onImport,
   onExport,
   onClear,
 }: ImportExportSectionProps) {
   const { t } = useTranslation();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedFileName = useMemo(() => {
     if (!selectedFile) return "";
     const segments = selectedFile.split(/[\\/]/);
     return segments[segments.length - 1] || selectedFile;
   }, [selectedFile]);
+
+  const handleSelectImport = () => {
+    if (isWebMode) {
+      fileInputRef.current?.click();
+      return;
+    }
+    void onSelectFile();
+  };
 
   return (
     <section className="space-y-4">
@@ -54,6 +67,18 @@ export function ImportExportSection({
       </header>
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-6">
+        {isWebMode && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".sql,text/plain,application/sql"
+            className="hidden"
+            onChange={(event) => {
+              onSelectUpload?.(event.target.files?.[0] ?? null);
+              event.currentTarget.value = "";
+            }}
+          />
+        )}
         {/* Import and Export Buttons Side by Side */}
         <div className="grid grid-cols-2 gap-4 items-stretch">
           {/* Import Button */}
@@ -61,7 +86,7 @@ export function ImportExportSection({
             <Button
               type="button"
               className={`w-full h-auto py-3 px-4 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white ${selectedFile && !isImporting ? "flex-col items-start" : "items-center"}`}
-              onClick={!selectedFile ? onSelectFile : onImport}
+              onClick={!selectedFile ? handleSelectImport : () => void onImport()}
               disabled={isImporting}
             >
               <div className="flex items-center gap-2 w-full justify-center">

@@ -4,12 +4,14 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Multipart, Path, Query, State};
-use axum::http::StatusCode;
+use axum::http::{header, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, get_service, post, put};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
@@ -120,6 +122,12 @@ struct RenameBackupRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct ExportConfigQuery {
+    filename: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct DailyMemorySearchQuery {
     query: String,
 }
@@ -174,6 +182,38 @@ struct SkillArchiveInstallResult {
     installed: Vec<crate::app_config::InstalledSkill>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<String>,
+}
+
+fn sanitize_export_sql_filename(filename: Option<String>) -> String {
+    let fallback = "cc-switch-export.sql".to_string();
+    let mut sanitized = filename
+        .unwrap_or_else(|| fallback.clone())
+        .chars()
+        .map(|ch| match ch {
+            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            _ if ch.is_control() => '_',
+            _ => ch,
+        })
+        .collect::<String>();
+
+    if sanitized.trim().is_empty() {
+        sanitized = fallback;
+    }
+
+    if !sanitized.to_ascii_lowercase().ends_with(".sql") {
+        sanitized.push_str(".sql");
+    }
+
+    sanitized
+}
+
+fn build_post_import_sync_warning(error: impl std::fmt::Display) -> String {
+    crate::error::AppError::localized(
+        "sync.post_operation_sync_failed",
+        format!("后置同步状态失败: {error}"),
+        format!("Post-operation synchronization failed: {error}"),
+    )
+    .to_string()
 }
 
 async fn get_mcp_servers(
@@ -1058,6 +1098,105 @@ async fn get_settings() -> Json<crate::settings::AppSettings> {
     Json(crate::settings::get_settings_for_frontend())
 }
 
+async fn export_config_download(
+    State(state): State<WebApiState>,
+    Query(query): Query<ExportConfigQuery>,
+) -> Result<Response, ApiError> {
+    let sql = state
+        .app_state
+        .db
+        .export_sql_string()
+        .map_err(|e| ApiError::internal(format!("failed to export config: {e}")))?;
+    let filename = sanitize_export_sql_filename(query.filename);
+    let disposition = HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
+        .map_err(|e| ApiError::internal(format!("failed to encode download filename: {e}")))?;
+
+    Ok((
+        [
+            (
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/sql; charset=utf-8"),
+            ),
+            (header::CONTENT_DISPOSITION, disposition),
+        ],
+        Body::from(sql.into_bytes()),
+    )
+        .into_response())
+}
+
+async fn import_config_upload(
+    State(state): State<WebApiState>,
+    mut multipart: Multipart,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let mut file_name: Option<String> = None;
+    let mut sql_raw: Option<String> = None;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| ApiError::bad_request(format!("failed to read upload field: {e}")))?
+    {
+        if field.name() != Some("file") {
+            continue;
+        }
+
+        let current_file_name = field.file_name().unwrap_or("cc-switch-import.sql").to_string();
+        let bytes = field.bytes().await.map_err(|e| {
+            ApiError::bad_request(format!(
+                "failed to read uploaded config file {current_file_name}: {e}"
+            ))
+        })?;
+
+        let sql = String::from_utf8(bytes.to_vec()).map_err(|e| {
+            ApiError::bad_request(format!(
+                "uploaded config file must be valid UTF-8 SQL text: {e}"
+            ))
+        })?;
+
+        file_name = Some(current_file_name);
+        sql_raw = Some(sql);
+        break;
+    }
+
+    let file_name = file_name.unwrap_or_else(|| "cc-switch-import.sql".to_string());
+    if !file_name.to_ascii_lowercase().ends_with(".sql") {
+        return Err(ApiError::bad_request("only .sql files are supported"));
+    }
+
+    let backup_id = state
+        .app_state
+        .db
+        .import_sql_string(
+            sql_raw
+                .as_deref()
+                .ok_or_else(|| ApiError::bad_request("missing uploaded config file"))?,
+        )
+        .map_err(|e| ApiError::internal(format!("failed to import config: {e}")))?;
+
+    let warning = match ProviderService::sync_current_to_live(state.app_state.as_ref()) {
+        Ok(()) => crate::settings::reload_settings()
+            .err()
+            .map(build_post_import_sync_warning),
+        Err(error) => Some(build_post_import_sync_warning(error)),
+    };
+    if let Some(message) = warning.as_ref() {
+        log::warn!("[Import] post-import sync warning: {message}");
+    }
+
+    let mut payload = json!({
+        "success": true,
+        "message": "SQL imported successfully",
+        "backupId": backup_id,
+    });
+    if let Some(message) = warning {
+        if let Some(object) = payload.as_object_mut() {
+            object.insert("warning".to_string(), Value::String(message));
+        }
+    }
+
+    Ok(Json(payload))
+}
+
 async fn save_settings(
     Json(settings): Json<crate::settings::AppSettings>,
 ) -> Result<Json<bool>, ApiError> {
@@ -1783,6 +1922,8 @@ pub async fn run_web_server() -> Result<(), String> {
     let mut app = Router::new()
         .route("/", get(root))
         .route("/api/health", get(health))
+        .route("/api/config/export", get(export_config_download))
+        .route("/api/config/import", post(import_config_upload))
         .route("/api/settings", get(get_settings).put(save_settings))
         .route(
             "/api/settings/rectifier",
