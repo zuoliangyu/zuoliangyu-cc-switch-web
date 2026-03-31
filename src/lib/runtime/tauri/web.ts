@@ -697,3 +697,20 @@ export async function installWebSkillUnified(
     currentApp,
   });
 }
+
+export async function deleteWebSkillBackup(backupId: string): Promise<boolean> {
+  return requestWithBody<boolean>(`/api/skills/backups/${backupId}`, "DELETE");
+}
+
+export async function restoreWebSkillBackup(
+  backupId: string,
+  currentApp: AppId,
+): Promise<InstalledSkill> {
+  return requestWithBody<InstalledSkill>(
+    `/api/skills/backups/${backupId}`,
+    "POST",
+    {
+      currentApp,
+    },
+  );
+}

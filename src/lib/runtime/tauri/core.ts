@@ -45,11 +45,13 @@ import {
   installWebSkillUnified,
   upsertWebMcpServer,
   upsertWebPrompt,
+  restoreWebSkillBackup,
   uninstallWebSkillUnified,
   updateWebCircuitBreakerConfig,
   updateWebGlobalProxyConfig,
   deleteWebMcpServer,
   deleteWebPrompt,
+  deleteWebSkillBackup,
   addWebSkillRepo,
   discoverWebAvailableSkills,
   removeWebSkillRepo,
@@ -178,6 +180,11 @@ export async function invoke<T>(
         args?.skill as any,
         args?.currentApp as AppId,
       )) as T;
+    case "restore_skill_backup":
+      return (await restoreWebSkillBackup(
+        args?.backupId as string,
+        args?.currentApp as AppId,
+      )) as T;
     case "scan_unmanaged_skills":
       return (await getWebUnmanagedSkills()) as T;
     case "import_skills_from_apps":
@@ -191,6 +198,8 @@ export async function invoke<T>(
         args?.owner as string,
         args?.name as string,
       )) as T;
+    case "delete_skill_backup":
+      return (await deleteWebSkillBackup(args?.backupId as string)) as T;
     case "uninstall_skill_unified":
       return (await uninstallWebSkillUnified(args?.id as string)) as T;
     case "toggle_skill_app":

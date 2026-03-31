@@ -98,6 +98,12 @@ struct InstallSkillRequest {
     current_app: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CurrentAppRequest {
+    current_app: String,
+}
+
 async fn get_mcp_servers(
     State(state): State<WebApiState>,
 ) -> Result<Json<indexmap::IndexMap<String, McpServer>>, ApiError> {
@@ -321,6 +327,30 @@ async fn install_skill_unified(
         .await
         .map_err(|e| ApiError::internal(format!("failed to install skill: {e}")))?;
     Ok(Json(installed))
+}
+
+async fn delete_skill_backup(
+    Path(backup_id): Path<String>,
+) -> Result<Json<bool>, ApiError> {
+    crate::services::skill::SkillService::delete_backup(&backup_id)
+        .map_err(|e| ApiError::internal(format!("failed to delete skill backup: {e}")))?;
+    Ok(Json(true))
+}
+
+async fn restore_skill_backup(
+    State(state): State<WebApiState>,
+    Path(backup_id): Path<String>,
+    Json(payload): Json<CurrentAppRequest>,
+) -> Result<Json<crate::app_config::InstalledSkill>, ApiError> {
+    let app_type = AppType::from_str(&payload.current_app)
+        .map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let restored = crate::services::skill::SkillService::restore_from_backup(
+        &state.app_state.db,
+        &backup_id,
+        &app_type,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to restore skill backup: {e}")))?;
+    Ok(Json(restored))
 }
 
 fn merge_settings_for_save(
@@ -972,6 +1002,10 @@ pub async fn run_web_server() -> Result<(), String> {
         )
         .route("/api/skills/discover", get(discover_available_skills))
         .route("/api/skills/install", post(install_skill_unified))
+        .route(
+            "/api/skills/backups/:backup_id",
+            post(restore_skill_backup).delete(delete_skill_backup),
+        )
         .route(
             "/api/skills/:id",
             axum::routing::delete(uninstall_skill_unified),
