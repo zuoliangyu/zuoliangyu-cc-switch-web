@@ -136,7 +136,6 @@ const WEB_BLOCKED_VIEWS: View[] = [
   "prompts",
   "skills",
   "skillsDiscovery",
-  "mcp",
   "sessions",
   "workspace",
   "openclawEnv",
@@ -1279,17 +1278,15 @@ function App() {
                                   <History className="flex-shrink-0 w-4 h-4" />
                                 </Button>
                               )}
-                              {!isWebMode && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewChange("mcp")}
-                                  className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-                                  title={t("mcp.title")}
-                                >
-                                  <McpIcon size={16} />
-                                </Button>
-                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewChange("mcp")}
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                title={t("mcp.title")}
+                              >
+                                <McpIcon size={16} />
+                              </Button>
                             </>
                           )}
                         </motion.div>

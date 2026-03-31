@@ -1,5 +1,6 @@
 import type { Settings } from "@/types";
 import type { Provider } from "@/types";
+import type { McpServer, McpServersMap } from "@/types";
 import type { AppId } from "@/lib/api";
 import type { SwitchResult } from "@/lib/api/providers";
 import type {
@@ -433,4 +434,35 @@ export async function switchWebProvider(
     `/api/providers/${appId}/${id}/switch`,
     "POST",
   );
+}
+
+export async function getWebMcpServers(): Promise<McpServersMap> {
+  try {
+    return await requestJson<McpServersMap>("/api/mcp/servers");
+  } catch (error) {
+    console.warn("[runtime:web] failed to load mcp servers from local service", error);
+    return {};
+  }
+}
+
+export async function upsertWebMcpServer(server: McpServer): Promise<void> {
+  return requestWithBody<void>("/api/mcp/servers", "POST", server);
+}
+
+export async function deleteWebMcpServer(id: string): Promise<boolean> {
+  return requestWithBody<boolean>(`/api/mcp/servers/${id}`, "DELETE");
+}
+
+export async function toggleWebMcpApp(
+  serverId: string,
+  appId: AppId,
+  enabled: boolean,
+): Promise<void> {
+  return requestWithBody<void>(`/api/mcp/servers/${serverId}/apps/${appId}`, "PUT", {
+    enabled,
+  });
+}
+
+export async function importWebMcpFromApps(): Promise<number> {
+  return requestWithBody<number>("/api/mcp/servers/import", "POST");
 }

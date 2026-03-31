@@ -16,6 +16,7 @@ import {
   getWebIsLiveTakeoverActive,
   getWebIsProxyRunning,
   getWebPricingModelSource,
+  getWebMcpServers,
   getWebProviderHealth,
   getWebProxyConfig,
   getWebProxyConfigForApp,
@@ -28,13 +29,17 @@ import {
   setWebAutoFailoverEnabled,
   setWebDefaultCostMultiplier,
   setWebPricingModelSource,
+  toggleWebMcpApp,
   setWebProxyTakeoverForApp,
   startWebProxyServer,
   stopWebProxyWithRestore,
   switchWebProvider,
   switchWebProxyProvider,
+  importWebMcpFromApps,
+  upsertWebMcpServer,
   updateWebCircuitBreakerConfig,
   updateWebGlobalProxyConfig,
+  deleteWebMcpServer,
   updateWebProvider,
   updateWebProxyConfig,
   updateWebProxyConfigForApp,
@@ -111,6 +116,20 @@ export async function invoke<T>(
     case "get_openclaw_live_provider_ids":
     case "get_tool_versions":
       return [] as T;
+    case "get_mcp_servers":
+      return (await getWebMcpServers()) as T;
+    case "upsert_mcp_server":
+      return (await upsertWebMcpServer(args?.server as any)) as T;
+    case "delete_mcp_server":
+      return (await deleteWebMcpServer(args?.id as string)) as T;
+    case "toggle_mcp_app":
+      return (await toggleWebMcpApp(
+        args?.serverId as string,
+        args?.app as AppId,
+        Boolean(args?.enabled),
+      )) as T;
+    case "import_mcp_from_apps":
+      return (await importWebMcpFromApps()) as T;
     case "start_proxy_server":
       return (await startWebProxyServer()) as T;
     case "stop_proxy_with_restore":

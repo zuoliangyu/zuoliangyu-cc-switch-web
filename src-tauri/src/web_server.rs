@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
-use crate::app_config::AppType;
+use crate::app_config::{AppType, McpServer};
 use crate::database::FailoverQueueItem;
 use crate::provider::Provider;
 use crate::proxy::circuit_breaker::{CircuitBreakerConfig, CircuitBreakerStats};
@@ -20,7 +20,7 @@ use crate::proxy::types::{
     AppProxyConfig, GlobalProxyConfig, ProviderHealth, ProxyConfig, ProxyServerInfo,
     ProxyStatus, ProxyTakeoverStatus,
 };
-use crate::services::{ProviderService, SwitchResult};
+use crate::services::{McpService, ProviderService, SwitchResult};
 use crate::store::AppState;
 use crate::Database;
 
@@ -73,6 +73,58 @@ struct ValueRequest {
 #[serde(rename_all = "camelCase")]
 struct ProviderIdRequest {
     provider_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ToggleMcpAppRequest {
+    enabled: bool,
+}
+
+async fn get_mcp_servers(
+    State(state): State<WebApiState>,
+) -> Result<Json<indexmap::IndexMap<String, McpServer>>, ApiError> {
+    let servers = McpService::get_all_servers(state.app_state.as_ref())
+        .map_err(|e| ApiError::internal(format!("failed to load mcp servers: {e}")))?;
+    Ok(Json(servers))
+}
+
+async fn upsert_mcp_server(
+    State(state): State<WebApiState>,
+    Json(server): Json<McpServer>,
+) -> Result<StatusCode, ApiError> {
+    McpService::upsert_server(state.app_state.as_ref(), server)
+        .map_err(|e| ApiError::internal(format!("failed to save mcp server: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn delete_mcp_server(
+    State(state): State<WebApiState>,
+    Path(id): Path<String>,
+) -> Result<Json<bool>, ApiError> {
+    let deleted = McpService::delete_server(state.app_state.as_ref(), &id)
+        .map_err(|e| ApiError::internal(format!("failed to delete mcp server: {e}")))?;
+    Ok(Json(deleted))
+}
+
+async fn toggle_mcp_app(
+    State(state): State<WebApiState>,
+    Path((id, app)): Path<(String, String)>,
+    Json(payload): Json<ToggleMcpAppRequest>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    McpService::toggle_app(state.app_state.as_ref(), &id, app_type, payload.enabled)
+        .map_err(|e| ApiError::internal(format!("failed to toggle mcp app: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn import_mcp_from_apps(State(state): State<WebApiState>) -> Result<Json<usize>, ApiError> {
+    let mut total = 0;
+    total += McpService::import_from_claude(state.app_state.as_ref()).unwrap_or(0);
+    total += McpService::import_from_codex(state.app_state.as_ref()).unwrap_or(0);
+    total += McpService::import_from_gemini(state.app_state.as_ref()).unwrap_or(0);
+    total += McpService::import_from_opencode(state.app_state.as_ref()).unwrap_or(0);
+    Ok(Json(total))
 }
 
 fn merge_settings_for_save(
@@ -713,6 +765,10 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/settings", get(get_settings).put(save_settings))
         .route("/api/providers/:app", get(get_providers).post(add_provider))
         .route("/api/providers/:app/current", get(get_current_provider))
+        .route("/api/mcp/servers", get(get_mcp_servers).post(upsert_mcp_server))
+        .route("/api/mcp/servers/import", post(import_mcp_from_apps))
+        .route("/api/mcp/servers/:id", axum::routing::delete(delete_mcp_server))
+        .route("/api/mcp/servers/:id/apps/:app", put(toggle_mcp_app))
         .route(
             "/api/providers/:app/:id",
             put(update_provider).delete(delete_provider),
