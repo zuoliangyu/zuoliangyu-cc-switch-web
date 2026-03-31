@@ -1,0 +1,172 @@
+name: Web CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - "codex/**"
+      - "feat/**"
+      - "feature/**"
+      - "fix/**"
+      - "refactor/**"
+      - "release/**"
+    paths:
+      - ".github/workflows/web-ci.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "src/**"
+      - "src-tauri/**"
+      - "scripts/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "docker-compose.host.example.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/web-ci.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "src/**"
+      - "src-tauri/**"
+      - "scripts/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "docker-compose.host.example.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-checks:
+    name: Web Checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.12.3
+          run_install: false
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux system deps
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            curl \
+            wget \
+            file \
+            patchelf \
+            libssl-dev \
+            libgtk-3-dev \
+            librsvg2-dev \
+            libayatana-appindicator3-dev
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev \
+            || sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.0-dev
+          sudo apt-get install -y --no-install-recommends libsoup-3.0-dev \
+            || sudo apt-get install -y --no-install-recommends libsoup2.4-dev
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-${{ runner.arch }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-pnpm-store-
+
+      - name: Setup cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            src-tauri/target/
+          key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-cargo-
+
+      - name: Install frontend deps
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript type check
+        run: pnpm exec tsc --noEmit -p tsconfig.json
+
+      - name: Rust check (cc-switch-web)
+        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --bin cc-switch-web
+
+  docker-smoke:
+    name: Docker Smoke
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t cc-switch-web:test .
+
+      - name: Run Docker container
+        run: docker run -d --name cc-switch-web-smoke -p 8788:8788 cc-switch-web:test
+
+      - name: Install curl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends curl
+
+      - name: Wait for health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8788/api/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "health check timeout" >&2
+          docker logs cc-switch-web-smoke || true
+          exit 1
+
+      - name: Print container logs on failure
+        if: failure()
+        run: docker logs cc-switch-web-smoke
+
+      - name: Stop Docker container
+        if: always()
+        run: docker rm -f cc-switch-web-smoke

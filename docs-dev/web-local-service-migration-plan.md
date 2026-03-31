@@ -154,6 +154,9 @@ Local Rust Service
   - `docker-compose.host.example.yml`
 - 已增加 Linux 服务托管示例：
   - `deploy/systemd/cc-switch-web.service.example`
+- 已增加 GitHub Actions Web CI：
+  - `macOS / Windows / Linux` 跨平台静态校验
+  - Docker 镜像构建与容器健康检查
 - 已在 README 三语文件中补充本地运行和 Docker 运行说明
 - 已在 Web 模式下收起一部分仍依赖桌面能力的入口，避免页面直接触发未迁移命令
 

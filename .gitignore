@@ -28,5 +28,8 @@ flatpak-repo/
 copilot-api
 .history
 CODEBUDDY.md
-.github
+.github/*
+!.github/workflows/
+.github/workflows/*
+!.github/workflows/web-ci.yml
 docker-compose.host.yml
