@@ -30,6 +30,7 @@ import type {
 } from "@/lib/api/settings";
 import type { StreamCheckConfig } from "@/lib/api/model-test";
 import type { DeleteSessionOptions, DeleteSessionResult } from "@/lib/api/sessions";
+import type { ProviderSortUpdate } from "@/lib/api/providers";
 import type {
   DiscoverableSkill,
   SkillArchiveInstallResult,
@@ -471,6 +472,17 @@ export async function syncWebUniversalProvider(id: string): Promise<boolean> {
   return requestWithBody<boolean>(
     `/api/universal-providers/${encodeURIComponent(id)}/sync`,
     "POST",
+  );
+}
+
+export async function updateWebProvidersSortOrder(
+  appId: AppId,
+  updates: ProviderSortUpdate[],
+): Promise<boolean> {
+  return requestWithBody<boolean>(
+    `/api/providers/${appId}/sort-order`,
+    "PUT",
+    updates,
   );
 }
 

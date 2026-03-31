@@ -137,6 +137,7 @@ import {
   uploadWebdavSync,
   updateWebModelPricing,
   updateWebProvider,
+  updateWebProvidersSortOrder,
   updateWebProxyConfig,
   updateWebProxyConfigForApp,
   updateWebEndpointLastUsed,
@@ -305,6 +306,11 @@ export async function invoke<T>(
       return (await deleteWebProvider(
         args?.app as AppId,
         args?.id as string,
+      )) as T;
+    case "update_providers_sort_order":
+      return (await updateWebProvidersSortOrder(
+        args?.app as AppId,
+        (args?.updates as any[]) ?? [],
       )) as T;
     case "switch_provider":
       return (await switchWebProvider(

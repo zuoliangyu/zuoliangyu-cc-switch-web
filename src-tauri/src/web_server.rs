@@ -1942,6 +1942,17 @@ async fn delete_provider(
     Ok(Json(true))
 }
 
+async fn update_providers_sort_order(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+    Json(updates): Json<Vec<crate::services::ProviderSortUpdate>>,
+) -> Result<Json<bool>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let updated = ProviderService::update_sort_order(state.app_state.as_ref(), app_type, updates)
+        .map_err(|e| ApiError::internal(format!("failed to update provider sort order: {e}")))?;
+    Ok(Json(updated))
+}
+
 async fn switch_provider(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
@@ -2554,6 +2565,10 @@ pub async fn run_web_server() -> Result<(), String> {
             post(restore_db_backup),
         )
         .route("/api/providers/:app", get(get_providers).post(add_provider))
+        .route(
+            "/api/providers/:app/sort-order",
+            put(update_providers_sort_order),
+        )
         .route("/api/providers/:app/current", get(get_current_provider))
         .route(
             "/api/providers/:app/import-default",
