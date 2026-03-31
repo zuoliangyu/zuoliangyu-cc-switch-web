@@ -1,8 +1,6 @@
 mod app_config;
 mod app_store;
-mod auto_launch;
 mod claude_mcp;
-mod claude_plugin;
 mod codex_config;
 mod commands;
 mod config;
@@ -728,15 +726,8 @@ pub fn run() {
             commands::set_optimizer_config,
             commands::get_log_config,
             commands::set_log_config,
-            commands::restart_app,
             commands::check_for_updates,
             commands::is_portable_mode,
-            commands::get_claude_plugin_status,
-            commands::read_claude_plugin_config,
-            commands::apply_claude_plugin_config,
-            commands::is_claude_plugin_applied,
-            commands::apply_claude_onboarding_skip,
-            commands::clear_claude_onboarding_skip,
             // Claude MCP management
             commands::get_claude_mcp_status,
             commands::read_claude_mcp_config,
@@ -819,9 +810,6 @@ pub fn run() {
             commands::add_skill_repo,
             commands::remove_skill_repo,
             commands::install_skills_from_zip,
-            // Auto launch
-            commands::set_auto_launch,
-            commands::get_auto_launch_status,
             // Proxy server management
             commands::start_proxy_server,
             commands::stop_proxy_with_restore,

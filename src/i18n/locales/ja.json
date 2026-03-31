@@ -166,9 +166,6 @@
     "saveFailedGeneric": "保存に失敗しました。もう一度お試しください",
     "appliedToClaudePlugin": "Claude プラグインに適用しました",
     "removedFromClaudePlugin": "Claude プラグインから削除しました",
-    "syncClaudePluginFailed": "Claude プラグインとの同期に失敗しました",
-    "skipClaudeOnboardingFailed": "Claude Code の初回確認スキップに失敗しました",
-    "clearClaudeOnboardingSkipFailed": "Claude Code の初回確認の復元に失敗しました",
     "updateSuccess": "プロバイダーを更新しました",
     "updateFailed": "プロバイダーの更新に失敗しました: {{error}}",
     "deleteSuccess": "プロバイダーを削除しました",
@@ -458,7 +455,6 @@
     "languageOptionChinese": "中文",
     "languageOptionEnglish": "English",
     "languageOptionJapanese": "日本語",
-    "autoLaunchFailed": "自動起動の設定に失敗しました",
     "appVisibility": {
       "title": "ホームページ表示",
       "description": "ホームページに表示するアプリを選択",
@@ -556,8 +552,6 @@
     "webServiceRestartMessage": "一部の変更はローカルサービスを再起動してからでないと完全には反映されません。ローカル Rust サービスは後で手動で再起動できます。",
     "webServiceRestartAcknowledge": "後で手動で再起動する",
     "webServiceRestartHint": "変更を反映するにはローカル Rust サービスを手動で再起動してください",
-    "restartFailed": "アプリの再起動に失敗しました。手動で閉じて再度開いてください。",
-    "devModeRestartHint": "開発モードでは自動再起動をサポートしていません。手動で再起動してください。",
     "saving": "保存中...",
     "globalProxy": {
       "label": "グローバルプロキシ",

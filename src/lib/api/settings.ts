@@ -33,10 +33,6 @@ export const settingsApi = {
     return await invoke("save_settings", { settings });
   },
 
-  async restart(): Promise<boolean> {
-    return await invoke("restart_app");
-  },
-
   async getConfigDir(appId: AppId): Promise<string> {
     return await invoke("get_config_dir", { app: appId });
   },
@@ -59,21 +55,6 @@ export const settingsApi = {
 
   async setAppConfigDirOverride(path: string | null): Promise<boolean> {
     return await invoke("set_app_config_dir_override", { path });
-  },
-
-  async applyClaudePluginConfig(options: {
-    official: boolean;
-  }): Promise<boolean> {
-    const { official } = options;
-    return await invoke("apply_claude_plugin_config", { official });
-  },
-
-  async applyClaudeOnboardingSkip(): Promise<boolean> {
-    return await invoke("apply_claude_onboarding_skip");
-  },
-
-  async clearClaudeOnboardingSkip(): Promise<boolean> {
-    return await invoke("clear_claude_onboarding_skip");
   },
 
   async saveFileDialog(defaultName: string): Promise<string | null> {
@@ -159,10 +140,6 @@ export const settingsApi = {
       throw new Error("Invalid URL");
     }
     await invoke("open_external", { url });
-  },
-
-  async setAutoLaunch(enabled: boolean): Promise<boolean> {
-    return await invoke("set_auto_launch", { enabled });
   },
 
   async getToolVersions(

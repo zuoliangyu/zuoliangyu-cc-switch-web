@@ -1,6 +1,6 @@
 # Web 化剩余缺口审计
 
-更新时间：2026-04-01（清理 Deeplink Rust/Tauri 残留后）
+更新时间：2026-04-01（清理 Deeplink 与桌面设置旧联动后）
 
 ## 结论
 
@@ -72,6 +72,7 @@
 - OMO / OMO Slim 已补齐本地文件读取、当前配置读取与停用的 Web 路径
 - Deeplink 前端导入对话框与 Web 入口已从当前分支移除
 - Deeplink Rust 模块、Tauri 命令、协议插件与 macOS URL scheme 已从当前分支移除
+- 前端已不可达的桌面设置联动已移除，包括自动重启、自启动和 Claude 插件/Onboarding 同步分支
 
 ## 四、当前真正的收尾重点
 
@@ -86,5 +87,5 @@
 
 1. 清理桌面专属入口
 2. 清理旧兼容 API
-3. 评估并处理 Claude 旧集成残留
+3. 继续清理 Claude 旧集成与托盘/单实例残留
 4. 更新 README 与开发计划文档，明确 Web 版边界

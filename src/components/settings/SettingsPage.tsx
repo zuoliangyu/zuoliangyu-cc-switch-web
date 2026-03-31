@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { settingsApi } from "@/lib/api";
 import { LanguageSettings } from "@/components/settings/LanguageSettings";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { AppVisibilitySettings } from "@/components/settings/AppVisibilitySettings";
@@ -142,32 +141,14 @@ export function SettingsPage({
 
   const handleRestartNow = useCallback(async () => {
     setShowRestartPrompt(false);
-    if (isWebMode) {
-      toast.info(
-        t("settings.webServiceRestartHint", {
-          defaultValue: "请手动重启本地 Rust 服务以使配置变更生效",
-        }),
-        { closeButton: true },
-      );
-      closeAfterSave();
-      return;
-    }
-
-    if (import.meta.env.DEV) {
-      toast.success(t("settings.devModeRestartHint"), { closeButton: true });
-      closeAfterSave();
-      return;
-    }
-
-    try {
-      await settingsApi.restart();
-    } catch (error) {
-      console.error("[SettingsPage] Failed to restart app", error);
-      toast.error(t("settings.restartFailed"));
-    } finally {
-      closeAfterSave();
-    }
-  }, [closeAfterSave, isWebMode, t]);
+    toast.info(
+      t("settings.webServiceRestartHint", {
+        defaultValue: "请手动重启本地 Rust 服务以使配置变更生效",
+      }),
+      { closeButton: true },
+    );
+    closeAfterSave();
+  }, [closeAfterSave, t]);
 
   // 通用设置即时保存（无需手动点击）
   // 使用 autoSaveSettings 避免误触发系统 API（开机自启、Claude 插件等）

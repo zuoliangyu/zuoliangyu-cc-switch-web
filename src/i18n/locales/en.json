@@ -166,9 +166,6 @@
     "saveFailedGeneric": "Save failed, please try again",
     "appliedToClaudePlugin": "Applied to Claude plugin",
     "removedFromClaudePlugin": "Removed from Claude plugin",
-    "syncClaudePluginFailed": "Sync Claude plugin failed",
-    "skipClaudeOnboardingFailed": "Failed to skip Claude Code first-run confirmation",
-    "clearClaudeOnboardingSkipFailed": "Failed to restore Claude Code first-run confirmation",
     "updateSuccess": "Provider updated successfully",
     "updateFailed": "Failed to update provider: {{error}}",
     "deleteSuccess": "Provider deleted",
@@ -458,7 +455,6 @@
     "languageOptionChinese": "中文",
     "languageOptionEnglish": "English",
     "languageOptionJapanese": "日本語",
-    "autoLaunchFailed": "Failed to set auto-launch",
     "appVisibility": {
       "title": "Homepage Display",
       "description": "Choose which apps to show on the homepage",
@@ -556,8 +552,6 @@
     "webServiceRestartMessage": "Some changes require the local service to be restarted before they fully take effect. You can restart the local Rust service manually later.",
     "webServiceRestartAcknowledge": "I'll restart it manually later",
     "webServiceRestartHint": "Please restart the local Rust service manually for the changes to take effect",
-    "restartFailed": "Application restart failed, please manually close and reopen.",
-    "devModeRestartHint": "Dev Mode: Automatic restart not supported, please manually restart the application.",
     "saving": "Saving...",
     "globalProxy": {
       "label": "Global Proxy",
