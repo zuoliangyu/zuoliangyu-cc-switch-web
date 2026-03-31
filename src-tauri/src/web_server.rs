@@ -452,6 +452,17 @@ async fn remove_provider_from_live_config(
     Ok(Json(true))
 }
 
+async fn import_default_provider_config(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+) -> Result<Json<bool>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let imported =
+        crate::commands::import_default_config_test_hook(state.app_state.as_ref(), app_type)
+            .map_err(|e| ApiError::internal(format!("failed to import default config: {e}")))?;
+    Ok(Json(imported))
+}
+
 async fn get_installed_skills(
     State(state): State<WebApiState>,
 ) -> Result<Json<Vec<crate::app_config::InstalledSkill>>, ApiError> {
@@ -2132,6 +2143,10 @@ pub async fn run_web_server() -> Result<(), String> {
         )
         .route("/api/providers/:app", get(get_providers).post(add_provider))
         .route("/api/providers/:app/current", get(get_current_provider))
+        .route(
+            "/api/providers/:app/import-default",
+            post(import_default_provider_config),
+        )
         .route("/api/providers/:app/live-provider-ids", get(get_live_provider_ids))
         .route("/api/providers/:app/import-live", post(import_providers_from_live))
         .route(

@@ -63,6 +63,7 @@ import {
   switchWebProxyProvider,
   importWebMcpFromApps,
   importWebConfigUpload,
+  importWebDefaultProviderConfig,
   importWebPromptFromFile,
   importWebSkillsFromApps,
   installWebSkillUnified,
@@ -244,6 +245,8 @@ export async function invoke<T>(
       return (await importWebProvidersFromLive("opencode")) as T;
     case "import_openclaw_providers_from_live":
       return (await importWebProvidersFromLive("openclaw")) as T;
+    case "import_default_config":
+      return (await importWebDefaultProviderConfig(args?.app as AppId)) as T;
     case "remove_provider_from_live_config":
       return (await removeWebProviderFromLiveConfig(
         args?.app as AppId,

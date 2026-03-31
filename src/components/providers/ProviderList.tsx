@@ -303,7 +303,7 @@ export function ProviderList({
       <ProviderEmptyState
         appId={appId}
         onCreate={onCreate}
-        onImport={isWebMode ? undefined : () => importMutation.mutate()}
+        onImport={() => importMutation.mutate()}
       />
     );
   }

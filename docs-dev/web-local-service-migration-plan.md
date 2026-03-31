@@ -155,6 +155,7 @@ Local Rust Service
 - 已恢复 `Settings / Advanced` 中的基础 Web 能力（数据库备份、日志配置、流式检查配置）
 - 已恢复 `Settings / Advanced` 中的配置导入/导出 Web 能力（浏览器上传 `.sql` 导入、浏览器下载 `.sql` 导出）
 - 已恢复 `Settings / Advanced` 中的 `WebDAV Sync` Web 能力（连接测试、保存配置、上传、下载、远端快照检查）
+- 已恢复 `Provider` 空状态页的“导入当前配置” Web 能力（Claude / Codex / Gemini 等应用可通过本地服务直接导入默认配置）
 - 已提供：
   - `pnpm dev` / `pnpm dev:web`
   - `pnpm build` / `pnpm build:d`

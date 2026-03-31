@@ -244,6 +244,12 @@ export async function importWebProvidersFromLive(appId: AppId): Promise<number> 
   return requestWithBody<number>(`/api/providers/${appId}/import-live`, "POST");
 }
 
+export async function importWebDefaultProviderConfig(
+  appId: AppId,
+): Promise<boolean> {
+  return requestWithBody<boolean>(`/api/providers/${appId}/import-default`, "POST");
+}
+
 export async function removeWebProviderFromLiveConfig(
   appId: AppId,
   id: string,
