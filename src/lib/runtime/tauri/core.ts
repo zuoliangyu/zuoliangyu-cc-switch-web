@@ -36,11 +36,15 @@ import {
   getWebSkillRepos,
   getWebSkillBackups,
   getWebUnmanagedSkills,
+  getWebOptimizerConfig,
   removeWebProviderFromFailoverQueue,
   saveWebSettings,
+  getWebRectifierConfig,
   setWebAutoFailoverEnabled,
   setWebDefaultCostMultiplier,
+  setWebOptimizerConfig,
   setWebPricingModelSource,
+  setWebRectifierConfig,
   toggleWebMcpApp,
   setWebProxyTakeoverForApp,
   startWebProxyServer,
@@ -127,6 +131,14 @@ export async function invoke<T>(
       return (await getWebSettings()) as T;
     case "save_settings":
       return (await saveWebSettings(args?.settings as any)) as T;
+    case "get_rectifier_config":
+      return (await getWebRectifierConfig()) as T;
+    case "set_rectifier_config":
+      return (await setWebRectifierConfig(args?.config as any)) as T;
+    case "get_optimizer_config":
+      return (await getWebOptimizerConfig()) as T;
+    case "set_optimizer_config":
+      return (await setWebOptimizerConfig(args?.config as any)) as T;
     case "get_providers": {
       const appId = args?.app as AppId | undefined;
       if (!appId) {

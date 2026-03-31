@@ -1932,6 +1932,9 @@
       "autoSwitch": "Auto Failover",
       "autoSwitchDescription": "When enabled, switches to queue P1 immediately and automatically tries the next provider in the queue on failures"
     },
+    "webMode": {
+      "partialSupport": "The Web runtime now supports local proxy, providers, core proxy configuration, failover, rectifier, and global outbound proxy. Remaining desktop-shell-dependent sections will be restored incrementally."
+    },
     "failoverQueue": {
       "title": "Failover Queue",
       "description": "Manage failover order for each app's providers",

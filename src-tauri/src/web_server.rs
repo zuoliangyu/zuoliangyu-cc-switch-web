@@ -18,8 +18,8 @@ use crate::database::FailoverQueueItem;
 use crate::provider::Provider;
 use crate::proxy::circuit_breaker::{CircuitBreakerConfig, CircuitBreakerStats};
 use crate::proxy::types::{
-    AppProxyConfig, GlobalProxyConfig, ProviderHealth, ProxyConfig, ProxyServerInfo,
-    ProxyStatus, ProxyTakeoverStatus,
+    AppProxyConfig, GlobalProxyConfig, OptimizerConfig, ProviderHealth, ProxyConfig,
+    ProxyServerInfo, ProxyStatus, ProxyTakeoverStatus, RectifierConfig,
 };
 use crate::prompt::Prompt;
 use crate::services::skill::{
@@ -1061,6 +1061,61 @@ async fn save_settings(
     Ok(Json(true))
 }
 
+async fn get_rectifier_config(
+    State(state): State<WebApiState>,
+) -> Result<Json<RectifierConfig>, ApiError> {
+    let config = state
+        .app_state
+        .db
+        .get_rectifier_config()
+        .map_err(|e| ApiError::internal(format!("failed to load rectifier config: {e}")))?;
+    Ok(Json(config))
+}
+
+async fn set_rectifier_config(
+    State(state): State<WebApiState>,
+    Json(config): Json<RectifierConfig>,
+) -> Result<Json<bool>, ApiError> {
+    state
+        .app_state
+        .db
+        .set_rectifier_config(&config)
+        .map_err(|e| ApiError::internal(format!("failed to save rectifier config: {e}")))?;
+    Ok(Json(true))
+}
+
+async fn get_optimizer_config(
+    State(state): State<WebApiState>,
+) -> Result<Json<OptimizerConfig>, ApiError> {
+    let config = state
+        .app_state
+        .db
+        .get_optimizer_config()
+        .map_err(|e| ApiError::internal(format!("failed to load optimizer config: {e}")))?;
+    Ok(Json(config))
+}
+
+async fn set_optimizer_config(
+    State(state): State<WebApiState>,
+    Json(config): Json<OptimizerConfig>,
+) -> Result<Json<bool>, ApiError> {
+    match config.cache_ttl.as_str() {
+        "5m" | "1h" => {}
+        other => {
+            return Err(ApiError::bad_request(format!(
+                "Invalid cache_ttl value: '{other}'. Allowed values: '5m', '1h'"
+            )));
+        }
+    }
+
+    state
+        .app_state
+        .db
+        .set_optimizer_config(&config)
+        .map_err(|e| ApiError::internal(format!("failed to save optimizer config: {e}")))?;
+    Ok(Json(true))
+}
+
 async fn get_providers(
     State(state): State<WebApiState>,
     Path(app): Path<String>,
@@ -1622,6 +1677,14 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/", get(root))
         .route("/api/health", get(health))
         .route("/api/settings", get(get_settings).put(save_settings))
+        .route(
+            "/api/settings/rectifier",
+            get(get_rectifier_config).put(set_rectifier_config),
+        )
+        .route(
+            "/api/settings/optimizer",
+            get(get_optimizer_config).put(set_optimizer_config),
+        )
         .route("/api/providers/:app", get(get_providers).post(add_provider))
         .route("/api/providers/:app/current", get(get_current_provider))
         .route("/api/providers/:app/live-provider-ids", get(get_live_provider_ids))

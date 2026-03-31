@@ -151,6 +151,7 @@ Local Rust Service
 - 已打通 `Usage` 的 Web API 主路径（统计看板、请求日志、模型定价、Provider 限额）
 - 已打通 `OpenClaw` 专属页面的 Web API 主路径（Env、Tools、Agents Defaults、健康检查、live provider 读取）
 - 已补齐 `OpenCode / OpenClaw` 的 live provider IDs、从 live 导入、从 live 配置移除等 Web 路径
+- 已恢复 `Proxy` 页中的 `Rectifier / Optimizer / Global Outbound Proxy` Web 入口与本地服务 API
 - 已提供：
   - `pnpm dev` / `pnpm dev:web`
   - `pnpm build` / `pnpm build:d`
@@ -191,7 +192,6 @@ Local Rust Service
 当前仍未完成、需要继续迁移的重点：
 
 - Skills
-- 整流器、全局出站代理等桌面设置区块
 - Windows / Linux 直接运行的更完整包装方式（如脚本、服务化说明）
 
 ## 7.1 阶段一：运行时解耦

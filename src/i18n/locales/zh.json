@@ -1932,6 +1932,9 @@
       "autoSwitch": "自动故障转移",
       "autoSwitchDescription": "开启后将立即切换到队列 P1，并在请求失败时自动切换到队列中的下一个供应商"
     },
+    "webMode": {
+      "partialSupport": "当前 Web 模式已提供本地代理、Provider、基础代理配置、故障转移、整流器与全局出站代理能力。其余仍依赖桌面壳的区块会在后续迁移中逐步恢复。"
+    },
     "failoverQueue": {
       "title": "故障转移队列",
       "description": "管理各应用的供应商故障转移顺序",

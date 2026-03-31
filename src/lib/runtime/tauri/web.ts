@@ -13,6 +13,10 @@ import type {
 import type { SessionMessage, SessionMeta } from "@/types";
 import type { AppId } from "@/lib/api";
 import type { Prompt } from "@/lib/api";
+import type {
+  OptimizerConfig,
+  RectifierConfig,
+} from "@/lib/api/settings";
 import type { DeleteSessionOptions, DeleteSessionResult } from "@/lib/api/sessions";
 import type {
   DiscoverableSkill,
@@ -533,6 +537,26 @@ export async function setWebAutoFailoverEnabled(
 
 export async function saveWebSettings(settings: Settings): Promise<boolean> {
   return requestWithBody<boolean>("/api/settings", "PUT", settings);
+}
+
+export async function getWebRectifierConfig(): Promise<RectifierConfig> {
+  return requestJson<RectifierConfig>("/api/settings/rectifier");
+}
+
+export async function setWebRectifierConfig(
+  config: RectifierConfig,
+): Promise<boolean> {
+  return requestWithBody<boolean>("/api/settings/rectifier", "PUT", config);
+}
+
+export async function getWebOptimizerConfig(): Promise<OptimizerConfig> {
+  return requestJson<OptimizerConfig>("/api/settings/optimizer");
+}
+
+export async function setWebOptimizerConfig(
+  config: OptimizerConfig,
+): Promise<boolean> {
+  return requestWithBody<boolean>("/api/settings/optimizer", "PUT", config);
 }
 
 export async function addWebProvider(

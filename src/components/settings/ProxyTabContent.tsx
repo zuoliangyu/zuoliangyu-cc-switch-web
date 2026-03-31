@@ -250,8 +250,7 @@ export function ProxyTabContent({
             </AccordionContent>
           </AccordionItem>
 
-          {!isWebMode && (
-            <>
+          <>
             {/* Rectifier */}
             <AccordionItem
               value="rectifier"
@@ -297,8 +296,7 @@ export function ProxyTabContent({
                 <GlobalProxySettings />
               </AccordionContent>
             </AccordionItem>
-            </>
-          )}
+          </>
         </>
       </Accordion>
 
@@ -306,7 +304,7 @@ export function ProxyTabContent({
         <div className="rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
           {t("proxy.webMode.partialSupport", {
             defaultValue:
-              "当前 Web 模式已提供本地代理、Provider、基础代理配置与故障转移能力。整流器、全局出站代理等桌面区块会在后续迁移中逐步恢复。",
+              "当前 Web 模式已提供本地代理、Provider、基础代理配置、故障转移、整流器与全局出站代理能力。其余仍依赖桌面壳的区块会在后续迁移中逐步恢复。",
           })}
         </div>
       )}
