@@ -19,6 +19,7 @@
     "build:d": "docker compose build",
     "start:web": "node scripts/start-web.mjs",
     "start:web:service": "cargo run --manifest-path src-tauri/Cargo.toml --bin cc-switch-web",
+    "start:m": "bash scripts/run-web.command",
     "start:w": "powershell -ExecutionPolicy Bypass -File .\\scripts\\run-web.ps1",
     "start:l": "bash scripts/run-web.sh",
     "up:d": "docker compose up -d",

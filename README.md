@@ -30,16 +30,17 @@ If you are looking for the original CC Switch project, desktop application, or u
 
 ### Quick Commands
 
-| Scenario | Command |
-| --- | --- |
-| Default Web development | `pnpm dev` |
-| Foreground Docker stack | `pnpm dev:d` |
-| Standard Docker build | `pnpm build` |
-| Background Docker start | `pnpm up:d` |
-| Follow Docker logs | `pnpm logs:d` |
-| Stop Docker stack | `pnpm down:d` |
-| Direct run on Linux | `pnpm start:l` |
-| Direct run on Windows | `pnpm start:w` |
+| Scenario                | Command        |
+| ----------------------- | -------------- |
+| Default Web development | `pnpm dev`     |
+| Foreground Docker stack | `pnpm dev:d`   |
+| Standard Docker build   | `pnpm build`   |
+| Background Docker start | `pnpm up:d`    |
+| Follow Docker logs      | `pnpm logs:d`  |
+| Stop Docker stack       | `pnpm down:d`  |
+| Direct run on macOS     | `pnpm start:m` |
+| Direct run on Linux     | `pnpm start:l` |
+| Direct run on Windows   | `pnpm start:w` |
 
 ### Local Run
 
@@ -91,11 +92,19 @@ If you are looking for the original CC Switch project, desktop application, or u
    pnpm start:l
    ```
 
+   macOS:
+
+   ```bash
+   pnpm start:m
+   ```
+
    Windows:
 
    ```powershell
    pnpm start:w
    ```
+
+   The launcher scripts only start the local service and print the access URL. They do not open the browser automatically.
 
 ### Docker Run
 
@@ -185,7 +194,6 @@ Recommended steps:
    ```
 
 3. Adjust these fields for your machine:
-
    - `User`
    - `Group`
    - `WorkingDirectory`
