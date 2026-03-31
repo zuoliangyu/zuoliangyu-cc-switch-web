@@ -4,9 +4,11 @@ import type { McpServer, McpServersMap } from "@/types";
 import type { AppId } from "@/lib/api";
 import type { Prompt } from "@/lib/api";
 import type {
+  DiscoverableSkill,
   ImportSkillSelection,
   InstalledSkill,
   SkillBackupEntry,
+  SkillRepo,
   SkillUninstallResult,
   UnmanagedSkill,
 } from "@/lib/api/skills";
@@ -644,4 +646,54 @@ export async function importWebSkillsFromApps(
     "POST",
     imports,
   );
+}
+
+export async function getWebSkillRepos(): Promise<SkillRepo[]> {
+  try {
+    return await requestJson<SkillRepo[]>("/api/skills/repos");
+  } catch (error) {
+    console.warn(
+      "[runtime:web] failed to load skill repos from local service",
+      error,
+    );
+    return [];
+  }
+}
+
+export async function addWebSkillRepo(repo: SkillRepo): Promise<boolean> {
+  return requestWithBody<boolean>("/api/skills/repos", "POST", repo);
+}
+
+export async function removeWebSkillRepo(
+  owner: string,
+  name: string,
+): Promise<boolean> {
+  return requestWithBody<boolean>(
+    `/api/skills/repos/${owner}/${name}`,
+    "DELETE",
+  );
+}
+
+export async function discoverWebAvailableSkills(): Promise<
+  DiscoverableSkill[]
+> {
+  try {
+    return await requestJson<DiscoverableSkill[]>("/api/skills/discover");
+  } catch (error) {
+    console.warn(
+      "[runtime:web] failed to discover skills from local service",
+      error,
+    );
+    return [];
+  }
+}
+
+export async function installWebSkillUnified(
+  skill: DiscoverableSkill,
+  currentApp: AppId,
+): Promise<InstalledSkill> {
+  return requestWithBody<InstalledSkill>("/api/skills/install", "POST", {
+    skill,
+    currentApp,
+  });
 }

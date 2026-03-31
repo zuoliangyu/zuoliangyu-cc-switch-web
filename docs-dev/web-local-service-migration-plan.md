@@ -143,6 +143,7 @@ Local Rust Service
 - 已打通 `Prompts` 的 Web API 主路径（列表、新增/编辑、删除、启用、读取当前提示词文件）
 - 已打通 `Skills` 的首批 Web API 主路径（已安装列表、应用启用切换、卸载、备份列表）
 - 已打通 `Skills` 的导入主路径（扫描未管理项、从应用目录导入）
+- 已打通 `Skills` 的发现与安装主路径（仓库列表、仓库增删、发现可安装项、安装）
 - 已提供：
   - `pnpm dev` / `pnpm dev:web`
   - `pnpm build` / `pnpm build:d`
@@ -174,6 +175,7 @@ Local Rust Service
 - Prompts 列表、编辑、删除与启用
 - Skills 已安装列表、应用启用切换与卸载
 - Skills 扫描未管理项与从应用目录导入
+- Skills 仓库管理、发现列表与安装
 - Settings 基础读写
 - Proxy 启停、接管、配置读写
 - Failover 基础队列与开关配置

@@ -21,7 +21,9 @@ use crate::proxy::types::{
     ProxyStatus, ProxyTakeoverStatus,
 };
 use crate::prompt::Prompt;
-use crate::services::skill::{ImportSkillSelection, SkillBackupEntry, SkillUninstallResult};
+use crate::services::skill::{
+    DiscoverableSkill, ImportSkillSelection, SkillBackupEntry, SkillRepo, SkillUninstallResult,
+};
 use crate::services::{McpService, PromptService, ProviderService, SwitchResult};
 use crate::store::AppState;
 use crate::Database;
@@ -87,6 +89,13 @@ struct ToggleMcpAppRequest {
 #[serde(rename_all = "camelCase")]
 struct ToggleSkillAppRequest {
     enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InstallSkillRequest {
+    skill: DiscoverableSkill,
+    current_app: String,
 }
 
 async fn get_mcp_servers(
@@ -249,6 +258,69 @@ async fn import_skills_from_apps(
     let skills = crate::services::skill::SkillService::import_from_apps(&state.app_state.db, imports)
         .map_err(|e| ApiError::internal(format!("failed to import skills from apps: {e}")))?;
     Ok(Json(skills))
+}
+
+async fn get_skill_repos(
+    State(state): State<WebApiState>,
+) -> Result<Json<Vec<SkillRepo>>, ApiError> {
+    let repos = state
+        .app_state
+        .db
+        .get_skill_repos()
+        .map_err(|e| ApiError::internal(format!("failed to load skill repos: {e}")))?;
+    Ok(Json(repos))
+}
+
+async fn add_skill_repo(
+    State(state): State<WebApiState>,
+    Json(repo): Json<SkillRepo>,
+) -> Result<Json<bool>, ApiError> {
+    state
+        .app_state
+        .db
+        .save_skill_repo(&repo)
+        .map_err(|e| ApiError::internal(format!("failed to save skill repo: {e}")))?;
+    Ok(Json(true))
+}
+
+async fn remove_skill_repo(
+    State(state): State<WebApiState>,
+    Path((owner, name)): Path<(String, String)>,
+) -> Result<Json<bool>, ApiError> {
+    state
+        .app_state
+        .db
+        .delete_skill_repo(&owner, &name)
+        .map_err(|e| ApiError::internal(format!("failed to remove skill repo: {e}")))?;
+    Ok(Json(true))
+}
+
+async fn discover_available_skills(
+    State(state): State<WebApiState>,
+) -> Result<Json<Vec<DiscoverableSkill>>, ApiError> {
+    let repos = state
+        .app_state
+        .db
+        .get_skill_repos()
+        .map_err(|e| ApiError::internal(format!("failed to load skill repos: {e}")))?;
+    let skills = crate::services::skill::SkillService::new()
+        .discover_available(repos)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to discover skills: {e}")))?;
+    Ok(Json(skills))
+}
+
+async fn install_skill_unified(
+    State(state): State<WebApiState>,
+    Json(payload): Json<InstallSkillRequest>,
+) -> Result<Json<crate::app_config::InstalledSkill>, ApiError> {
+    let app_type = AppType::from_str(&payload.current_app)
+        .map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let installed = crate::services::skill::SkillService::new()
+        .install(&state.app_state.db, &payload.skill, &app_type)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to install skill: {e}")))?;
+    Ok(Json(installed))
 }
 
 fn merge_settings_for_save(
@@ -893,6 +965,13 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/skills/backups", get(get_skill_backups))
         .route("/api/skills/unmanaged", get(scan_unmanaged_skills))
         .route("/api/skills/import", post(import_skills_from_apps))
+        .route("/api/skills/repos", get(get_skill_repos).post(add_skill_repo))
+        .route(
+            "/api/skills/repos/:owner/:name",
+            axum::routing::delete(remove_skill_repo),
+        )
+        .route("/api/skills/discover", get(discover_available_skills))
+        .route("/api/skills/install", post(install_skill_unified))
         .route(
             "/api/skills/:id",
             axum::routing::delete(uninstall_skill_unified),

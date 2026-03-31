@@ -133,7 +133,6 @@ const VALID_VIEWS: View[] = [
 ];
 
 const WEB_BLOCKED_VIEWS: View[] = [
-  "skillsDiscovery",
   "sessions",
   "workspace",
   "openclawEnv",
@@ -1084,17 +1083,28 @@ function App() {
                 )}
                 {currentView === "skills" &&
                   (isWebMode ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        unifiedSkillsPanelRef.current?.openImport()
-                      }
-                      className="hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      {t("skills.import")}
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          unifiedSkillsPanelRef.current?.openImport()
+                        }
+                        className="hover:bg-black/5 dark:hover:bg-white/5"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        {t("skills.import")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentView("skillsDiscovery")}
+                        className="hover:bg-black/5 dark:hover:bg-white/5"
+                      >
+                        <Search className="w-4 h-4 mr-2" />
+                        {t("skills.discover")}
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button
