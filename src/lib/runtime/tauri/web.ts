@@ -1,5 +1,5 @@
 import type { Settings } from "@/types";
-import type { Provider, UsageResult } from "@/types";
+import type { CustomEndpoint, Provider, UsageResult } from "@/types";
 import type { McpServer, McpServersMap } from "@/types";
 import type { RemoteSnapshotInfo, WebDavSyncSettings } from "@/types";
 import type {
@@ -340,6 +340,14 @@ export async function streamCheckWebProvider(
   );
 }
 
+export async function getWebLiveProviderSettings(
+  appId: AppId,
+): Promise<Record<string, unknown>> {
+  return requestJson<Record<string, unknown>>(
+    `/api/providers/${appId}/live-settings`,
+  );
+}
+
 export async function getWebProviderUsage(
   appId: AppId,
   providerId: string,
@@ -366,6 +374,65 @@ export async function testWebUsageScript(
     `/api/providers/${appId}/${encodeURIComponent(providerId)}/usage/test`,
     "POST",
     payload,
+  );
+}
+
+export async function testWebApiEndpoints(
+  urls: string[],
+  timeoutSecs?: number,
+): Promise<import("@/lib/api/vscode").EndpointLatencyResult[]> {
+  return requestWithBody<import("@/lib/api/vscode").EndpointLatencyResult[]>(
+    "/api/providers/endpoints/test",
+    "POST",
+    {
+      urls,
+      timeoutSecs,
+    },
+  );
+}
+
+export async function getWebCustomEndpoints(
+  appId: AppId,
+  providerId: string,
+): Promise<CustomEndpoint[]> {
+  return requestJson<CustomEndpoint[]>(
+    `/api/providers/${appId}/${encodeURIComponent(providerId)}/custom-endpoints`,
+  );
+}
+
+export async function addWebCustomEndpoint(
+  appId: AppId,
+  providerId: string,
+  url: string,
+): Promise<void> {
+  await requestWithBody<void>(
+    `/api/providers/${appId}/${encodeURIComponent(providerId)}/custom-endpoints`,
+    "POST",
+    { url },
+  );
+}
+
+export async function removeWebCustomEndpoint(
+  appId: AppId,
+  providerId: string,
+  url: string,
+): Promise<void> {
+  await requestWithBody<void>(
+    `/api/providers/${appId}/${encodeURIComponent(providerId)}/custom-endpoints`,
+    "DELETE",
+    { url },
+  );
+}
+
+export async function updateWebEndpointLastUsed(
+  appId: AppId,
+  providerId: string,
+  url: string,
+): Promise<void> {
+  await requestWithBody<void>(
+    `/api/providers/${appId}/${encodeURIComponent(providerId)}/custom-endpoints/last-used`,
+    "POST",
+    { url },
   );
 }
 

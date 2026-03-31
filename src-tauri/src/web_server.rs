@@ -101,6 +101,19 @@ struct TestUsageScriptRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct EndpointTestRequest {
+    urls: Vec<String>,
+    timeout_secs: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CustomEndpointUrlRequest {
+    url: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ToggleMcpAppRequest {
     enabled: bool,
 }
@@ -522,6 +535,15 @@ async fn stream_check_provider(
     Ok(Json(result))
 }
 
+async fn read_live_provider_settings(
+    Path(app): Path<String>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let settings = ProviderService::read_live_settings(app_type)
+        .map_err(|e| ApiError::internal(format!("failed to read live provider settings: {e}")))?;
+    Ok(Json(settings))
+}
+
 async fn query_provider_usage(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
@@ -559,6 +581,61 @@ async fn test_usage_script(
     .await
     .map_err(|e| ApiError::internal(format!("failed to test usage script: {e}")))?;
     Ok(Json(result))
+}
+
+async fn test_api_endpoints(
+    Json(payload): Json<EndpointTestRequest>,
+) -> Result<Json<Vec<crate::services::EndpointLatency>>, ApiError> {
+    let results = crate::services::SpeedtestService::test_endpoints(
+        payload.urls,
+        payload.timeout_secs,
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to test api endpoints: {e}")))?;
+    Ok(Json(results))
+}
+
+async fn get_custom_endpoints(
+    State(state): State<WebApiState>,
+    Path((app, id)): Path<(String, String)>,
+) -> Result<Json<Vec<crate::settings::CustomEndpoint>>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let endpoints = ProviderService::get_custom_endpoints(state.app_state.as_ref(), app_type, &id)
+        .map_err(|e| ApiError::internal(format!("failed to load custom endpoints: {e}")))?;
+    Ok(Json(endpoints))
+}
+
+async fn add_custom_endpoint(
+    State(state): State<WebApiState>,
+    Path((app, id)): Path<(String, String)>,
+    Json(payload): Json<CustomEndpointUrlRequest>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    ProviderService::add_custom_endpoint(state.app_state.as_ref(), app_type, &id, payload.url)
+        .map_err(|e| ApiError::internal(format!("failed to add custom endpoint: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn remove_custom_endpoint(
+    State(state): State<WebApiState>,
+    Path((app, id)): Path<(String, String)>,
+    Json(payload): Json<CustomEndpointUrlRequest>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    ProviderService::remove_custom_endpoint(state.app_state.as_ref(), app_type, &id, payload.url)
+        .map_err(|e| ApiError::internal(format!("failed to remove custom endpoint: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn update_endpoint_last_used(
+    State(state): State<WebApiState>,
+    Path((app, id)): Path<(String, String)>,
+    Json(payload): Json<CustomEndpointUrlRequest>,
+) -> Result<StatusCode, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    ProviderService::update_endpoint_last_used(state.app_state.as_ref(), app_type, &id, payload.url)
+        .map_err(|e| ApiError::internal(format!("failed to update endpoint last used: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn get_installed_skills(
@@ -2442,10 +2519,25 @@ pub async fn run_web_server() -> Result<(), String> {
             "/api/providers/:app/stream-check/:id",
             post(stream_check_provider),
         )
+        .route(
+            "/api/providers/:app/live-settings",
+            get(read_live_provider_settings),
+        )
         .route("/api/providers/:app/:id/usage", get(query_provider_usage))
         .route(
             "/api/providers/:app/:id/usage/test",
             post(test_usage_script),
+        )
+        .route("/api/providers/endpoints/test", post(test_api_endpoints))
+        .route(
+            "/api/providers/:app/:id/custom-endpoints",
+            get(get_custom_endpoints)
+                .post(add_custom_endpoint)
+                .delete(remove_custom_endpoint),
+        )
+        .route(
+            "/api/providers/:app/:id/custom-endpoints/last-used",
+            post(update_endpoint_last_used),
         )
         .route("/api/providers/:app/live-provider-ids", get(get_live_provider_ids))
         .route("/api/providers/:app/import-live", post(import_providers_from_live))

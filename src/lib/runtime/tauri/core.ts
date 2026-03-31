@@ -39,7 +39,9 @@ import {
   getWebProviders,
   getWebSettings,
   getWebCurrentPromptFileContent,
+  getWebCustomEndpoints,
   getWebInstalledSkills,
+  getWebLiveProviderSettings,
   getWebStreamCheckConfig,
   getWebSkillRepos,
   getWebSkillBackups,
@@ -103,6 +105,7 @@ import {
   getWebUsageSummary,
   getWebUsageTrends,
   fetchWebdavRemoteInfo,
+  addWebCustomEndpoint,
   getWebWorkspaceDirectoryPath,
   getWebWorkspaceFile,
   importWebProvidersFromLive,
@@ -110,6 +113,7 @@ import {
   downloadWebdavSync,
   listWebDailyMemoryFiles,
   removeWebSkillRepo,
+  removeWebCustomEndpoint,
   removeWebProviderFromLiveConfig,
   saveWebDailyMemoryFile,
   saveWebdavSyncSettings,
@@ -123,6 +127,7 @@ import {
   deleteWebSession,
   deleteWebSessions,
   deleteWebModelPricing,
+  testWebApiEndpoints,
   testWebdavConnection,
   testWebUsageScript,
   toggleWebSkillApp,
@@ -131,6 +136,7 @@ import {
   updateWebProvider,
   updateWebProxyConfig,
   updateWebProxyConfigForApp,
+  updateWebEndpointLastUsed,
   enableWebPrompt,
 } from "./web";
 
@@ -220,6 +226,36 @@ export async function invoke<T>(
           userId: args?.userId as string | undefined,
           templateType: args?.templateType as string | undefined,
         },
+      )) as T;
+    case "read_live_provider_settings":
+      return (await getWebLiveProviderSettings(args?.app as AppId)) as T;
+    case "test_api_endpoints":
+      return (await testWebApiEndpoints(
+        (args?.urls as string[]) ?? [],
+        args?.timeoutSecs as number | undefined,
+      )) as T;
+    case "get_custom_endpoints":
+      return (await getWebCustomEndpoints(
+        args?.app as AppId,
+        args?.providerId as string,
+      )) as T;
+    case "add_custom_endpoint":
+      return (await addWebCustomEndpoint(
+        args?.app as AppId,
+        args?.providerId as string,
+        args?.url as string,
+      )) as T;
+    case "remove_custom_endpoint":
+      return (await removeWebCustomEndpoint(
+        args?.app as AppId,
+        args?.providerId as string,
+        args?.url as string,
+      )) as T;
+    case "update_endpoint_last_used":
+      return (await updateWebEndpointLastUsed(
+        args?.app as AppId,
+        args?.providerId as string,
+        args?.url as string,
       )) as T;
     case "create_db_backup":
       return (await createWebDbBackup()) as T;

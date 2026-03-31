@@ -164,6 +164,7 @@ Local Rust Service
 - 已恢复 `OpenCode / OpenClaw` 的 Provider 卡片主按钮（Web 模式下可直接添加到 live 配置或从配置中移除）
 - 已补齐 `reset_circuit_breaker` 的 Web 路径（流式检查成功后可同步重置熔断状态并触发优先级恢复切换）
 - 已恢复 Provider 用量脚本的 Web 能力（浏览器中可直接查询单个 Provider 用量，并测试自定义 Usage Script）
+- 已恢复 Provider 编辑辅助能力的 Web 路径（live 配置读取、端点测速、自定义 endpoint 增删改）
 - 已提供：
   - `pnpm dev` / `pnpm dev:web`
   - `pnpm build` / `pnpm build:d`
