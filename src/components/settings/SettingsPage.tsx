@@ -239,22 +239,28 @@ export function SettingsPage({
                       settings={settings}
                       onChange={handleAutoSave}
                     />
-                    <WindowSettings
-                      settings={settings}
-                      onChange={handleAutoSave}
-                    />
-                    <SkillSyncMethodSettings
-                      value={settings.skillSyncMethod ?? "auto"}
-                      onChange={(method) =>
-                        handleAutoSave({ skillSyncMethod: method })
-                      }
-                    />
-                    <TerminalSettings
-                      value={settings.preferredTerminal}
-                      onChange={(terminal) =>
-                        handleAutoSave({ preferredTerminal: terminal })
-                      }
-                    />
+                    {!isWebMode && (
+                      <WindowSettings
+                        settings={settings}
+                        onChange={handleAutoSave}
+                      />
+                    )}
+                    {!isWebMode && (
+                      <SkillSyncMethodSettings
+                        value={settings.skillSyncMethod ?? "auto"}
+                        onChange={(method) =>
+                          handleAutoSave({ skillSyncMethod: method })
+                        }
+                      />
+                    )}
+                    {!isWebMode && (
+                      <TerminalSettings
+                        value={settings.preferredTerminal}
+                        onChange={(terminal) =>
+                          handleAutoSave({ preferredTerminal: terminal })
+                        }
+                      />
+                    )}
                   </motion.div>
                 ) : null}
               </TabsContent>
