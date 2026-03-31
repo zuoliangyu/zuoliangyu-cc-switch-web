@@ -163,6 +163,49 @@ If you are looking for the original CC Switch project, desktop application, or u
 
    The example file is primarily for Linux servers and uses `$HOME` paths for `.claude`, `.codex`, `.gemini`, `.config/opencode`, and `.config/openclaw`.
 
+### Linux systemd Example
+
+If you want to keep the service running on a headless Linux server, use the example file in the repository:
+
+`deploy/systemd/cc-switch-web.service.example`
+
+Recommended steps:
+
+1. Build the frontend and local service first:
+
+   ```bash
+   pnpm build:web
+   pnpm build:web:service
+   ```
+
+2. Copy the service file into the system directory:
+
+   ```bash
+   sudo cp deploy/systemd/cc-switch-web.service.example /etc/systemd/system/cc-switch-web.service
+   ```
+
+3. Adjust these fields for your machine:
+
+   - `User`
+   - `Group`
+   - `WorkingDirectory`
+   - `HOME`
+   - `CC_SWITCH_WEB_DIST_DIR`
+
+4. Reload and start:
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now cc-switch-web
+   ```
+
+5. Check status and logs:
+
+   ```bash
+   sudo systemctl status cc-switch-web
+   sudo journalctl -u cc-switch-web -f
+   ```
+
 ### Tauri Compatibility
 
 If you still need the desktop shell temporarily for debugging, use:
@@ -173,5 +216,3 @@ pnpm build:tauri
 ```
 
 These are no longer the default path for this repository.
-
-If you want the containerized service to manage host-side CLI configuration directories directly, add bind mounts in `docker-compose.yml` for paths such as `.claude`, `.codex`, `.gemini`, `opencode`, and `openclaw`.

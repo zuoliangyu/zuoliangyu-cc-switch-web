@@ -1,0 +1,20 @@
+[Unit]
+Description=CC Switch Web local Rust service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ccswitch
+Group=ccswitch
+WorkingDirectory=/opt/cc-switch-web
+Environment=HOME=/home/ccswitch
+Environment=CC_SWITCH_WEB_HOST=127.0.0.1
+Environment=CC_SWITCH_WEB_PORT=8788
+Environment=CC_SWITCH_WEB_DIST_DIR=/opt/cc-switch-web/dist
+ExecStart=/usr/bin/bash /opt/cc-switch-web/scripts/run-web.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
