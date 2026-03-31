@@ -213,14 +213,3 @@ Recommended steps:
    sudo systemctl status cc-switch-web
    sudo journalctl -u cc-switch-web -f
    ```
-
-### Tauri Compatibility
-
-If you still need the desktop shell temporarily for debugging, use:
-
-```bash
-pnpm dev:tauri
-pnpm build:tauri
-```
-
-These are no longer the default path for this repository.
