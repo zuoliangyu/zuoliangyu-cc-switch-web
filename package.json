@@ -4,9 +4,11 @@
   "description": "All-in-One Assistant for Claude Code, Codex & Gemini CLI",
   "type": "module",
   "scripts": {
-    "dev": "pnpm tauri dev",
-    "build": "pnpm tauri build",
+    "dev": "pnpm dev:web",
+    "build": "pnpm build:d",
     "tauri": "tauri",
+    "dev:tauri": "pnpm tauri dev",
+    "build:tauri": "pnpm tauri build",
     "dev:renderer": "vite",
     "dev:web": "node scripts/dev-web.mjs",
     "dev:web:ui": "vite --host 127.0.0.1 --port 3000",

@@ -140,9 +140,11 @@ Local Rust Service
 - 已新增 Rust 本地 Web 服务入口，并支持托管 `dist/` 静态资源
 - 已打通 `Settings`、`Providers`、`Proxy`、基础 `Failover` 的 HTTP API
 - 已提供：
-  - `pnpm dev:web`
-  - `pnpm build:web`
+  - `pnpm dev` / `pnpm dev:web`
+  - `pnpm build` / `pnpm build:d`
   - `pnpm start:web`
+  - `pnpm start:w`
+  - `pnpm start:l`
 - 已增加 Docker 运行文件：
   - `Dockerfile`
   - `docker-compose.yml`
@@ -265,9 +267,13 @@ Local Rust Service
 ### 工作项
 
 - 新增开发命令：
+  - `pnpm dev`
   - `pnpm dev:web`
-  - `pnpm build:web`
+  - `pnpm build`
+  - `pnpm build:d`
   - `pnpm start:web`
+  - `pnpm start:w`
+  - `pnpm start:l`
 - 新增 Rust 服务启动命令
 - 增加 Windows 启动脚本
 - 增加 Linux 启动脚本

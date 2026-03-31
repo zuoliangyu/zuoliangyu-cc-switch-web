@@ -36,7 +36,13 @@ If you are looking for the original CC Switch project, desktop application, or u
    pnpm install --frozen-lockfile
    ```
 
-2. Start development mode with one command:
+2. Default Web development mode:
+
+   ```bash
+   pnpm dev
+   ```
+
+   Equivalent to:
 
    ```bash
    pnpm dev:web
@@ -44,13 +50,13 @@ If you are looking for the original CC Switch project, desktop application, or u
 
    Open [http://localhost:3000](http://localhost:3000). The frontend talks to the local Rust service at `http://127.0.0.1:8788`.
 
-   If you want to run the Docker stack in the foreground, use:
+3. If you want to run the Docker stack in the foreground, use:
 
    ```bash
    pnpm dev:d
    ```
 
-3. Start a production-style local run:
+4. Start a production-style local run:
 
    ```bash
    pnpm build:web
@@ -59,7 +65,7 @@ If you are looking for the original CC Switch project, desktop application, or u
 
    Then open [http://localhost:8788](http://localhost:8788).
 
-4. Build once and run the release binary directly:
+5. Build once and run the release binary directly:
 
    ```bash
    pnpm build:web
@@ -80,7 +86,21 @@ If you are looking for the original CC Switch project, desktop application, or u
 
 ### Docker Run
 
-1. Build and start:
+1. Default standard build:
+
+   ```bash
+   pnpm build
+   ```
+
+   Equivalent to:
+
+   ```bash
+   pnpm build:d
+   ```
+
+   This builds the frontend and Rust service directly inside the Docker build environment.
+
+2. Build and start in the foreground:
 
    ```bash
    pnpm dev:d
@@ -88,32 +108,43 @@ If you are looking for the original CC Switch project, desktop application, or u
 
    This runs `docker compose up --build` in the foreground.
 
-2. If the image is already built and you only want to start it in the background:
+3. If the image is already built and you only want to start it in the background:
 
    ```bash
    pnpm up:d
    ```
 
-3. Rebuild image only:
+4. Rebuild image only:
 
    ```bash
    pnpm build:d
    ```
 
-4. View logs:
+5. View logs:
 
    ```bash
    pnpm logs:d
    ```
 
-5. Stop:
+6. Stop:
 
    ```bash
    pnpm down:d
    ```
 
-6. Open [http://localhost:8788](http://localhost:8788).
+7. Open [http://localhost:8788](http://localhost:8788).
 
-7. Persistent data is stored in the `cc-switch-web-data` volume.
+8. Persistent data is stored in the `cc-switch-web-data` volume.
+
+### Tauri Compatibility
+
+If you still need the desktop shell temporarily for debugging, use:
+
+```bash
+pnpm dev:tauri
+pnpm build:tauri
+```
+
+These are no longer the default path for this repository.
 
 If you want the containerized service to manage host-side CLI configuration directories directly, add bind mounts in `docker-compose.yml` for paths such as `.claude`, `.codex`, `.gemini`, `opencode`, and `openclaw`.
