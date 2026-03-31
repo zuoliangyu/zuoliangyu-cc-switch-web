@@ -24,6 +24,8 @@ import {
   getWebProviders,
   getWebSettings,
   getWebCurrentPromptFileContent,
+  getWebInstalledSkills,
+  getWebSkillBackups,
   removeWebProviderFromFailoverQueue,
   saveWebSettings,
   setWebAutoFailoverEnabled,
@@ -39,10 +41,12 @@ import {
   importWebPromptFromFile,
   upsertWebMcpServer,
   upsertWebPrompt,
+  uninstallWebSkillUnified,
   updateWebCircuitBreakerConfig,
   updateWebGlobalProxyConfig,
   deleteWebMcpServer,
   deleteWebPrompt,
+  toggleWebSkillApp,
   updateWebProvider,
   updateWebProxyConfig,
   updateWebProxyConfigForApp,
@@ -156,6 +160,18 @@ export async function invoke<T>(
       return (await importWebPromptFromFile(args?.app as AppId)) as T;
     case "get_current_prompt_file_content":
       return (await getWebCurrentPromptFileContent(args?.app as AppId)) as T;
+    case "get_installed_skills":
+      return (await getWebInstalledSkills()) as T;
+    case "get_skill_backups":
+      return (await getWebSkillBackups()) as T;
+    case "uninstall_skill_unified":
+      return (await uninstallWebSkillUnified(args?.id as string)) as T;
+    case "toggle_skill_app":
+      return (await toggleWebSkillApp(
+        args?.id as string,
+        args?.app as AppId,
+        Boolean(args?.enabled),
+      )) as T;
     case "start_proxy_server":
       return (await startWebProxyServer()) as T;
     case "stop_proxy_with_restore":

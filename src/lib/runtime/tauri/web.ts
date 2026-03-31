@@ -3,6 +3,11 @@ import type { Provider } from "@/types";
 import type { McpServer, McpServersMap } from "@/types";
 import type { AppId } from "@/lib/api";
 import type { Prompt } from "@/lib/api";
+import type {
+  InstalledSkill,
+  SkillBackupEntry,
+  SkillUninstallResult,
+} from "@/lib/api/skills";
 import type { SwitchResult } from "@/lib/api/providers";
 import type {
   AppProxyConfig,
@@ -575,4 +580,44 @@ export async function getWebCurrentPromptFileContent(
     );
     return null;
   }
+}
+
+export async function getWebInstalledSkills(): Promise<InstalledSkill[]> {
+  try {
+    return await requestJson<InstalledSkill[]>("/api/skills/installed");
+  } catch (error) {
+    console.warn(
+      "[runtime:web] failed to load installed skills from local service",
+      error,
+    );
+    return [];
+  }
+}
+
+export async function getWebSkillBackups(): Promise<SkillBackupEntry[]> {
+  try {
+    return await requestJson<SkillBackupEntry[]>("/api/skills/backups");
+  } catch (error) {
+    console.warn(
+      "[runtime:web] failed to load skill backups from local service",
+      error,
+    );
+    return [];
+  }
+}
+
+export async function uninstallWebSkillUnified(
+  id: string,
+): Promise<SkillUninstallResult> {
+  return requestWithBody<SkillUninstallResult>(`/api/skills/${id}`, "DELETE");
+}
+
+export async function toggleWebSkillApp(
+  id: string,
+  app: AppId,
+  enabled: boolean,
+): Promise<boolean> {
+  return requestWithBody<boolean>(`/api/skills/${id}/apps/${app}`, "PUT", {
+    enabled,
+  });
 }

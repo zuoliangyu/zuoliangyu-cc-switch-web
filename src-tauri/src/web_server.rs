@@ -21,6 +21,7 @@ use crate::proxy::types::{
     ProxyStatus, ProxyTakeoverStatus,
 };
 use crate::prompt::Prompt;
+use crate::services::skill::{SkillBackupEntry, SkillUninstallResult};
 use crate::services::{McpService, PromptService, ProviderService, SwitchResult};
 use crate::store::AppState;
 use crate::Database;
@@ -79,6 +80,12 @@ struct ProviderIdRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ToggleMcpAppRequest {
+    enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ToggleSkillAppRequest {
     enabled: bool,
 }
 
@@ -186,6 +193,45 @@ async fn get_current_prompt_file_content(
     let content = PromptService::get_current_file_content(app_type)
         .map_err(|e| ApiError::internal(format!("failed to load current prompt file: {e}")))?;
     Ok(Json(content))
+}
+
+async fn get_installed_skills(
+    State(state): State<WebApiState>,
+) -> Result<Json<Vec<crate::app_config::InstalledSkill>>, ApiError> {
+    let skills = crate::services::skill::SkillService::get_all_installed(&state.app_state.db)
+        .map_err(|e| ApiError::internal(format!("failed to load installed skills: {e}")))?;
+    Ok(Json(skills))
+}
+
+async fn get_skill_backups() -> Result<Json<Vec<SkillBackupEntry>>, ApiError> {
+    let backups = crate::services::skill::SkillService::list_backups()
+        .map_err(|e| ApiError::internal(format!("failed to load skill backups: {e}")))?;
+    Ok(Json(backups))
+}
+
+async fn uninstall_skill_unified(
+    State(state): State<WebApiState>,
+    Path(id): Path<String>,
+) -> Result<Json<SkillUninstallResult>, ApiError> {
+    let result = crate::services::skill::SkillService::uninstall(&state.app_state.db, &id)
+        .map_err(|e| ApiError::internal(format!("failed to uninstall skill: {e}")))?;
+    Ok(Json(result))
+}
+
+async fn toggle_skill_app(
+    State(state): State<WebApiState>,
+    Path((id, app)): Path<(String, String)>,
+    Json(payload): Json<ToggleSkillAppRequest>,
+) -> Result<Json<bool>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    crate::services::skill::SkillService::toggle_app(
+        &state.app_state.db,
+        &id,
+        &app_type,
+        payload.enabled,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to toggle skill app: {e}")))?;
+    Ok(Json(true))
 }
 
 fn merge_settings_for_save(
@@ -826,6 +872,13 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/settings", get(get_settings).put(save_settings))
         .route("/api/providers/:app", get(get_providers).post(add_provider))
         .route("/api/providers/:app/current", get(get_current_provider))
+        .route("/api/skills/installed", get(get_installed_skills))
+        .route("/api/skills/backups", get(get_skill_backups))
+        .route(
+            "/api/skills/:id",
+            axum::routing::delete(uninstall_skill_unified),
+        )
+        .route("/api/skills/:id/apps/:app", put(toggle_skill_app))
         .route("/api/prompts/:app", get(get_prompts))
         .route("/api/prompts/:app/import", post(import_prompt_from_file))
         .route(

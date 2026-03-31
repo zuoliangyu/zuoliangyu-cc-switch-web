@@ -133,7 +133,6 @@ const VALID_VIEWS: View[] = [
 ];
 
 const WEB_BLOCKED_VIEWS: View[] = [
-  "skills",
   "skillsDiscovery",
   "sessions",
   "workspace",
@@ -1083,7 +1082,7 @@ function App() {
                     </Button>
                   </>
                 )}
-                {currentView === "skills" && (
+                {currentView === "skills" && !isWebMode && (
                   <>
                     <Button
                       variant="ghost"
@@ -1234,23 +1233,21 @@ function App() {
                             </>
                           ) : (
                             <>
-                              {!isWebMode && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewChange("skills")}
-                                  className={cn(
-                                    "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5",
-                                    "transition-all duration-200 ease-in-out overflow-hidden",
-                                    hasSkillsSupport
-                                      ? "opacity-100 w-8 scale-100 px-2"
-                                      : "opacity-0 w-0 scale-75 pointer-events-none px-0 -ml-1",
-                                  )}
-                                  title={t("skills.manage")}
-                                >
-                                  <Wrench className="flex-shrink-0 w-4 h-4" />
-                                </Button>
-                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewChange("skills")}
+                                className={cn(
+                                  "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5",
+                                  "transition-all duration-200 ease-in-out overflow-hidden",
+                                  hasSkillsSupport
+                                    ? "opacity-100 w-8 scale-100 px-2"
+                                    : "opacity-0 w-0 scale-75 pointer-events-none px-0 -ml-1",
+                                )}
+                                title={t("skills.manage")}
+                              >
+                                <Wrench className="flex-shrink-0 w-4 h-4" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
