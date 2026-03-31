@@ -1,6 +1,6 @@
 # Web 化剩余缺口审计
 
-更新时间：2026-04-01
+更新时间：2026-04-01（OMO Web 路径补齐后）
 
 ## 结论
 
@@ -20,7 +20,7 @@
 
 换句话说：
 
-- `Providers / Proxy / Failover / Settings / MCP / Prompts / Skills / Workspace / Sessions / Usage / OpenClaw / Universal Provider` 的 Web 主路径已基本可用
+- `Providers / Proxy / Failover / Settings / MCP / Prompts / Skills / Workspace / Sessions / Usage / OpenClaw / Universal Provider / OMO / OMO Slim` 的 Web 主路径已基本可用
 - 当前更大的问题已经不是“缺少 Web 核心功能”，而是“仓库里还残留不少桌面 API 和旧兼容层”
 
 ## 一、建议继续处理
@@ -29,7 +29,6 @@
 |---|---|---|---|
 | `sync_current_providers_live` | 仍有工具层调用 | 评估后保留或改成显式 Web API | 这不是主页面独立入口，但在导入/变更后同步 live 状态的兼容链路里仍可能有价值 |
 | `set_common_config_snippet` / `set_global_proxy_url` / 部分旧设置命令 | 存在旧调用痕迹 | 逐项核对是否还有业务价值 | 有些能力可能已被新版 Settings/Proxy 页面替代，需要确认后再删 |
-| OMO / OMO Slim 相关命令 | 仍有残留 API | 先核对是否还属于产品范围 | 如果还要保留对应能力，需要决定是迁移到 Web，还是整体下线 |
 | 旧兼容 Skills API | 工具层仍保留 | 逐步移除对旧别名的依赖 | 当前实际主路径已走统一 Skills API，不宜长期双轨 |
 | 旧兼容 MCP API | 工具层仍保留 | 收敛到统一 MCP API | 当前 Web 主路径已完成统一 MCP 管理，这批兼容命令应减量 |
 
@@ -71,6 +70,7 @@
 - 顶栏更新徽标已从 Web 分支前端移除
 - About 页已移除桌面自动更新与便携模式展示
 - Web 模式下不再持有前端自动更新上下文
+- OMO / OMO Slim 已补齐本地文件读取、当前配置读取与停用的 Web 路径
 
 ## 四、当前真正的收尾重点
 
@@ -78,12 +78,12 @@
 
 1. 删除或隔离桌面残留 API，减少误调用面
 2. 清理旧兼容层，统一走已经完成的 Web API 主路径
-3. 审查 OMO / OMO Slim、Claude 旧集成、Deeplink 是否还属于产品范围
+3. 审查 Claude 旧集成、Deeplink 是否还属于产品范围
 4. 补文档，把“哪些功能是 Web 替代方案，不再提供桌面行为”写清楚
 
 ## 五、建议的后续执行顺序
 
 1. 清理桌面专属入口
 2. 清理旧兼容 API
-3. 评估并处理 OMO / OMO Slim 残留
+3. 评估并处理 Deeplink 与 Claude 旧集成残留
 4. 更新 README 与开发计划文档，明确 Web 版边界

@@ -29,6 +29,7 @@ import type {
   RectifierConfig,
 } from "@/lib/api/settings";
 import type { StreamCheckConfig } from "@/lib/api/model-test";
+import type { OmoLocalFileData } from "@/types/omo";
 import type { DeleteSessionOptions, DeleteSessionResult } from "@/lib/api/sessions";
 import type { ProviderSortUpdate } from "@/lib/api/providers";
 import type {
@@ -257,6 +258,30 @@ export async function getWebToolVersions(
     tools,
     wslShellByTool,
   });
+}
+
+export async function getWebOmoLocalFile(): Promise<OmoLocalFileData> {
+  return requestJson<OmoLocalFileData>("/api/omo/local-file");
+}
+
+export async function getWebCurrentOmoProviderId(): Promise<string> {
+  return requestJson<string>("/api/omo/current-provider-id");
+}
+
+export async function disableWebCurrentOmo(): Promise<void> {
+  await requestWithBody<void>("/api/omo/disable", "POST");
+}
+
+export async function getWebOmoSlimLocalFile(): Promise<OmoLocalFileData> {
+  return requestJson<OmoLocalFileData>("/api/omo-slim/local-file");
+}
+
+export async function getWebCurrentOmoSlimProviderId(): Promise<string> {
+  return requestJson<string>("/api/omo-slim/current-provider-id");
+}
+
+export async function disableWebCurrentOmoSlim(): Promise<void> {
+  await requestWithBody<void>("/api/omo-slim/disable", "POST");
 }
 
 export async function startWebManagedAuthLogin(

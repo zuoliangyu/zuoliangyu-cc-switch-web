@@ -29,6 +29,12 @@ import {
   getWebOpenClawLiveProvider,
   getWebOpenClawModelCatalog,
   getWebOpenClawTools,
+  getWebOmoLocalFile,
+  getWebCurrentOmoProviderId,
+  disableWebCurrentOmo,
+  getWebOmoSlimLocalFile,
+  getWebCurrentOmoSlimProviderId,
+  disableWebCurrentOmoSlim,
   getWebPricingModelSource,
   getWebMcpServers,
   getWebProviderHealth,
@@ -210,6 +216,18 @@ export async function invoke<T>(
       return (await getWebStreamCheckConfig()) as T;
     case "save_stream_check_config":
       return (await setWebStreamCheckConfig(args?.config as any)) as T;
+    case "read_omo_local_file":
+      return (await getWebOmoLocalFile()) as T;
+    case "get_current_omo_provider_id":
+      return (await getWebCurrentOmoProviderId()) as T;
+    case "disable_current_omo":
+      return (await disableWebCurrentOmo()) as T;
+    case "read_omo_slim_local_file":
+      return (await getWebOmoSlimLocalFile()) as T;
+    case "get_current_omo_slim_provider_id":
+      return (await getWebCurrentOmoSlimProviderId()) as T;
+    case "disable_current_omo_slim":
+      return (await disableWebCurrentOmoSlim()) as T;
     case "stream_check_provider":
       return (await streamCheckWebProvider(
         args?.appType as AppId,
