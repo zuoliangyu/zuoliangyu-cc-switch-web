@@ -1,13 +1,17 @@
 import {
-  getDefaultGlobalProxyConfig,
-  getDefaultProxyConfig,
-  getDefaultProxyStatus,
-  getDefaultProxyTakeoverStatus,
+  getDefaultAppProxyConfig,
 } from "./defaults";
 import { isTauriRuntime } from "./env";
 import {
   addWebProvider,
   deleteWebProvider,
+  getWebGlobalProxyConfig,
+  getWebIsLiveTakeoverActive,
+  getWebIsProxyRunning,
+  getWebProxyConfig,
+  getWebProxyConfigForApp,
+  getWebProxyStatus,
+  getWebProxyTakeoverStatus,
   getWebProviders,
   getWebSettings,
   saveWebSettings,
@@ -87,16 +91,23 @@ export async function invoke<T>(
     case "get_tool_versions":
       return [] as T;
     case "get_proxy_status":
-      return getDefaultProxyStatus() as T;
+      return (await getWebProxyStatus()) as T;
     case "get_proxy_takeover_status":
-      return getDefaultProxyTakeoverStatus() as T;
+      return (await getWebProxyTakeoverStatus()) as T;
     case "get_proxy_config":
-      return getDefaultProxyConfig() as T;
+      return (await getWebProxyConfig()) as T;
     case "get_global_proxy_config":
-      return getDefaultGlobalProxyConfig() as T;
+      return (await getWebGlobalProxyConfig()) as T;
+    case "get_proxy_config_for_app": {
+      const appType = args?.appType as AppId | undefined;
+      return (appType
+        ? await getWebProxyConfigForApp(appType)
+        : getDefaultAppProxyConfig()) as T;
+    }
     case "is_proxy_running":
+      return (await getWebIsProxyRunning()) as T;
     case "is_live_takeover_active":
-      return false as T;
+      return (await getWebIsLiveTakeoverActive()) as T;
     case "get_app_config_dir_override":
       return null as T;
     case "get_config_dir":

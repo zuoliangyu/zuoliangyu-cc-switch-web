@@ -1,5 +1,6 @@
 import type { Settings, VisibleApps } from "@/types";
 import type {
+  AppProxyConfig,
   GlobalProxyConfig,
   ProxyConfig,
   ProxyStatus,
@@ -73,4 +74,19 @@ export const getDefaultGlobalProxyConfig = (): GlobalProxyConfig => ({
   listenAddress: "127.0.0.1",
   listenPort: 8787,
   enableLogging: false,
+});
+
+export const getDefaultAppProxyConfig = (appType = "claude"): AppProxyConfig => ({
+  appType,
+  enabled: false,
+  autoFailoverEnabled: false,
+  maxRetries: 3,
+  streamingFirstByteTimeout: 30,
+  streamingIdleTimeout: 300,
+  nonStreamingTimeout: 120,
+  circuitFailureThreshold: 5,
+  circuitSuccessThreshold: 2,
+  circuitTimeoutSeconds: 30,
+  circuitErrorRateThreshold: 0.5,
+  circuitMinRequests: 10,
 });

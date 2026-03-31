@@ -14,6 +14,9 @@ use tower_http::services::ServeDir;
 
 use crate::app_config::AppType;
 use crate::provider::Provider;
+use crate::proxy::types::{
+    AppProxyConfig, GlobalProxyConfig, ProxyConfig, ProxyStatus, ProxyTakeoverStatus,
+};
 use crate::services::{ProviderService, SwitchResult};
 use crate::store::AppState;
 use crate::Database;
@@ -208,6 +211,80 @@ async fn switch_provider(
     Ok(Json(result))
 }
 
+async fn get_proxy_status(State(state): State<WebApiState>) -> Result<Json<ProxyStatus>, ApiError> {
+    let status = state
+        .app_state
+        .proxy_service
+        .get_status()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load proxy status: {e}")))?;
+    Ok(Json(status))
+}
+
+async fn get_proxy_takeover_status(
+    State(state): State<WebApiState>,
+) -> Result<Json<ProxyTakeoverStatus>, ApiError> {
+    let status = state
+        .app_state
+        .proxy_service
+        .get_takeover_status()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load proxy takeover status: {e}")))?;
+    Ok(Json(status))
+}
+
+async fn get_proxy_config(State(state): State<WebApiState>) -> Result<Json<ProxyConfig>, ApiError> {
+    let config = state
+        .app_state
+        .proxy_service
+        .get_config()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load proxy config: {e}")))?;
+    Ok(Json(config))
+}
+
+async fn get_global_proxy_config(
+    State(state): State<WebApiState>,
+) -> Result<Json<GlobalProxyConfig>, ApiError> {
+    let config = state
+        .app_state
+        .db
+        .get_global_proxy_config()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load global proxy config: {e}")))?;
+    Ok(Json(config))
+}
+
+async fn get_proxy_config_for_app(
+    State(state): State<WebApiState>,
+    Path(app): Path<String>,
+) -> Result<Json<AppProxyConfig>, ApiError> {
+    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let config = state
+        .app_state
+        .db
+        .get_proxy_config_for_app(app_type.as_str())
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load app proxy config: {e}")))?;
+    Ok(Json(config))
+}
+
+async fn is_proxy_running(State(state): State<WebApiState>) -> Json<bool> {
+    Json(state.app_state.proxy_service.is_running().await)
+}
+
+async fn is_live_takeover_active(
+    State(state): State<WebApiState>,
+) -> Result<Json<bool>, ApiError> {
+    let active = state
+        .app_state
+        .proxy_service
+        .is_takeover_active()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load proxy takeover state: {e}")))?;
+    Ok(Json(active))
+}
+
 fn resolve_bind_addr() -> Result<SocketAddr, String> {
     let host = std::env::var("CC_SWITCH_WEB_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = std::env::var("CC_SWITCH_WEB_PORT")
@@ -253,6 +330,16 @@ pub async fn run_web_server() -> Result<(), String> {
             put(update_provider).delete(delete_provider),
         )
         .route("/api/providers/:app/:id/switch", post(switch_provider))
+        .route("/api/proxy/status", get(get_proxy_status))
+        .route("/api/proxy/takeover-status", get(get_proxy_takeover_status))
+        .route("/api/proxy/config", get(get_proxy_config))
+        .route("/api/proxy/global-config", get(get_global_proxy_config))
+        .route("/api/proxy/apps/:app/config", get(get_proxy_config_for_app))
+        .route("/api/proxy/running", get(is_proxy_running))
+        .route(
+            "/api/proxy/live-takeover-active",
+            get(is_live_takeover_active),
+        )
         .layer(CorsLayer::permissive())
         .with_state(state);
 

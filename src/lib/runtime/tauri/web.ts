@@ -1,8 +1,22 @@
 import type { Settings } from "@/types";
 import type { Provider } from "@/types";
 import type { AppId } from "@/lib/api";
-import { getDefaultSettings } from "./defaults";
 import type { SwitchResult } from "@/lib/api/providers";
+import type {
+  AppProxyConfig,
+  GlobalProxyConfig,
+  ProxyConfig,
+  ProxyStatus,
+  ProxyTakeoverStatus,
+} from "@/types/proxy";
+import {
+  getDefaultAppProxyConfig,
+  getDefaultGlobalProxyConfig,
+  getDefaultProxyConfig,
+  getDefaultProxyStatus,
+  getDefaultProxyTakeoverStatus,
+  getDefaultSettings,
+} from "./defaults";
 
 interface ProvidersResponse {
   providers: Record<string, Provider>;
@@ -78,6 +92,80 @@ export async function getWebProviders(appId: AppId): Promise<ProvidersResponse> 
       providers: {},
       currentProviderId: "",
     };
+  }
+}
+
+export async function getWebProxyStatus(): Promise<ProxyStatus> {
+  try {
+    return await requestJson<ProxyStatus>("/api/proxy/status");
+  } catch (error) {
+    console.warn("[runtime:web] failed to load proxy status from local service", error);
+    return getDefaultProxyStatus();
+  }
+}
+
+export async function getWebProxyTakeoverStatus(): Promise<ProxyTakeoverStatus> {
+  try {
+    return await requestJson<ProxyTakeoverStatus>("/api/proxy/takeover-status");
+  } catch (error) {
+    console.warn(
+      "[runtime:web] failed to load proxy takeover status from local service",
+      error,
+    );
+    return getDefaultProxyTakeoverStatus();
+  }
+}
+
+export async function getWebProxyConfig(): Promise<ProxyConfig> {
+  try {
+    return await requestJson<ProxyConfig>("/api/proxy/config");
+  } catch (error) {
+    console.warn("[runtime:web] failed to load proxy config from local service", error);
+    return getDefaultProxyConfig();
+  }
+}
+
+export async function getWebGlobalProxyConfig(): Promise<GlobalProxyConfig> {
+  try {
+    return await requestJson<GlobalProxyConfig>("/api/proxy/global-config");
+  } catch (error) {
+    console.warn(
+      "[runtime:web] failed to load global proxy config from local service",
+      error,
+    );
+    return getDefaultGlobalProxyConfig();
+  }
+}
+
+export async function getWebProxyConfigForApp(
+  appId: AppId,
+): Promise<AppProxyConfig> {
+  try {
+    return await requestJson<AppProxyConfig>(`/api/proxy/apps/${appId}/config`);
+  } catch (error) {
+    console.warn(
+      `[runtime:web] failed to load proxy config for ${appId} from local service`,
+      error,
+    );
+    return getDefaultAppProxyConfig(appId);
+  }
+}
+
+export async function getWebIsProxyRunning(): Promise<boolean> {
+  try {
+    return await requestJson<boolean>("/api/proxy/running");
+  } catch (error) {
+    console.warn("[runtime:web] failed to load proxy running state", error);
+    return false;
+  }
+}
+
+export async function getWebIsLiveTakeoverActive(): Promise<boolean> {
+  try {
+    return await requestJson<boolean>("/api/proxy/live-takeover-active");
+  } catch (error) {
+    console.warn("[runtime:web] failed to load live takeover state", error);
+    return false;
   }
 }
 
