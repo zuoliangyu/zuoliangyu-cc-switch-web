@@ -103,26 +103,18 @@
 
 | 指标 | 当前结果 | 结论 |
 |---|---|---|
-| 前端实际 `invoke(...)` 命令总数 | 152 | 已完成复核 |
-| Web runtime 已映射命令总数 | 185 | 包含主路径命令和兼容别名 |
+| 前端实际 `invoke(...)` 命令总数 | 185 | 已完成复核 |
+| Web runtime 已映射命令总数 | 185 | 当前命令映射层与前端调用完全对齐 |
 | 前端调用但 Web runtime 未映射 | 0 | 当前不存在“前端调用会直接落到 `not available yet`”的命令差集 |
+| Web runtime 已映射但前端无调用 | 0 | 当前不存在“只保留在 runtime 里的无入口命令映射” |
 
-这意味着当前剩余问题已经不是“Web 核心功能缺失”，而是“兼容层偏厚”。
-
-当前更值得继续清理的是这些“已映射但前端现阶段无调用”的兼容项：
-
-| 类别 | 代表命令 | 当前判断 | 建议 |
-|---|---|---|---|
-| 旧认证兼容别名 | `auth_*` / `copilot_*` 旧命令别名 | 主要用于兼容旧 API 名称，不是当前页面主路径 | 继续核对是否仍被测试、脚本或外部调用依赖，确认后再收口 |
-| 旧 Workspace / Daily Memory 别名 | `read_workspace_file` / `write_workspace_file` / `list_daily_memory_files` 等 | Web 主路径已能工作，但仍保留旧命令名 | 可以逐步收敛到统一 REST API 对应的调用封装 |
-| 旧通用配置兼容命令 | `get_claude_common_config_snippet` / `get_common_config_snippet` / `extract_common_config_snippet` | 当前更偏兼容层保留 | 后续统一命名，减少别名数量 |
-| 旧代理兼容命令 | `get_global_proxy_url` / `scan_local_proxies` / `test_proxy_url` / `get_upstream_proxy_status` | 已有 Web 路径，但不是所有命令都由当前页面直接触发 | 评估后保留必要能力，删除无入口别名 |
+这意味着当前剩余问题已经不在“命令映射缺口”这一层，而是在更高一层的产品边界和桌面残留收尾。
 
 换句话说，当前真正剩余的是：
 
 1. 桌面专属能力的有意识不迁移
 2. 旧 API 别名和死代码的收口
-3. 个别兼容命令在 Web runtime 中仍然保留但暂无当前页面调用
+3. `tauri` crate 本体与命令宏/运行时依赖仍在 Rust 侧保留，后续若要彻底去壳，需要一次单独重构
 
 ## 五、当前真正的收尾重点
 
