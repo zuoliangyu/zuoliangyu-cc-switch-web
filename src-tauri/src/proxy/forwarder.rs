@@ -17,13 +17,11 @@ use super::{
     types::{OptimizerConfig, ProxyStatus, RectifierConfig},
     ProxyError,
 };
-use crate::commands::CopilotAuthState;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::{app_config::AppType, provider::Provider};
 use http::Extensions;
 use serde_json::Value;
 use std::sync::Arc;
-use tauri::Manager;
 use tokio::sync::RwLock;
 
 pub struct ForwardResult {
@@ -44,8 +42,8 @@ pub struct RequestForwarder {
     current_providers: Arc<RwLock<std::collections::HashMap<String, (String, String)>>>,
     /// 故障转移切换管理器
     failover_manager: Arc<FailoverSwitchManager>,
-    /// AppHandle，用于发射事件和更新托盘
-    app_handle: Option<tauri::AppHandle>,
+    /// Copilot 鉴权状态（显式注入，避免依赖 Tauri 容器）
+    copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
     /// 请求开始时的"当前供应商 ID"（用于判断是否需要同步 UI/托盘）
     current_provider_id_at_start: String,
     /// 整流器配置
@@ -64,7 +62,7 @@ impl RequestForwarder {
         status: Arc<RwLock<ProxyStatus>>,
         current_providers: Arc<RwLock<std::collections::HashMap<String, (String, String)>>>,
         failover_manager: Arc<FailoverSwitchManager>,
-        app_handle: Option<tauri::AppHandle>,
+        copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
         current_provider_id_at_start: String,
         _streaming_first_byte_timeout: u64,
         _streaming_idle_timeout: u64,
@@ -76,7 +74,7 @@ impl RequestForwarder {
             status,
             current_providers,
             failover_manager,
-            app_handle,
+            copilot_auth_state,
             current_provider_id_at_start,
             rectifier_config,
             optimizer_config,
@@ -214,13 +212,12 @@ impl RequestForwarder {
 
                             // 异步触发供应商切换，更新 UI/托盘，并把“当前供应商”同步为实际使用的 provider
                             let fm = self.failover_manager.clone();
-                            let ah = self.app_handle.clone();
                             let pid = provider.id.clone();
                             let pname = provider.name.clone();
                             let at = app_type_str.to_string();
 
                             tokio::spawn(async move {
-                                let _ = fm.try_switch(ah.as_ref(), &at, &pid, &pname).await;
+                                let _ = fm.try_switch(&at, &pid, &pname).await;
                             });
                         }
                         // 重新计算成功率
@@ -347,15 +344,12 @@ impl RequestForwarder {
 
                                                 // 异步触发供应商切换，更新 UI/托盘
                                                 let fm = self.failover_manager.clone();
-                                                let ah = self.app_handle.clone();
                                                 let pid = provider.id.clone();
                                                 let pname = provider.name.clone();
                                                 let at = app_type_str.to_string();
 
                                                 tokio::spawn(async move {
-                                                    let _ = fm
-                                                        .try_switch(ah.as_ref(), &at, &pid, &pname)
-                                                        .await;
+                                                    let _ = fm.try_switch(&at, &pid, &pname).await;
                                                 });
                                             }
                                             if status.total_requests > 0 {
@@ -541,14 +535,11 @@ impl RequestForwarder {
                                         if should_switch {
                                             status.failover_count += 1;
                                             let fm = self.failover_manager.clone();
-                                            let ah = self.app_handle.clone();
                                             let pid = provider.id.clone();
                                             let pname = provider.name.clone();
                                             let at = app_type_str.to_string();
                                             tokio::spawn(async move {
-                                                let _ = fm
-                                                    .try_switch(ah.as_ref(), &at, &pid, &pname)
-                                                    .await;
+                                                let _ = fm.try_switch(&at, &pid, &pname).await;
                                             });
                                         }
                                         if status.total_requests > 0 {
@@ -831,52 +822,44 @@ impl RequestForwarder {
         let auth_headers = if let Some(mut auth) = adapter.extract_auth(provider) {
             // GitHub Copilot 特殊处理：从 CopilotAuthManager 获取真实 token
             if auth.strategy == AuthStrategy::GitHubCopilot {
-                if let Some(app_handle) = &self.app_handle {
-                    let copilot_state = app_handle.state::<CopilotAuthState>();
-                    let copilot_auth: tokio::sync::RwLockReadGuard<'_, CopilotAuthManager> =
-                        copilot_state.0.read().await;
+                let copilot_auth: tokio::sync::RwLockReadGuard<'_, CopilotAuthManager> =
+                    self.copilot_auth_state.read().await;
 
-                    // 从 provider.meta 获取关联的 GitHub 账号 ID（多账号支持）
-                    let account_id = provider
-                        .meta
-                        .as_ref()
-                        .and_then(|m| m.managed_account_id_for("github_copilot"));
+                // 从 provider.meta 获取关联的 GitHub 账号 ID（多账号支持）
+                let account_id = provider
+                    .meta
+                    .as_ref()
+                    .and_then(|m| m.managed_account_id_for("github_copilot"));
 
-                    // 根据账号 ID 获取对应 token（向后兼容：无账号 ID 时使用第一个账号）
-                    let token_result = match &account_id {
-                        Some(id) => {
-                            log::debug!("[Copilot] 使用指定账号 {id} 获取 token");
-                            copilot_auth.get_valid_token_for_account(id).await
-                        }
-                        None => {
-                            log::debug!("[Copilot] 使用默认账号获取 token");
-                            copilot_auth.get_valid_token().await
-                        }
-                    };
-
-                    match token_result {
-                        Ok(token) => {
-                            auth = AuthInfo::new(token, AuthStrategy::GitHubCopilot);
-                            log::debug!(
-                                "[Copilot] 成功获取 Copilot token (account={})",
-                                account_id.as_deref().unwrap_or("default")
-                            );
-                        }
-                        Err(e) => {
-                            log::error!(
-                                "[Copilot] 获取 Copilot token 失败 (account={}): {e}",
-                                account_id.as_deref().unwrap_or("default")
-                            );
-                            return Err(ProxyError::AuthError(format!(
-                                "GitHub Copilot 认证失败: {e}"
-                            )));
-                        }
+                // 根据账号 ID 获取对应 token（向后兼容：无账号 ID 时使用第一个账号）
+                let token_result = match &account_id {
+                    Some(id) => {
+                        log::debug!("[Copilot] 使用指定账号 {id} 获取 token");
+                        copilot_auth.get_valid_token_for_account(id).await
                     }
-                } else {
-                    log::error!("[Copilot] AppHandle 不可用");
-                    return Err(ProxyError::AuthError(
-                        "GitHub Copilot 认证不可用（无 AppHandle）".to_string(),
-                    ));
+                    None => {
+                        log::debug!("[Copilot] 使用默认账号获取 token");
+                        copilot_auth.get_valid_token().await
+                    }
+                };
+
+                match token_result {
+                    Ok(token) => {
+                        auth = AuthInfo::new(token, AuthStrategy::GitHubCopilot);
+                        log::debug!(
+                            "[Copilot] 成功获取 Copilot token (account={})",
+                            account_id.as_deref().unwrap_or("default")
+                        );
+                    }
+                    Err(e) => {
+                        log::error!(
+                            "[Copilot] 获取 Copilot token 失败 (account={}): {e}",
+                            account_id.as_deref().unwrap_or("default")
+                        );
+                        return Err(ProxyError::AuthError(format!(
+                            "GitHub Copilot 认证失败: {e}"
+                        )));
+                    }
                 }
             }
             adapter.get_auth_headers(&auth)
@@ -1202,13 +1185,7 @@ impl RequestForwarder {
     }
 
     async fn is_copilot_openai_vendor_model(&self, provider: &Provider, model_id: &str) -> bool {
-        let Some(app_handle) = &self.app_handle else {
-            log::debug!("[Copilot] AppHandle unavailable, fallback to chat/completions");
-            return false;
-        };
-
-        let copilot_state = app_handle.state::<CopilotAuthState>();
-        let copilot_auth = copilot_state.0.read().await;
+        let copilot_auth = self.copilot_auth_state.read().await;
         let account_id = provider
             .meta
             .as_ref()

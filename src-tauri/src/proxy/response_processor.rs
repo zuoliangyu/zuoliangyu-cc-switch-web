@@ -723,7 +723,11 @@ mod tests {
             start_time: Arc::new(RwLock::new(None)),
             current_providers: Arc::new(RwLock::new(HashMap::new())),
             provider_router: Arc::new(ProviderRouter::new(db.clone())),
-            app_handle: None,
+            copilot_auth_state: Arc::new(RwLock::new(
+                crate::proxy::providers::copilot_auth::CopilotAuthManager::new(
+                    crate::config::get_app_config_dir(),
+                ),
+            )),
             failover_manager: Arc::new(FailoverSwitchManager::new(db)),
         }
     }

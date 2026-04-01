@@ -83,6 +83,8 @@
 - 旧桌面 `run()` 启动器、`tauri-build`、`tauri.conf.json`、`tauri-plugin-log/process` 已从当前分支移除
 - `appConfigDir` 覆盖路径已改为本地 Rust 服务写入独立文件，不再依赖 Tauri Store
 - 原生目录选择器、原生文件对话框、系统链接/目录打开命令已从当前分支的 Rust 侧移除，Web 模式统一走手填、上传下载或复制路径
+- `ProxyService -> ProxyServer -> RequestForwarder` 的核心链路已改为显式注入 `copilot_auth_state`，不再通过 `AppHandle.state()` 读取容器状态
+- Failover 热切换与 WebDAV 自动同步的服务层逻辑已去掉 `AppHandle` 依赖，当前 Web-only 主链不再依赖 Tauri 事件才能运行
 
 ## 四、当前真正的收尾重点
 

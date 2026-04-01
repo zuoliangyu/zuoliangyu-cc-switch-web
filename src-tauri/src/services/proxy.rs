@@ -6,6 +6,7 @@ use crate::app_config::AppType;
 use crate::config::{get_claude_settings_path, read_json_file, write_json_file};
 use crate::database::Database;
 use crate::provider::Provider;
+use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::proxy::server::ProxyServer;
 use crate::proxy::types::*;
 use crate::services::provider::{
@@ -36,17 +37,26 @@ const CLAUDE_MODEL_OVERRIDE_ENV_KEYS: [&str; 6] = [
 #[derive(Clone)]
 pub struct ProxyService {
     db: Arc<Database>,
+    copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
     server: Arc<RwLock<Option<ProxyServer>>>,
-    /// AppHandle，用于传递给 ProxyServer 以支持故障转移时的 UI 更新
-    app_handle: Arc<RwLock<Option<tauri::AppHandle>>>,
 }
 
 impl ProxyService {
     pub fn new(db: Arc<Database>) -> Self {
+        let copilot_auth_state = Arc::new(RwLock::new(CopilotAuthManager::new(
+            crate::config::get_app_config_dir(),
+        )));
+        Self::new_with_auth(db, copilot_auth_state)
+    }
+
+    pub fn new_with_auth(
+        db: Arc<Database>,
+        copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+    ) -> Self {
         Self {
             db,
+            copilot_auth_state,
             server: Arc::new(RwLock::new(None)),
-            app_handle: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -73,13 +83,6 @@ impl ProxyService {
         }
 
         Ok(())
-    }
-
-    /// 设置 AppHandle（在应用初始化时调用）
-    pub fn set_app_handle(&self, handle: tauri::AppHandle) {
-        futures::executor::block_on(async {
-            *self.app_handle.write().await = Some(handle);
-        });
     }
 
     /// 启动代理服务器
@@ -118,8 +121,11 @@ impl ProxyService {
         }
 
         // 4. 创建并启动服务器
-        let app_handle = self.app_handle.read().await.clone();
-        let server = ProxyServer::new(config.clone(), self.db.clone(), app_handle);
+        let server = ProxyServer::new(
+            config.clone(),
+            self.db.clone(),
+            self.copilot_auth_state.clone(),
+        );
         let info = server
             .start()
             .await
@@ -1488,15 +1494,22 @@ impl ProxyService {
         app_type: &str,
         provider: &Provider,
     ) -> Result<(), String> {
+        Self::update_live_backup_from_provider_for_db(self.db.as_ref(), app_type, provider).await
+    }
+
+    pub async fn update_live_backup_from_provider_for_db(
+        db: &Database,
+        app_type: &str,
+        provider: &Provider,
+    ) -> Result<(), String> {
         let app_type_enum =
             AppType::from_str(app_type).map_err(|_| format!("未知的应用类型: {app_type}"))?;
         let mut effective_settings =
-            build_effective_settings_with_common_config(self.db.as_ref(), &app_type_enum, provider)
+            build_effective_settings_with_common_config(db, &app_type_enum, provider)
                 .map_err(|e| format!("构建 {app_type} 有效配置失败: {e}"))?;
 
         if matches!(app_type_enum, AppType::Codex) {
-            let existing_backup = self
-                .db
+            let existing_backup = db
                 .get_live_backup(app_type)
                 .await
                 .map_err(|e| format!("读取 {app_type} 现有备份失败: {e}"))?;
@@ -1531,8 +1544,7 @@ impl ProxyService {
             }
         };
 
-        self.db
-            .save_live_backup(app_type, &backup_json)
+        db.save_live_backup(app_type, &backup_json)
             .await
             .map_err(|e| format!("更新 {app_type} 备份失败: {e}"))?;
 
@@ -1827,8 +1839,8 @@ impl ProxyService {
                     .map_err(|e| format!("重启前停止代理服务器失败: {e}"))?;
             }
 
-            let app_handle = self.app_handle.read().await.clone();
-            let new_server = ProxyServer::new(new_config, self.db.clone(), app_handle);
+            let new_server =
+                ProxyServer::new(new_config, self.db.clone(), self.copilot_auth_state.clone());
             new_server
                 .start()
                 .await

@@ -17,23 +17,23 @@ use tower_http::services::ServeDir;
 
 use crate::app_config::{AppType, McpServer};
 use crate::database::FailoverQueueItem;
+use crate::prompt::Prompt;
 use crate::provider::Provider;
 use crate::proxy::circuit_breaker::{CircuitBreakerConfig, CircuitBreakerStats};
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::proxy::types::{
-    AppProxyConfig, GlobalProxyConfig, LogConfig, OptimizerConfig, ProviderHealth,
-    ProxyConfig, ProxyServerInfo, ProxyStatus, ProxyTakeoverStatus, RectifierConfig,
+    AppProxyConfig, GlobalProxyConfig, LogConfig, OptimizerConfig, ProviderHealth, ProxyConfig,
+    ProxyServerInfo, ProxyStatus, ProxyTakeoverStatus, RectifierConfig,
 };
-use crate::prompt::Prompt;
 use crate::services::omo::{OmoLocalFileData, OmoService, SLIM, STANDARD};
 use crate::services::skill::{
     DiscoverableSkill, ImportSkillSelection, SkillBackupEntry, SkillRepo, SkillUninstallResult,
 };
 use crate::services::webdav_sync as webdav_sync_service;
 use crate::services::{McpService, PromptService, ProviderService, SwitchResult};
+use crate::settings::{self, WebDavSyncSettings};
 use crate::store::AppState;
 use crate::Database;
-use crate::settings::{self, WebDavSyncSettings};
 use tokio::sync::RwLock;
 
 #[derive(Clone)]
@@ -215,8 +215,7 @@ struct RequestLogsPayload {
 #[serde(rename_all = "camelCase")]
 struct ToolVersionsRequest {
     tools: Option<Vec<String>>,
-    wsl_shell_by_tool:
-        Option<HashMap<String, crate::commands::WslShellPreferenceInput>>,
+    wsl_shell_by_tool: Option<HashMap<String, crate::commands::WslShellPreferenceInput>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -321,21 +320,25 @@ fn persist_webdav_sync_error(
 }
 
 fn webdav_not_configured_error() -> ApiError {
-    ApiError::bad_request(crate::error::AppError::localized(
-        "webdav.sync.not_configured",
-        "未配置 WebDAV 同步",
-        "WebDAV sync is not configured.",
+    ApiError::bad_request(
+        crate::error::AppError::localized(
+            "webdav.sync.not_configured",
+            "未配置 WebDAV 同步",
+            "WebDAV sync is not configured.",
+        )
+        .to_string(),
     )
-    .to_string())
 }
 
 fn webdav_sync_disabled_error() -> ApiError {
-    ApiError::bad_request(crate::error::AppError::localized(
-        "webdav.sync.disabled",
-        "WebDAV 同步未启用",
-        "WebDAV sync is disabled.",
+    ApiError::bad_request(
+        crate::error::AppError::localized(
+            "webdav.sync.disabled",
+            "WebDAV 同步未启用",
+            "WebDAV sync is disabled.",
+        )
+        .to_string(),
     )
-    .to_string())
 }
 
 fn require_enabled_webdav_settings() -> Result<WebDavSyncSettings, ApiError> {
@@ -466,9 +469,7 @@ async fn get_current_prompt_file_content(
     Ok(Json(content))
 }
 
-async fn get_live_provider_ids(
-    Path(app): Path<String>,
-) -> Result<Json<Vec<String>>, ApiError> {
+async fn get_live_provider_ids(Path(app): Path<String>) -> Result<Json<Vec<String>>, ApiError> {
     let provider_ids = match AppType::from_str(&app) {
         Ok(AppType::OpenCode) => crate::opencode_config::get_providers()
             .map(|providers| providers.keys().cloned().collect()),
@@ -516,8 +517,12 @@ async fn remove_provider_from_live_config(
     Path((app, id)): Path<(String, String)>,
 ) -> Result<Json<bool>, ApiError> {
     let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    crate::services::ProviderService::remove_from_live_config(state.app_state.as_ref(), app_type, &id)
-        .map_err(|e| ApiError::internal(format!("failed to remove provider from live config: {e}")))?;
+    crate::services::ProviderService::remove_from_live_config(
+        state.app_state.as_ref(),
+        app_type,
+        &id,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to remove provider from live config: {e}")))?;
     Ok(Json(true))
 }
 
@@ -616,12 +621,10 @@ async fn test_usage_script(
 async fn test_api_endpoints(
     Json(payload): Json<EndpointTestRequest>,
 ) -> Result<Json<Vec<crate::services::EndpointLatency>>, ApiError> {
-    let results = crate::services::SpeedtestService::test_endpoints(
-        payload.urls,
-        payload.timeout_secs,
-    )
-    .await
-    .map_err(|e| ApiError::internal(format!("failed to test api endpoints: {e}")))?;
+    let results =
+        crate::services::SpeedtestService::test_endpoints(payload.urls, payload.timeout_secs)
+            .await
+            .map_err(|e| ApiError::internal(format!("failed to test api endpoints: {e}")))?;
     Ok(Json(results))
 }
 
@@ -663,8 +666,13 @@ async fn update_endpoint_last_used(
     Json(payload): Json<CustomEndpointUrlRequest>,
 ) -> Result<StatusCode, ApiError> {
     let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    ProviderService::update_endpoint_last_used(state.app_state.as_ref(), app_type, &id, payload.url)
-        .map_err(|e| ApiError::internal(format!("failed to update endpoint last used: {e}")))?;
+    ProviderService::update_endpoint_last_used(
+        state.app_state.as_ref(),
+        app_type,
+        &id,
+        payload.url,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to update endpoint last used: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -763,8 +771,9 @@ async fn import_skills_from_apps(
     State(state): State<WebApiState>,
     Json(imports): Json<Vec<ImportSkillSelection>>,
 ) -> Result<Json<Vec<crate::app_config::InstalledSkill>>, ApiError> {
-    let skills = crate::services::skill::SkillService::import_from_apps(&state.app_state.db, imports)
-        .map_err(|e| ApiError::internal(format!("failed to import skills from apps: {e}")))?;
+    let skills =
+        crate::services::skill::SkillService::import_from_apps(&state.app_state.db, imports)
+            .map_err(|e| ApiError::internal(format!("failed to import skills from apps: {e}")))?;
     Ok(Json(skills))
 }
 
@@ -831,9 +840,7 @@ async fn install_skill_unified(
     Ok(Json(installed))
 }
 
-async fn delete_skill_backup(
-    Path(backup_id): Path<String>,
-) -> Result<Json<bool>, ApiError> {
+async fn delete_skill_backup(Path(backup_id): Path<String>) -> Result<Json<bool>, ApiError> {
     crate::services::skill::SkillService::delete_backup(&backup_id)
         .map_err(|e| ApiError::internal(format!("failed to delete skill backup: {e}")))?;
     Ok(Json(true))
@@ -952,9 +959,10 @@ async fn set_openclaw_default_model(
     Ok(Json(outcome))
 }
 
-async fn get_openclaw_model_catalog(
-) -> Result<Json<Option<HashMap<String, crate::openclaw_config::OpenClawModelCatalogEntry>>>, ApiError>
-{
+async fn get_openclaw_model_catalog() -> Result<
+    Json<Option<HashMap<String, crate::openclaw_config::OpenClawModelCatalogEntry>>>,
+    ApiError,
+> {
     let catalog = crate::openclaw_config::get_model_catalog()
         .map_err(|e| ApiError::internal(format!("failed to load openclaw model catalog: {e}")))?;
     Ok(Json(catalog))
@@ -978,14 +986,12 @@ async fn get_openclaw_agents_defaults(
 async fn set_openclaw_agents_defaults(
     Json(defaults): Json<crate::openclaw_config::OpenClawAgentsDefaults>,
 ) -> Result<Json<crate::openclaw_config::OpenClawWriteOutcome>, ApiError> {
-    let outcome = crate::openclaw_config::set_agents_defaults(&defaults).map_err(|e| {
-        ApiError::internal(format!("failed to save openclaw agents defaults: {e}"))
-    })?;
+    let outcome = crate::openclaw_config::set_agents_defaults(&defaults)
+        .map_err(|e| ApiError::internal(format!("failed to save openclaw agents defaults: {e}")))?;
     Ok(Json(outcome))
 }
 
-async fn get_openclaw_env(
-) -> Result<Json<crate::openclaw_config::OpenClawEnvConfig>, ApiError> {
+async fn get_openclaw_env() -> Result<Json<crate::openclaw_config::OpenClawEnvConfig>, ApiError> {
     let env = crate::openclaw_config::get_env_config()
         .map_err(|e| ApiError::internal(format!("failed to load openclaw env config: {e}")))?;
     Ok(Json(env))
@@ -999,8 +1005,8 @@ async fn set_openclaw_env(
     Ok(Json(outcome))
 }
 
-async fn get_openclaw_tools(
-) -> Result<Json<crate::openclaw_config::OpenClawToolsConfig>, ApiError> {
+async fn get_openclaw_tools() -> Result<Json<crate::openclaw_config::OpenClawToolsConfig>, ApiError>
+{
     let tools = crate::openclaw_config::get_tools_config()
         .map_err(|e| ApiError::internal(format!("failed to load openclaw tools config: {e}")))?;
     Ok(Json(tools))
@@ -1048,9 +1054,10 @@ async fn get_session_messages(
 async fn delete_session(
     Json(payload): Json<crate::session_manager::DeleteSessionRequest>,
 ) -> Result<Json<bool>, ApiError> {
-    let deleted = crate::delete_session(payload.provider_id, payload.session_id, payload.source_path)
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to delete session: {e}")))?;
+    let deleted =
+        crate::delete_session(payload.provider_id, payload.session_id, payload.source_path)
+            .await
+            .map_err(|e| ApiError::internal(format!("failed to delete session: {e}")))?;
     Ok(Json(deleted))
 }
 
@@ -1312,7 +1319,8 @@ async fn install_skill_archives(
     let current_app = current_app
         .filter(|value| !value.trim().is_empty())
         .ok_or_else(|| ApiError::bad_request("missing currentApp in upload payload"))?;
-    let app_type = AppType::from_str(&current_app).map_err(|e| ApiError::bad_request(e.to_string()))?;
+    let app_type =
+        AppType::from_str(&current_app).map_err(|e| ApiError::bad_request(e.to_string()))?;
 
     if uploads.is_empty() {
         return Err(ApiError::bad_request("missing archives in upload payload"));
@@ -1346,8 +1354,11 @@ async fn install_skill_archives(
             ))
         })?;
 
-        let install_result =
-            crate::services::skill::SkillService::install_from_zip(&state.app_state.db, &archive_path, &app_type);
+        let install_result = crate::services::skill::SkillService::install_from_zip(
+            &state.app_state.db,
+            &archive_path,
+            &app_type,
+        );
 
         let _ = std::fs::remove_file(&archive_path);
 
@@ -1410,7 +1421,13 @@ impl ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        (self.status, Json(ErrorResponse { error: self.message })).into_response()
+        (
+            self.status,
+            Json(ErrorResponse {
+                error: self.message,
+            }),
+        )
+            .into_response()
     }
 }
 
@@ -1475,7 +1492,10 @@ async fn import_config_upload(
             continue;
         }
 
-        let current_file_name = field.file_name().unwrap_or("cc-switch-import.sql").to_string();
+        let current_file_name = field
+            .file_name()
+            .unwrap_or("cc-switch-import.sql")
+            .to_string();
         let bytes = field.bytes().await.map_err(|e| {
             ApiError::bad_request(format!(
                 "failed to read uploaded config file {current_file_name}: {e}"
@@ -1550,9 +1570,7 @@ async fn webdav_test_connection(
     })))
 }
 
-async fn webdav_sync_upload(
-    State(state): State<WebApiState>,
-) -> Result<Json<Value>, ApiError> {
+async fn webdav_sync_upload(State(state): State<WebApiState>) -> Result<Json<Value>, ApiError> {
     let db = state.app_state.db.clone();
     let mut sync_settings = require_enabled_webdav_settings()?;
     let result = webdav_sync_service::run_with_sync_lock(webdav_sync_service::upload(
@@ -1570,9 +1588,7 @@ async fn webdav_sync_upload(
     }
 }
 
-async fn webdav_sync_download(
-    State(state): State<WebApiState>,
-) -> Result<Json<Value>, ApiError> {
+async fn webdav_sync_download(State(state): State<WebApiState>) -> Result<Json<Value>, ApiError> {
     let db = state.app_state.db.clone();
     let mut sync_settings = require_enabled_webdav_settings()?;
     let _auto_sync_suppression = crate::services::webdav_auto_sync::AutoSyncSuppressionGuard::new();
@@ -1772,10 +1788,12 @@ async fn auth_start_login(
     State(state): State<WebApiState>,
     Json(payload): Json<AuthStartLoginRequest>,
 ) -> Result<Json<crate::commands::ManagedAuthDeviceCodeResponse>, ApiError> {
-    let response =
-        crate::commands::auth_start_login_internal(&payload.auth_provider, &state.copilot_auth_state)
-            .await
-            .map_err(|e| ApiError::internal(format!("failed to start auth login: {e}")))?;
+    let response = crate::commands::auth_start_login_internal(
+        &payload.auth_provider,
+        &state.copilot_auth_state,
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to start auth login: {e}")))?;
     Ok(Json(response))
 }
 
@@ -1853,9 +1871,7 @@ async fn auth_logout(
     Ok(StatusCode::NO_CONTENT)
 }
 
-async fn create_db_backup(
-    State(state): State<WebApiState>,
-) -> Result<Json<String>, ApiError> {
+async fn create_db_backup(State(state): State<WebApiState>) -> Result<Json<String>, ApiError> {
     let db = state.app_state.db.clone();
     let filename = tokio::task::spawn_blocking(move || match db.backup_database_file()? {
         Some(path) => Ok(path
@@ -1873,8 +1889,7 @@ async fn create_db_backup(
     Ok(Json(filename))
 }
 
-async fn list_db_backups(
-) -> Result<Json<Vec<crate::database::backup::BackupEntry>>, ApiError> {
+async fn list_db_backups() -> Result<Json<Vec<crate::database::backup::BackupEntry>>, ApiError> {
     let backups = crate::Database::list_backups()
         .map_err(|e| ApiError::internal(format!("failed to list database backups: {e}")))?;
     Ok(Json(backups))
@@ -1900,9 +1915,7 @@ async fn rename_db_backup(
     Ok(Json(filename))
 }
 
-async fn delete_db_backup(
-    Path(filename): Path<String>,
-) -> Result<StatusCode, ApiError> {
+async fn delete_db_backup(Path(filename): Path<String>) -> Result<StatusCode, ApiError> {
     crate::Database::delete_backup(&filename)
         .map_err(|e| ApiError::internal(format!("failed to delete database backup: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
@@ -1915,10 +1928,13 @@ async fn get_providers(
     let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
     let providers =
         ProviderService::list(state.app_state.as_ref(), app_type.clone()).map_err(|e| {
-            ApiError::internal(format!("failed to load providers for {}: {e}", app_type.as_str()))
+            ApiError::internal(format!(
+                "failed to load providers for {}: {e}",
+                app_type.as_str()
+            ))
         })?;
-    let current_provider_id =
-        ProviderService::current(state.app_state.as_ref(), app_type.clone()).map_err(|e| {
+    let current_provider_id = ProviderService::current(state.app_state.as_ref(), app_type.clone())
+        .map_err(|e| {
             ApiError::internal(format!(
                 "failed to load current provider for {}: {e}",
                 app_type.as_str()
@@ -1936,8 +1952,8 @@ async fn get_current_provider(
     Path(app): Path<String>,
 ) -> Result<Json<String>, ApiError> {
     let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let current_provider_id =
-        ProviderService::current(state.app_state.as_ref(), app_type.clone()).map_err(|e| {
+    let current_provider_id = ProviderService::current(state.app_state.as_ref(), app_type.clone())
+        .map_err(|e| {
             ApiError::internal(format!(
                 "failed to load current provider for {}: {e}",
                 app_type.as_str()
@@ -2076,7 +2092,9 @@ async fn update_providers_sort_order(
 ) -> Result<Json<bool>, ApiError> {
     let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
     let updated = ProviderService::update_sort_order(state.app_state.as_ref(), app_type, updates)
-        .map_err(|e| ApiError::internal(format!("failed to update provider sort order: {e}")))?;
+        .map_err(|e| {
+        ApiError::internal(format!("failed to update provider sort order: {e}"))
+    })?;
     Ok(Json(updated))
 }
 
@@ -2152,9 +2170,7 @@ async fn is_proxy_running(State(state): State<WebApiState>) -> Json<bool> {
     Json(state.app_state.proxy_service.is_running().await)
 }
 
-async fn is_live_takeover_active(
-    State(state): State<WebApiState>,
-) -> Result<Json<bool>, ApiError> {
+async fn is_live_takeover_active(State(state): State<WebApiState>) -> Result<Json<bool>, ApiError> {
     let active = state
         .app_state
         .proxy_service
@@ -2282,7 +2298,9 @@ async fn set_default_cost_multiplier(
         .db
         .set_default_cost_multiplier(app_type.as_str(), &payload.value)
         .await
-        .map_err(|e| ApiError::internal(format!("failed to update default cost multiplier: {e}")))?;
+        .map_err(|e| {
+            ApiError::internal(format!("failed to update default cost multiplier: {e}"))
+        })?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -2348,7 +2366,9 @@ async fn reset_circuit_breaker(
         .proxy_service
         .reset_provider_circuit_breaker(&provider_id, &app_type_str)
         .await
-        .map_err(|e| ApiError::internal(format!("failed to reset in-memory circuit breaker: {e}")))?;
+        .map_err(|e| {
+            ApiError::internal(format!("failed to reset in-memory circuit breaker: {e}"))
+        })?;
 
     let (app_enabled, auto_failover_enabled) = match state
         .app_state
@@ -2358,15 +2378,14 @@ async fn reset_circuit_breaker(
     {
         Ok(config) => (config.enabled, config.auto_failover_enabled),
         Err(e) => {
-            log::error!("[{app_type_str}] Failed to read proxy_config: {e}, defaulting to disabled");
+            log::error!(
+                "[{app_type_str}] Failed to read proxy_config: {e}, defaulting to disabled"
+            );
             (false, false)
         }
     };
 
-    if app_enabled
-        && auto_failover_enabled
-        && state.app_state.proxy_service.is_running().await
-    {
+    if app_enabled && auto_failover_enabled && state.app_state.proxy_service.is_running().await {
         let current_id = state
             .app_state
             .db
@@ -2397,7 +2416,9 @@ async fn reset_circuit_breaker(
                         .proxy_service
                         .switch_proxy_target(&app_type_str, &provider_id)
                         .await
-                        .map_err(|e| ApiError::internal(format!("failed to switch recovered provider: {e}")))?;
+                        .map_err(|e| {
+                            ApiError::internal(format!("failed to switch recovered provider: {e}"))
+                        })?;
                 }
             }
         }
@@ -2427,9 +2448,7 @@ async fn update_circuit_breaker_config(
         .db
         .update_circuit_breaker_config(&config)
         .await
-        .map_err(|e| {
-            ApiError::internal(format!("failed to update circuit breaker config: {e}"))
-        })?;
+        .map_err(|e| ApiError::internal(format!("failed to update circuit breaker config: {e}")))?;
 
     state
         .app_state
@@ -2489,7 +2508,9 @@ async fn add_to_failover_queue(
         .app_state
         .db
         .add_to_failover_queue(app_type.as_str(), &payload.provider_id)
-        .map_err(|e| ApiError::internal(format!("failed to add provider to failover queue: {e}")))?;
+        .map_err(|e| {
+            ApiError::internal(format!("failed to add provider to failover queue: {e}"))
+        })?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -2503,7 +2524,9 @@ async fn remove_from_failover_queue(
         .db
         .remove_from_failover_queue(app_type.as_str(), &provider_id)
         .map_err(|e| {
-            ApiError::internal(format!("failed to remove provider from failover queue: {e}"))
+            ApiError::internal(format!(
+                "failed to remove provider from failover queue: {e}"
+            ))
         })?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -2539,13 +2562,13 @@ async fn set_auto_failover_enabled(
             .map_err(|e| ApiError::internal(format!("failed to load failover queue: {e}")))?;
 
         if queue.is_empty() {
-            let current_id =
-                crate::settings::get_effective_current_provider(state.app_state.db.as_ref(), &app_type)
-                    .map_err(|e| {
-                        ApiError::internal(format!(
-                            "failed to get current provider for failover: {e}"
-                        ))
-                    })?;
+            let current_id = crate::settings::get_effective_current_provider(
+                state.app_state.db.as_ref(),
+                &app_type,
+            )
+            .map_err(|e| {
+                ApiError::internal(format!("failed to get current provider for failover: {e}"))
+            })?;
 
             let Some(current_id) = current_id else {
                 return Err(ApiError::bad_request(
@@ -2639,12 +2662,9 @@ fn resolve_frontend_dist_dir() -> Option<PathBuf> {
 pub async fn run_web_server() -> Result<(), String> {
     let db = Arc::new(Database::init().map_err(|e| format!("database init failed: {e}"))?);
     let app_state = Arc::new(AppState::new(db));
-    let copilot_auth_state = Arc::new(RwLock::new(CopilotAuthManager::new(
-        crate::config::get_app_config_dir(),
-    )));
     let state = WebApiState {
+        copilot_auth_state: app_state.copilot_auth_state.clone(),
         app_state,
-        copilot_auth_state,
     };
     let bind_addr = resolve_bind_addr()?;
 
@@ -2662,7 +2682,10 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/webdav/upload", post(webdav_sync_upload))
         .route("/api/webdav/download", post(webdav_sync_download))
         .route("/api/webdav/settings", post(webdav_sync_save_settings))
-        .route("/api/webdav/remote-info", get(webdav_sync_fetch_remote_info))
+        .route(
+            "/api/webdav/remote-info",
+            get(webdav_sync_fetch_remote_info),
+        )
         .route(
             "/api/settings/rectifier",
             get(get_rectifier_config).put(set_rectifier_config),
@@ -2671,7 +2694,10 @@ pub async fn run_web_server() -> Result<(), String> {
             "/api/settings/optimizer",
             get(get_optimizer_config).put(set_optimizer_config),
         )
-        .route("/api/settings/log-config", get(get_log_config).put(set_log_config))
+        .route(
+            "/api/settings/log-config",
+            get(get_log_config).put(set_log_config),
+        )
         .route(
             "/api/settings/stream-check-config",
             get(get_stream_check_config).put(set_stream_check_config),
@@ -2695,18 +2721,21 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/auth/:auth_provider/accounts", get(auth_list_accounts))
         .route("/api/auth/:auth_provider/status", get(auth_get_status))
         .route("/api/auth/remove-account", post(auth_remove_account))
-        .route("/api/auth/set-default-account", post(auth_set_default_account))
+        .route(
+            "/api/auth/set-default-account",
+            post(auth_set_default_account),
+        )
         .route("/api/auth/logout", post(auth_logout))
-        .route("/api/backups/db", get(list_db_backups).post(create_db_backup))
+        .route(
+            "/api/backups/db",
+            get(list_db_backups).post(create_db_backup),
+        )
         .route("/api/backups/db/rename", put(rename_db_backup))
         .route(
             "/api/backups/db/:filename",
             axum::routing::delete(delete_db_backup),
         )
-        .route(
-            "/api/backups/db/:filename/restore",
-            post(restore_db_backup),
-        )
+        .route("/api/backups/db/:filename/restore", post(restore_db_backup))
         .route("/api/providers/:app", get(get_providers).post(add_provider))
         .route(
             "/api/providers/:app/sort-order",
@@ -2745,8 +2774,14 @@ pub async fn run_web_server() -> Result<(), String> {
             "/api/providers/:app/:id/custom-endpoints/last-used",
             post(update_endpoint_last_used),
         )
-        .route("/api/providers/:app/live-provider-ids", get(get_live_provider_ids))
-        .route("/api/providers/:app/import-live", post(import_providers_from_live))
+        .route(
+            "/api/providers/:app/live-provider-ids",
+            get(get_live_provider_ids),
+        )
+        .route(
+            "/api/providers/:app/import-live",
+            post(import_providers_from_live),
+        )
         .route(
             "/api/providers/:app/live-config/:id",
             axum::routing::delete(remove_provider_from_live_config),
@@ -2767,7 +2802,10 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/skills/backups", get(get_skill_backups))
         .route("/api/skills/unmanaged", get(scan_unmanaged_skills))
         .route("/api/skills/import", post(import_skills_from_apps))
-        .route("/api/skills/repos", get(get_skill_repos).post(add_skill_repo))
+        .route(
+            "/api/skills/repos",
+            get(get_skill_repos).post(add_skill_repo),
+        )
         .route(
             "/api/skills/repos/:owner/:name",
             axum::routing::delete(remove_skill_repo),
@@ -2818,8 +2856,14 @@ pub async fn run_web_server() -> Result<(), String> {
             "/api/openclaw/agents-defaults",
             get(get_openclaw_agents_defaults).put(set_openclaw_agents_defaults),
         )
-        .route("/api/openclaw/env", get(get_openclaw_env).put(set_openclaw_env))
-        .route("/api/openclaw/tools", get(get_openclaw_tools).put(set_openclaw_tools))
+        .route(
+            "/api/openclaw/env",
+            get(get_openclaw_env).put(set_openclaw_env),
+        )
+        .route(
+            "/api/openclaw/tools",
+            get(get_openclaw_tools).put(set_openclaw_tools),
+        )
         .route("/api/openclaw/health", get(scan_openclaw_config_health))
         .route(
             "/api/openclaw/live-provider/:provider_id",
@@ -2857,9 +2901,15 @@ pub async fn run_web_server() -> Result<(), String> {
             put(upsert_prompt).delete(delete_prompt),
         )
         .route("/api/prompts/:app/:id/enable", post(enable_prompt))
-        .route("/api/mcp/servers", get(get_mcp_servers).post(upsert_mcp_server))
+        .route(
+            "/api/mcp/servers",
+            get(get_mcp_servers).post(upsert_mcp_server),
+        )
         .route("/api/mcp/servers/import", post(import_mcp_from_apps))
-        .route("/api/mcp/servers/:id", axum::routing::delete(delete_mcp_server))
+        .route(
+            "/api/mcp/servers/:id",
+            axum::routing::delete(delete_mcp_server),
+        )
         .route("/api/mcp/servers/:id/apps/:app", put(toggle_mcp_app))
         .route(
             "/api/providers/:app/:id",
@@ -2886,7 +2936,10 @@ pub async fn run_web_server() -> Result<(), String> {
             get(is_live_takeover_active),
         )
         .route("/api/proxy/start", post(start_proxy_server))
-        .route("/api/proxy/stop-with-restore", post(stop_proxy_with_restore))
+        .route(
+            "/api/proxy/stop-with-restore",
+            post(stop_proxy_with_restore),
+        )
         .route(
             "/api/proxy/apps/:app/takeover",
             put(set_proxy_takeover_for_app),

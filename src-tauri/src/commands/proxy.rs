@@ -281,7 +281,6 @@ pub async fn get_provider_health(
 /// 2. 如果恢复的供应商在队列中优先级更高（queue_order 更小），则自动切换
 #[tauri::command]
 pub async fn reset_circuit_breaker(
-    app_handle: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     provider_id: String,
     app_type: String,
@@ -349,7 +348,7 @@ pub async fn reset_circuit_breaker(
                     let switch_manager =
                         crate::proxy::failover_switch::FailoverSwitchManager::new(db.clone());
                     if let Err(e) = switch_manager
-                        .try_switch(Some(&app_handle), &app_type, &provider_id, &provider_name)
+                        .try_switch(&app_type, &provider_id, &provider_name)
                         .await
                     {
                         log::error!("[Recovery] 自动切换失败: {e}");
