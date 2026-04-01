@@ -43,8 +43,8 @@
 | `pick_directory` | Web 未映射 | 不再迁移 | 浏览器不能可靠调用本地原生目录选择器，当前已改为手填路径 |
 | `save_file_dialog` / `open_file_dialog` | Web 未映射 | 不再迁移 | Web 已改用上传/下载方案 |
 | `open_workspace_directory` | Web 未映射 | 不再迁移 | Web 页面已降级为复制路径 |
-| `open_provider_terminal` | Web 未映射 | 不再迁移 | Web 页面已隐藏该入口 |
-| `launch_session_terminal` | Web 未映射 | 不再迁移 | Web 页面已降级为复制恢复命令 |
+| `open_provider_terminal` | Web 未映射 | 不再迁移 | Web 分支已移除该入口，避免依赖桌面终端 |
+| `launch_session_terminal` | Web 未映射 | 不再迁移 | Web 分支统一复制恢复命令，不再拉起终端 |
 | `open_app_config_folder` / `open_config_folder` | Web 未映射 | 不再迁移 | 与本地 GUI 文件管理器强耦合 |
 | `apply_claude_plugin_config` | Web 未映射 | 建议下线或桌面专用 | 属于旧桌面集成逻辑 |
 | `apply_claude_onboarding_skip` / `clear_claude_onboarding_skip` | Web 未映射 | 建议下线或桌面专用 | 属于 Claude 桌面集成兼容逻辑 |
@@ -58,7 +58,7 @@
 |---|---|
 | 打开工作区目录 | 复制目录路径 |
 | 打开 Session 终端 | 复制恢复命令 |
-| 打开 Provider 专属终端 | Web 下隐藏入口 |
+| 打开 Provider 专属终端 | Web 分支移除该入口 |
 | 原生文件导入 | 浏览器上传 SQL |
 | 原生文件导出 | 浏览器下载 SQL |
 | 原生目录选择器 | 手动填写目录覆盖 |
@@ -76,6 +76,7 @@
 - 前端托盘菜单刷新 API 已在 Web 运行时收口为 no-op，避免继续误调用桌面壳能力
 - 桌面自动更新与便携模式检测的 Rust 命令、Updater 插件依赖已从当前分支移除
 - 已无前端入口的 `open_config_folder` / `open_app_config_folder` 命令已从当前分支移除
+- Provider 专属终端与 Session 终端拉起命令已从当前分支移除，统一降级为复制操作
 
 ## 四、当前真正的收尾重点
 

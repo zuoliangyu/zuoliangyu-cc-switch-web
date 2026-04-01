@@ -674,19 +674,6 @@ pub fn effective_backup_retain_count() -> usize {
         .unwrap_or(10)
 }
 
-// ===== 终端设置管理函数 =====
-
-/// 获取首选终端应用
-pub fn get_preferred_terminal() -> Option<String> {
-    settings_store()
-        .read()
-        .unwrap_or_else(|e| {
-            log::warn!("设置锁已毒化，使用恢复值: {e}");
-            e.into_inner()
-        })
-        .preferred_terminal
-        .clone()
-}
 
 // ===== WebDAV 同步设置管理函数 =====
 

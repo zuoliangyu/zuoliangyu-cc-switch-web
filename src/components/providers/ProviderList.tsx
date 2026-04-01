@@ -43,7 +43,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { settingsApi } from "@/lib/api/settings";
-import { isWebRuntime } from "@/lib/runtime/tauri/env";
 
 interface ProviderListProps {
   providers: Record<string, Provider>;
@@ -58,7 +57,6 @@ interface ProviderListProps {
   onDuplicate: (provider: Provider) => void;
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
-  onOpenTerminal?: (provider: Provider) => void;
   onCreate?: () => void;
   isLoading?: boolean;
   isProxyRunning?: boolean; // 代理服务运行状态
@@ -80,7 +78,6 @@ export function ProviderList({
   onDuplicate,
   onConfigureUsage,
   onOpenWebsite,
-  onOpenTerminal,
   onCreate,
   isLoading = false,
   isProxyRunning = false,
@@ -89,7 +86,6 @@ export function ProviderList({
   onSetAsDefault,
 }: ProviderListProps) {
   const { t } = useTranslation();
-  const isWebMode = isWebRuntime();
   const { checkProvider, isChecking } = useStreamCheck(appId);
   const { sortedProviders, sensors, handleDragEnd } = useDragSort(
     providers,
@@ -349,7 +345,6 @@ export function ProviderList({
                 onDuplicate={onDuplicate}
                 onConfigureUsage={onConfigureUsage}
                 onOpenWebsite={onOpenWebsite}
-                onOpenTerminal={isWebMode ? undefined : onOpenTerminal}
                 onTest={
                   appId !== "opencode" && appId !== "openclaw"
                     ? handleTest
@@ -486,7 +481,6 @@ interface SortableProviderCardProps {
   onDuplicate: (provider: Provider) => void;
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
-  onOpenTerminal?: (provider: Provider) => void;
   onTest?: (provider: Provider) => void;
   isTesting: boolean;
   isProxyRunning: boolean;
@@ -517,7 +511,6 @@ function SortableProviderCard({
   onDuplicate,
   onConfigureUsage,
   onOpenWebsite,
-  onOpenTerminal,
   onTest,
   isTesting,
   isProxyRunning,
@@ -564,7 +557,6 @@ function SortableProviderCard({
           onConfigureUsage ? (item) => onConfigureUsage(item) : () => undefined
         }
         onOpenWebsite={onOpenWebsite}
-        onOpenTerminal={onOpenTerminal}
         onTest={onTest}
         isTesting={isTesting}
         isProxyRunning={isProxyRunning}

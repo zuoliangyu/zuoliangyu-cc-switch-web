@@ -41,7 +41,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { extractErrorMessage } from "@/utils/errorUtils";
-import { isMac } from "@/lib/platform";
 import { isWebRuntime } from "@/lib/runtime/tauri/env";
 import { ProviderIcon } from "@/components/ProviderIcon";
 import { SessionItem } from "./SessionItem";
@@ -203,25 +202,10 @@ export function SessionManagerPage({ appId }: { appId: string }) {
   const handleResume = async () => {
     if (!selectedSession?.resumeCommand) return;
 
-    if (isWebMode || !isMac()) {
-      await handleCopy(
-        selectedSession.resumeCommand,
-        t("sessionManager.resumeCommandCopied"),
-      );
-      return;
-    }
-
-    try {
-      await sessionsApi.launchTerminal({
-        command: selectedSession.resumeCommand,
-        cwd: selectedSession.projectDir ?? undefined,
-      });
-      toast.success(t("sessionManager.terminalLaunched"));
-    } catch (error) {
-      const fallback = selectedSession.resumeCommand;
-      await handleCopy(fallback, t("sessionManager.resumeFallbackCopied"));
-      toast.error(extractErrorMessage(error) || t("sessionManager.openFailed"));
-    }
+    await handleCopy(
+      selectedSession.resumeCommand,
+      t("sessionManager.resumeCommandCopied"),
+    );
   };
 
   const handleDeleteConfirm = async () => {
@@ -873,7 +857,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
 
                       {/* 右侧：操作按钮组 */}
                       <div className="flex items-center gap-2 shrink-0">
-                        {(isMac() || isWebMode) && (
+                        {isWebMode && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
