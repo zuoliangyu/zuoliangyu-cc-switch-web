@@ -641,11 +641,6 @@ export const providerPresets: ProviderPreset[] = [
         ANTHROPIC_AUTH_TOKEN: "sk-",
         ANTHROPIC_BASE_URL: "https://e-flowcode.cc",
       },
-      statusLine: {
-        command: "C:/Users/zuolan/.claude/eflowcodeline/eflowcodeline.exe",
-        padding: 0,
-        type: "command",
-      },
       enabledPlugins: {
         "superpowers@superpowers-marketplace": true,
       },
