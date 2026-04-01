@@ -480,14 +480,12 @@ async fn remove_provider_from_live_config(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
 ) -> Result<Json<bool>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    crate::services::ProviderService::remove_from_live_config(
-        state.app_state.as_ref(),
-        app_type,
-        &id,
-    )
-    .map_err(|e| ApiError::internal(format!("failed to remove provider from live config: {e}")))?;
-    Ok(Json(true))
+    let removed =
+        crate::commands::remove_provider_from_live_config_internal(state.app_state.as_ref(), app, id)
+            .map_err(|e| {
+                ApiError::internal(format!("failed to remove provider from live config: {e}"))
+            })?;
+    Ok(Json(removed))
 }
 
 async fn import_default_provider_config(
@@ -537,8 +535,7 @@ async fn stream_check_all_providers(
 async fn read_live_provider_settings(
     Path(app): Path<String>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let settings = ProviderService::read_live_settings(app_type)
+    let settings = crate::commands::read_live_provider_settings_internal(app)
         .map_err(|e| ApiError::internal(format!("failed to read live provider settings: {e}")))?;
     Ok(Json(settings))
 }
@@ -596,8 +593,8 @@ async fn get_custom_endpoints(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
 ) -> Result<Json<Vec<crate::settings::CustomEndpoint>>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let endpoints = ProviderService::get_custom_endpoints(state.app_state.as_ref(), app_type, &id)
+    let endpoints =
+        crate::commands::get_custom_endpoints_internal(state.app_state.as_ref(), app, id)
         .map_err(|e| ApiError::internal(format!("failed to load custom endpoints: {e}")))?;
     Ok(Json(endpoints))
 }
@@ -607,8 +604,7 @@ async fn add_custom_endpoint(
     Path((app, id)): Path<(String, String)>,
     Json(payload): Json<CustomEndpointUrlRequest>,
 ) -> Result<StatusCode, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    ProviderService::add_custom_endpoint(state.app_state.as_ref(), app_type, &id, payload.url)
+    crate::commands::add_custom_endpoint_internal(state.app_state.as_ref(), app, id, payload.url)
         .map_err(|e| ApiError::internal(format!("failed to add custom endpoint: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -618,8 +614,12 @@ async fn remove_custom_endpoint(
     Path((app, id)): Path<(String, String)>,
     Json(payload): Json<CustomEndpointUrlRequest>,
 ) -> Result<StatusCode, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    ProviderService::remove_custom_endpoint(state.app_state.as_ref(), app_type, &id, payload.url)
+    crate::commands::remove_custom_endpoint_internal(
+        state.app_state.as_ref(),
+        app,
+        id,
+        payload.url,
+    )
         .map_err(|e| ApiError::internal(format!("failed to remove custom endpoint: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -629,21 +629,15 @@ async fn update_endpoint_last_used(
     Path((app, id)): Path<(String, String)>,
     Json(payload): Json<CustomEndpointUrlRequest>,
 ) -> Result<StatusCode, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    ProviderService::update_endpoint_last_used(
-        state.app_state.as_ref(),
-        app_type,
-        &id,
-        payload.url,
-    )
-    .map_err(|e| ApiError::internal(format!("failed to update endpoint last used: {e}")))?;
+    crate::commands::update_endpoint_last_used_internal(state.app_state.as_ref(), app, id, payload.url)
+        .map_err(|e| ApiError::internal(format!("failed to update endpoint last used: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
 async fn get_universal_providers(
     State(state): State<WebApiState>,
 ) -> Result<Json<HashMap<String, crate::provider::UniversalProvider>>, ApiError> {
-    let providers = ProviderService::list_universal(state.app_state.as_ref())
+    let providers = crate::commands::get_universal_providers_internal(state.app_state.as_ref())
         .map_err(|e| ApiError::internal(format!("failed to load universal providers: {e}")))?;
     Ok(Json(providers))
 }
@@ -652,7 +646,7 @@ async fn get_universal_provider(
     State(state): State<WebApiState>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<crate::provider::UniversalProvider>>, ApiError> {
-    let provider = ProviderService::get_universal(state.app_state.as_ref(), &id)
+    let provider = crate::commands::get_universal_provider_internal(state.app_state.as_ref(), id)
         .map_err(|e| ApiError::internal(format!("failed to load universal provider: {e}")))?;
     Ok(Json(provider))
 }
@@ -661,7 +655,7 @@ async fn upsert_universal_provider(
     State(state): State<WebApiState>,
     Json(provider): Json<crate::provider::UniversalProvider>,
 ) -> Result<Json<bool>, ApiError> {
-    let result = ProviderService::upsert_universal(state.app_state.as_ref(), provider)
+    let result = crate::commands::upsert_universal_provider_internal(state.app_state.as_ref(), provider)
         .map_err(|e| ApiError::internal(format!("failed to save universal provider: {e}")))?;
     Ok(Json(result))
 }
@@ -670,7 +664,7 @@ async fn delete_universal_provider(
     State(state): State<WebApiState>,
     Path(id): Path<String>,
 ) -> Result<Json<bool>, ApiError> {
-    let result = ProviderService::delete_universal(state.app_state.as_ref(), &id)
+    let result = crate::commands::delete_universal_provider_internal(state.app_state.as_ref(), id)
         .map_err(|e| ApiError::internal(format!("failed to delete universal provider: {e}")))?;
     Ok(Json(result))
 }
@@ -679,7 +673,7 @@ async fn sync_universal_provider(
     State(state): State<WebApiState>,
     Path(id): Path<String>,
 ) -> Result<Json<bool>, ApiError> {
-    let result = ProviderService::sync_universal_to_apps(state.app_state.as_ref(), &id)
+    let result = crate::commands::sync_universal_provider_internal(state.app_state.as_ref(), id)
         .map_err(|e| ApiError::internal(format!("failed to sync universal provider: {e}")))?;
     Ok(Json(result))
 }
