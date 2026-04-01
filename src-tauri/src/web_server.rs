@@ -1873,21 +1873,11 @@ async fn get_providers(
     State(state): State<WebApiState>,
     Path(app): Path<String>,
 ) -> Result<Json<ProvidersResponse>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let providers =
-        ProviderService::list(state.app_state.as_ref(), app_type.clone()).map_err(|e| {
-            ApiError::internal(format!(
-                "failed to load providers for {}: {e}",
-                app_type.as_str()
-            ))
-        })?;
-    let current_provider_id = ProviderService::current(state.app_state.as_ref(), app_type.clone())
-        .map_err(|e| {
-            ApiError::internal(format!(
-                "failed to load current provider for {}: {e}",
-                app_type.as_str()
-            ))
-        })?;
+    let providers = crate::commands::get_providers_internal(state.app_state.as_ref(), app.clone())
+        .map_err(|e| ApiError::internal(format!("failed to load providers: {e}")))?;
+    let current_provider_id =
+        crate::commands::get_current_provider_internal(state.app_state.as_ref(), app)
+            .map_err(|e| ApiError::internal(format!("failed to load current provider: {e}")))?;
 
     Ok(Json(ProvidersResponse {
         providers,
@@ -1899,14 +1889,9 @@ async fn get_current_provider(
     State(state): State<WebApiState>,
     Path(app): Path<String>,
 ) -> Result<Json<String>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let current_provider_id = ProviderService::current(state.app_state.as_ref(), app_type.clone())
-        .map_err(|e| {
-            ApiError::internal(format!(
-                "failed to load current provider for {}: {e}",
-                app_type.as_str()
-            ))
-        })?;
+    let current_provider_id =
+        crate::commands::get_current_provider_internal(state.app_state.as_ref(), app)
+            .map_err(|e| ApiError::internal(format!("failed to load current provider: {e}")))?;
 
     Ok(Json(current_provider_id))
 }
@@ -2004,8 +1989,7 @@ async fn add_provider(
     Path(app): Path<String>,
     Json(provider): Json<Provider>,
 ) -> Result<Json<bool>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let added = ProviderService::add(state.app_state.as_ref(), app_type, provider)
+    let added = crate::commands::add_provider_internal(state.app_state.as_ref(), app, provider)
         .map_err(|e| ApiError::internal(format!("failed to add provider: {e}")))?;
     Ok(Json(added))
 }
@@ -2015,9 +1999,8 @@ async fn update_provider(
     Path((app, id)): Path<(String, String)>,
     Json(mut provider): Json<Provider>,
 ) -> Result<Json<bool>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
     provider.id = id;
-    let updated = ProviderService::update(state.app_state.as_ref(), app_type, provider)
+    let updated = crate::commands::update_provider_internal(state.app_state.as_ref(), app, provider)
         .map_err(|e| ApiError::internal(format!("failed to update provider: {e}")))?;
     Ok(Json(updated))
 }
@@ -2026,10 +2009,9 @@ async fn delete_provider(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
 ) -> Result<Json<bool>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    ProviderService::delete(state.app_state.as_ref(), app_type, &id)
+    let deleted = crate::commands::delete_provider_internal(state.app_state.as_ref(), app, id)
         .map_err(|e| ApiError::internal(format!("failed to delete provider: {e}")))?;
-    Ok(Json(true))
+    Ok(Json(deleted))
 }
 
 async fn update_providers_sort_order(
@@ -2037,11 +2019,9 @@ async fn update_providers_sort_order(
     Path(app): Path<String>,
     Json(updates): Json<Vec<crate::services::ProviderSortUpdate>>,
 ) -> Result<Json<bool>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let updated = ProviderService::update_sort_order(state.app_state.as_ref(), app_type, updates)
-        .map_err(|e| {
-        ApiError::internal(format!("failed to update provider sort order: {e}"))
-    })?;
+    let updated =
+        crate::commands::update_providers_sort_order_internal(state.app_state.as_ref(), app, updates)
+            .map_err(|e| ApiError::internal(format!("failed to update provider sort order: {e}")))?;
     Ok(Json(updated))
 }
 
@@ -2049,8 +2029,7 @@ async fn switch_provider(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
 ) -> Result<Json<SwitchResult>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let result = ProviderService::switch(state.app_state.as_ref(), app_type, &id)
+    let result = crate::commands::switch_provider_by_name_internal(state.app_state.as_ref(), app, id)
         .map_err(|e| ApiError::internal(format!("failed to switch provider: {e}")))?;
     Ok(Json(result))
 }

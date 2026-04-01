@@ -17,20 +17,40 @@ use tokio::sync::RwLock;
 const TEMPLATE_TYPE_GITHUB_COPILOT: &str = "github_copilot";
 const COPILOT_UNIT_PREMIUM: &str = "requests";
 
+pub(crate) fn get_providers_internal(
+    state: &AppState,
+    app: String,
+) -> Result<IndexMap<String, Provider>, String> {
+    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
+    ProviderService::list(state, app_type).map_err(|e| e.to_string())
+}
+
 /// 获取所有供应商
 #[tauri::command]
 pub fn get_providers(
     state: State<'_, AppState>,
     app: String,
 ) -> Result<IndexMap<String, Provider>, String> {
+    get_providers_internal(state.inner(), app)
+}
+
+pub(crate) fn get_current_provider_internal(state: &AppState, app: String) -> Result<String, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    ProviderService::list(state.inner(), app_type).map_err(|e| e.to_string())
+    ProviderService::current(state, app_type).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_current_provider(state: State<'_, AppState>, app: String) -> Result<String, String> {
+    get_current_provider_internal(state.inner(), app)
+}
+
+pub(crate) fn add_provider_internal(
+    state: &AppState,
+    app: String,
+    provider: Provider,
+) -> Result<bool, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    ProviderService::current(state.inner(), app_type).map_err(|e| e.to_string())
+    ProviderService::add(state, app_type, provider).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -39,8 +59,16 @@ pub fn add_provider(
     app: String,
     provider: Provider,
 ) -> Result<bool, String> {
+    add_provider_internal(state.inner(), app, provider)
+}
+
+pub(crate) fn update_provider_internal(
+    state: &AppState,
+    app: String,
+    provider: Provider,
+) -> Result<bool, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    ProviderService::add(state.inner(), app_type, provider).map_err(|e| e.to_string())
+    ProviderService::update(state, app_type, provider).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -49,8 +77,18 @@ pub fn update_provider(
     app: String,
     provider: Provider,
 ) -> Result<bool, String> {
+    update_provider_internal(state.inner(), app, provider)
+}
+
+pub(crate) fn delete_provider_internal(
+    state: &AppState,
+    app: String,
+    id: String,
+) -> Result<bool, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    ProviderService::update(state.inner(), app_type, provider).map_err(|e| e.to_string())
+    ProviderService::delete(state, app_type, &id)
+        .map(|_| true)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -59,10 +97,7 @@ pub fn delete_provider(
     app: String,
     id: String,
 ) -> Result<bool, String> {
-    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    ProviderService::delete(state.inner(), app_type, &id)
-        .map(|_| true)
-        .map_err(|e| e.to_string())
+    delete_provider_internal(state.inner(), app, id)
 }
 
 #[tauri::command]
@@ -85,6 +120,15 @@ fn switch_provider_internal(
     ProviderService::switch(state, app_type, id)
 }
 
+pub(crate) fn switch_provider_by_name_internal(
+    state: &AppState,
+    app: String,
+    id: String,
+) -> Result<SwitchResult, String> {
+    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
+    switch_provider_internal(state, app_type, &id).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(not(feature = "test-hooks"), doc(hidden))]
 pub fn switch_provider_test_hook(
     state: &AppState,
@@ -100,8 +144,7 @@ pub fn switch_provider(
     app: String,
     id: String,
 ) -> Result<SwitchResult, String> {
-    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    switch_provider_internal(&state, app_type, &id).map_err(|e| e.to_string())
+    switch_provider_by_name_internal(state.inner(), app, id)
 }
 
 fn import_default_config_internal(state: &AppState, app_type: AppType) -> Result<bool, AppError> {
@@ -348,8 +391,16 @@ pub fn update_providers_sort_order(
     app: String,
     updates: Vec<ProviderSortUpdate>,
 ) -> Result<bool, String> {
+    update_providers_sort_order_internal(state.inner(), app, updates)
+}
+
+pub(crate) fn update_providers_sort_order_internal(
+    state: &AppState,
+    app: String,
+    updates: Vec<ProviderSortUpdate>,
+) -> Result<bool, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    ProviderService::update_sort_order(state.inner(), app_type, updates).map_err(|e| e.to_string())
+    ProviderService::update_sort_order(state, app_type, updates).map_err(|e| e.to_string())
 }
 
 use crate::provider::UniversalProvider;
