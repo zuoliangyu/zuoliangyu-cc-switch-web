@@ -16,13 +16,11 @@ import {
   useUninstallSkill,
   useScanUnmanagedSkills,
   useImportSkillsFromApps,
-  useInstallSkillsFromZip,
   type InstalledSkill,
 } from "@/hooks/useSkills";
 import type { AppId } from "@/lib/api/types";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { settingsApi, skillsApi } from "@/lib/api";
-import { isWebRuntime } from "@/lib/runtime/tauri/env";
+import { settingsApi } from "@/lib/api";
 import { toast } from "sonner";
 import { MCP_SKILLS_APP_IDS } from "@/config/appConfig";
 import { AppCountBar } from "@/components/common/AppCountBar";
@@ -111,7 +109,6 @@ const UnifiedSkillsPanel = React.forwardRef<
   const [archiveFiles, setArchiveFiles] = useState<File[]>([]);
   const [isArchiveDragActive, setIsArchiveDragActive] = useState(false);
   const archiveInputRef = useRef<HTMLInputElement | null>(null);
-  const webRuntime = isWebRuntime();
 
   const { data: skills, isLoading } = useInstalledSkills();
   const {
@@ -126,7 +123,6 @@ const UnifiedSkillsPanel = React.forwardRef<
   const { data: unmanagedSkills, refetch: scanUnmanaged } =
     useScanUnmanagedSkills();
   const importMutation = useImportSkillsFromApps();
-  const installFromZipMutation = useInstallSkillsFromZip();
   const installArchiveMutation = useInstallSkillArchives();
 
   const enabledCounts = useMemo(() => {
@@ -205,40 +201,7 @@ const UnifiedSkillsPanel = React.forwardRef<
   };
 
   const handleInstallFromZip = async () => {
-    if (webRuntime) {
-      setArchiveDialogOpen(true);
-      return;
-    }
-
-    try {
-      const filePath = await skillsApi.openZipFileDialog();
-      if (!filePath) return;
-
-      const installed = await installFromZipMutation.mutateAsync({
-        filePath,
-        currentApp,
-      });
-
-      if (installed.length === 0) {
-        toast.info(t("skills.installFromZip.noSkillsFound"), {
-          closeButton: true,
-        });
-      } else if (installed.length === 1) {
-        toast.success(
-          t("skills.installFromZip.successSingle", { name: installed[0].name }),
-          { closeButton: true },
-        );
-      } else {
-        toast.success(
-          t("skills.installFromZip.successMultiple", {
-            count: installed.length,
-          }),
-          { closeButton: true },
-        );
-      }
-    } catch (error) {
-      toast.error(t("skills.installFailed"), { description: String(error) });
-    }
+    setArchiveDialogOpen(true);
   };
 
   const appendArchiveFiles = (files: File[]) => {
@@ -513,40 +476,36 @@ const UnifiedSkillsPanel = React.forwardRef<
         open={restoreDialogOpen}
       />
 
-      {webRuntime && (
-        <>
-          <input
-            ref={archiveInputRef}
-            type="file"
-            accept=".zip,application/zip"
-            multiple
-            className="hidden"
-            onChange={handleArchiveInputChange}
-          />
-          <InstallSkillsFromZipDialog
-            open={archiveDialogOpen}
-            files={archiveFiles}
-            isDragActive={isArchiveDragActive}
-            isInstalling={installArchiveMutation.isPending}
-            onBrowse={() => archiveInputRef.current?.click()}
-            onClose={() => {
-              if (installArchiveMutation.isPending) return;
-              setArchiveDialogOpen(false);
-              setArchiveFiles([]);
-              setIsArchiveDragActive(false);
-            }}
-            onClear={() => setArchiveFiles([])}
-            onDropFiles={appendArchiveFiles}
-            onInstall={handleInstallArchives}
-            onRemoveFile={(fileKey) =>
-              setArchiveFiles((current) =>
-                current.filter((file) => buildArchiveFileKey(file) !== fileKey),
-              )
-            }
-            onSetDragActive={setIsArchiveDragActive}
-          />
-        </>
-      )}
+      <input
+        ref={archiveInputRef}
+        type="file"
+        accept=".zip,application/zip"
+        multiple
+        className="hidden"
+        onChange={handleArchiveInputChange}
+      />
+      <InstallSkillsFromZipDialog
+        open={archiveDialogOpen}
+        files={archiveFiles}
+        isDragActive={isArchiveDragActive}
+        isInstalling={installArchiveMutation.isPending}
+        onBrowse={() => archiveInputRef.current?.click()}
+        onClose={() => {
+          if (installArchiveMutation.isPending) return;
+          setArchiveDialogOpen(false);
+          setArchiveFiles([]);
+          setIsArchiveDragActive(false);
+        }}
+        onClear={() => setArchiveFiles([])}
+        onDropFiles={appendArchiveFiles}
+        onInstall={handleInstallArchives}
+        onRemoveFile={(fileKey) =>
+          setArchiveFiles((current) =>
+            current.filter((file) => buildArchiveFileKey(file) !== fileKey),
+          )
+        }
+        onSetDragActive={setIsArchiveDragActive}
+      />
     </div>
   );
 });

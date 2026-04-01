@@ -29,7 +29,7 @@
 |---|---|---|---|
 | 旧兼容 Skills API | 工具层仍保留 | 逐步移除对旧别名的依赖 | 当前实际主路径已走统一 Skills API，不宜长期双轨 |
 | 旧兼容 MCP API | 工具层仍保留 | 收敛到统一 MCP API | 当前 Web 主路径已完成统一 MCP 管理，这批兼容命令应减量 |
-| 未使用的旧前端 API 封装 | 仍有少量保留 | 清点后删除 | 如旧文件对话框、旧目录打开封装仍保留在工具层，但当前页面已不再依赖 |
+| 未使用的旧前端 API 封装 | 已继续收敛 | 继续按调用点清理 | 目录打开、文件对话框、ZIP 本地路径安装等前端残留已开始删除 |
 | 未接入页面的路径查询命令 | 仅工具层存在 | 按实际入口决定保留或清理 | 如 `get_claude_code_config_path` / `get_app_config_path` 当前没有 Web 页面主链依赖 |
 
 ## 二、建议直接删除或仅保留 Tauri
@@ -86,6 +86,7 @@
 - 旧桌面 `run()` 启动器、`tauri-build`、`tauri.conf.json`、`tauri-plugin-log/process` 已从当前分支移除
 - `appConfigDir` 覆盖路径已改为本地 Rust 服务写入独立文件，不再依赖 Tauri Store
 - 原生目录选择器、原生文件对话框、系统链接/目录打开命令已从当前分支的 Rust 侧移除，Web 模式统一走手填、上传下载或复制路径
+- 前端设置页已收敛为浏览器上传/下载 SQL；工作区和 Daily Memory 页面统一改为复制目录路径；Skills ZIP 安装统一走浏览器多文件上传与拖拽
 - `ProxyService -> ProxyServer -> RequestForwarder` 的核心链路已改为显式注入 `copilot_auth_state`，不再通过 `AppHandle.state()` 读取容器状态
 - Failover 热切换与 WebDAV 自动同步的服务层逻辑已去掉 `AppHandle` 依赖，当前 Web-only 主链不再依赖 Tauri 事件才能运行
 - 命令层的故障转移与 Universal Provider 同步事件已从当前分支移除，前端同步改为显式请求/缓存失效而非依赖 Tauri event bus
@@ -100,11 +101,11 @@
 | 类别 | 命令 | 当前判断 | 建议 |
 |---|---|---|---|
 | 环境变量治理 | `check_env_conflicts` / `delete_env_vars` / `restore_env_backup` | Web 页面已主动跳过，不属于本地 Web 服务主链 | 保持不映射或直接在 Web 下隐藏相关入口 |
-| 桌面对话框 | `pick_directory` / `open_file_dialog` / `save_file_dialog` / `open_zip_file_dialog` | Web 已改成手填路径、上传下载、浏览器文件选择 | 不再迁移 |
-| 桌面目录打开 | `open_workspace_directory` | Web 已降级为复制路径 | 不再迁移 |
+| 桌面对话框 | `pick_directory` / `open_file_dialog` / `save_file_dialog` / `open_zip_file_dialog` | Web 前端主路径已不再依赖 | 不再迁移，并继续清理残余封装 |
+| 桌面目录打开 | `open_workspace_directory` | Web 前端主路径已不再依赖 | 不再迁移，并继续清理残余封装 |
 | 旧 MCP API | `get_claude_mcp_status` / `read_claude_mcp_config` / `upsert_claude_mcp_server` / `delete_claude_mcp_server` / `get_mcp_config` / `upsert_mcp_server_in_config` / `delete_mcp_server_in_config` / `set_mcp_enabled` / `validate_mcp_command` | 当前页面主路径已走统一 MCP API，差集里这批主要是旧封装残留 | 确认无入口后删除旧封装 |
-| 旧 Skills API | `get_skills` / `get_skills_for_app` / `install_skill` / `install_skill_for_app` / `uninstall_skill` / `uninstall_skill_for_app` / `install_skills_from_zip` | 当前页面主路径已走统一 Skills API；ZIP 安装在 Web 下已改为上传归档 | 确认无入口后删除旧封装 |
-| 旧导入导出文件路径 API | `export_config_to_file` / `import_config_from_file` | Web 主路径已改成下载 Blob / 上传 SQL | 保留桌面端即可，Web 不再迁移 |
+| 旧 Skills API | `get_skills` / `get_skills_for_app` / `install_skill` / `install_skill_for_app` / `uninstall_skill` / `uninstall_skill_for_app` / `install_skills_from_zip` | 当前页面主路径已走统一 Skills API；前端 ZIP 安装已统一成上传归档 | 确认无入口后继续清理运行时残留 |
+| 旧导入导出文件路径 API | `export_config_to_file` / `import_config_from_file` | Web 前端主路径已不再依赖 | 保留运行时兼容时再评估，前端不再迁移 |
 | 未接入页面的路径查询 | `get_claude_code_config_path` / `get_app_config_path` | 当前 Web 页面未使用 | 评估后删除或继续仅保留桌面 |
 
 换句话说，当前剩余差集已经不再是“Web 核心功能缺失”，而是：

@@ -87,7 +87,6 @@ export function useSettings(): UseSettingsResult {
     resetAppConfigDir,
     resetAllDirectories,
   } = useDirectorySettings({
-    settings,
     onUpdateSettings: updateSettings,
   });
 

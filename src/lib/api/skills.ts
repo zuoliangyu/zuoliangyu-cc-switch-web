@@ -1,5 +1,4 @@
 import { invoke } from "@/lib/runtime/tauri/core";
-import { isTauriRuntime } from "@/lib/runtime/tauri/env";
 
 import type { AppId } from "@/lib/api/types";
 
@@ -70,19 +69,6 @@ export interface UnmanagedSkill {
 export interface ImportSkillSelection {
   directory: string;
   apps: SkillApps;
-}
-
-/** 技能对象（兼容旧 API） */
-export interface Skill {
-  key: string;
-  name: string;
-  description: string;
-  directory: string;
-  readmeUrl?: string;
-  installed: boolean;
-  repoOwner?: string;
-  repoName?: string;
-  repoBranch?: string;
 }
 
 /** 仓库配置 */
@@ -156,35 +142,6 @@ export const skillsApi = {
     return await invoke("discover_available_skills");
   },
 
-  // ========== 兼容旧 API ==========
-
-  /** 获取技能列表（兼容旧 API） */
-  async getAll(app: AppId = "claude"): Promise<Skill[]> {
-    if (app === "claude") {
-      return await invoke("get_skills");
-    }
-    return await invoke("get_skills_for_app", { app });
-  },
-
-  /** 安装技能（兼容旧 API） */
-  async install(directory: string, app: AppId = "claude"): Promise<boolean> {
-    if (app === "claude") {
-      return await invoke("install_skill", { directory });
-    }
-    return await invoke("install_skill_for_app", { app, directory });
-  },
-
-  /** 卸载技能（兼容旧 API） */
-  async uninstall(
-    directory: string,
-    app: AppId = "claude",
-  ): Promise<SkillUninstallResult> {
-    if (app === "claude") {
-      return await invoke("uninstall_skill", { directory });
-    }
-    return await invoke("uninstall_skill_for_app", { app, directory });
-  },
-
   // ========== 仓库管理 ==========
 
   /** 获取仓库列表 */
@@ -202,29 +159,11 @@ export const skillsApi = {
     return await invoke("remove_skill_repo", { owner, name });
   },
 
-  // ========== ZIP 安装 ==========
-
-  /** 打开 ZIP 文件选择对话框 */
-  async openZipFileDialog(): Promise<string | null> {
-    return await invoke("open_zip_file_dialog");
-  },
-
-  /** 从 ZIP 文件安装 Skills */
-  async installFromZip(
-    filePath: string,
-    currentApp: AppId,
-  ): Promise<InstalledSkill[]> {
-    return await invoke("install_skills_from_zip", { filePath, currentApp });
-  },
-
   /** Web 模式下从上传的 ZIP 归档安装 Skills */
   async installFromArchives(
     files: File[],
     currentApp: AppId,
   ): Promise<SkillArchiveInstallResult[]> {
-    if (isTauriRuntime()) {
-      throw new Error("installFromArchives is only available in web runtime");
-    }
     return await invoke("install_skills_from_archives", {
       files,
       currentApp,

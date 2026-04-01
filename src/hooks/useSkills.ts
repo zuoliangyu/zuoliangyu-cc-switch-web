@@ -271,32 +271,6 @@ export function useRemoveSkillRepo() {
 }
 
 /**
- * 从 ZIP 文件安装 Skills
- * 成功后直接更新缓存，不触发重新加载/刷新
- */
-export function useInstallSkillsFromZip() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      filePath,
-      currentApp,
-    }: {
-      filePath: string;
-      currentApp: AppId;
-    }) => skillsApi.installFromZip(filePath, currentApp),
-    onSuccess: (installedSkills) => {
-      // 直接更新 installed 缓存
-      queryClient.setQueryData<InstalledSkill[]>(
-        ["skills", "installed"],
-        (oldData) => {
-          return mergeInstalledSkills(oldData, installedSkills);
-        },
-      );
-    },
-  });
-}
-
-/**
  * Web 模式下从上传的多个 ZIP 归档安装 Skills
  * 成功后直接更新缓存，不触发重新加载/刷新
  */

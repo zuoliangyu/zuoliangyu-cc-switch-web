@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { workspaceApi } from "@/lib/api/workspace";
-import { isWebRuntime } from "@/lib/runtime/tauri/env";
 import WorkspaceFileEditor from "./WorkspaceFileEditor";
 import DailyMemoryPanel from "./DailyMemoryPanel";
 
@@ -55,24 +54,18 @@ const WORKSPACE_FILES: WorkspaceFile[] = [
 
 const WorkspaceFilesPanel: React.FC = () => {
   const { t } = useTranslation();
-  const isWebMode = isWebRuntime();
   const [editingFile, setEditingFile] = useState<string | null>(null);
   const [fileExists, setFileExists] = useState<Record<string, boolean>>({});
   const [showDailyMemory, setShowDailyMemory] = useState(false);
 
   const handleOpenDirectory = async (subdir: "workspace" | "memory") => {
     try {
-      if (isWebMode) {
-        const path = await workspaceApi.getDirectoryPath(subdir);
-        await navigator.clipboard.writeText(path);
-        toast.success(t("workspace.pathCopied"), {
-          description: path,
-          closeButton: true,
-        });
-        return;
-      }
-
-      await workspaceApi.openDirectory(subdir);
+      const path = await workspaceApi.getDirectoryPath(subdir);
+      await navigator.clipboard.writeText(path);
+      toast.success(t("workspace.pathCopied"), {
+        description: path,
+        closeButton: true,
+      });
     } catch (error) {
       toast.error(t("common.error"), { description: String(error) });
     }
@@ -108,7 +101,7 @@ const WorkspaceFilesPanel: React.FC = () => {
       <p
         className="text-sm text-muted-foreground mb-6 cursor-pointer hover:text-foreground transition-colors inline-flex items-center gap-1"
         onClick={() => void handleOpenDirectory("workspace")}
-        title={t(isWebMode ? "workspace.copyPath" : "workspace.openDirectory")}
+        title={t("workspace.copyPath")}
       >
         ~/.openclaw/workspace/
         <FolderOpen className="w-3.5 h-3.5" />

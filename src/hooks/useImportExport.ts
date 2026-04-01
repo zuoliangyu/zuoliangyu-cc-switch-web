@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { settingsApi } from "@/lib/api";
-import { isWebRuntime } from "@/lib/runtime/tauri/env";
 
 export type ImportStatus =
   | "idle"
@@ -34,7 +33,6 @@ export function useImportExport(
 ): UseImportExportResult {
   const { t } = useTranslation();
   const { onImportSuccess } = options;
-  const isWebMode = isWebRuntime();
 
   const [selectedFile, setSelectedFile] = useState("");
   const [selectedUpload, setSelectedUpload] = useState<File | null>(null);
@@ -60,30 +58,15 @@ export function useImportExport(
   }, []);
 
   const selectImportFile = useCallback(async () => {
-    if (isWebMode) {
-      return;
-    }
-
-    try {
-      const filePath = await settingsApi.openFileDialog();
-      if (filePath) {
-        setSelectedFile(filePath);
-        setSelectedUpload(null);
-        setStatus("idle");
-        setErrorMessage(null);
-      }
-    } catch (error) {
-      console.error("[useImportExport] Failed to open file dialog", error);
-      toast.error(
-        t("settings.selectFileFailed", {
-          defaultValue: "选择文件失败",
-        }),
-      );
-    }
-  }, [isWebMode, t]);
+    toast.info(
+      t("settings.selectFileFailed", {
+        defaultValue: "请通过浏览器文件选择器上传 SQL 备份文件",
+      }),
+    );
+  }, [t]);
 
   const importConfig = useCallback(async () => {
-    if (isWebMode ? !selectedUpload : !selectedFile) {
+    if (!selectedUpload) {
       toast.error(
         t("settings.selectFileFailed", {
           defaultValue: "请选择有效的 SQL 备份文件",
@@ -99,9 +82,9 @@ export function useImportExport(
     setErrorMessage(null);
 
     try {
-      const result = isWebMode
-        ? await settingsApi.importConfigFromUpload(selectedUpload as File)
-        : await settingsApi.importConfigFromFile(selectedFile);
+      const result = await settingsApi.importConfigFromUpload(
+        selectedUpload as File,
+      );
       if (!result.success) {
         setStatus("error");
         const message =
@@ -154,7 +137,7 @@ export function useImportExport(
     } finally {
       setIsImporting(false);
     }
-  }, [isImporting, isWebMode, onImportSuccess, selectedFile, selectedUpload, t]);
+  }, [isImporting, onImportSuccess, selectedUpload, t]);
 
   const exportConfig = useCallback(async () => {
     try {
@@ -162,52 +145,22 @@ export function useImportExport(
       const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
       const defaultName = `cc-switch-export-${stamp}.sql`;
 
-      if (isWebMode) {
-        const { blob, fileName } =
-          await settingsApi.downloadConfigExport(defaultName);
-        const objectUrl = window.URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = objectUrl;
-        anchor.download = fileName;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        window.URL.revokeObjectURL(objectUrl);
-        toast.success(
-          t("settings.configExported", {
-            defaultValue: "配置已导出",
-          }) + `\n${fileName}`,
-          { closeButton: true },
-        );
-        return;
-      }
-
-      const destination = await settingsApi.saveFileDialog(defaultName);
-      if (!destination) {
-        toast.error(
-          t("settings.selectFileFailed", {
-            defaultValue: "请选择 SQL 备份保存路径",
-          }),
-        );
-        return;
-      }
-
-      const result = await settingsApi.exportConfigToFile(destination);
-      if (result.success) {
-        const displayPath = result.filePath ?? destination;
-        toast.success(
-          t("settings.configExported", {
-            defaultValue: "配置已导出",
-          }) + `\n${displayPath}`,
-          { closeButton: true },
-        );
-      } else {
-        toast.error(
-          t("settings.exportFailed", {
-            defaultValue: "导出配置失败",
-          }) + (result.message ? `: ${result.message}` : ""),
-        );
-      }
+      const { blob, fileName } =
+        await settingsApi.downloadConfigExport(defaultName);
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+      toast.success(
+        t("settings.configExported", {
+          defaultValue: "配置已导出",
+        }) + `\n${fileName}`,
+        { closeButton: true },
+      );
     } catch (error) {
       console.error("[useImportExport] Failed to export config", error);
       toast.error(
@@ -217,7 +170,7 @@ export function useImportExport(
         }),
       );
     }
-  }, [isWebMode, t]);
+  }, [t]);
 
   const resetStatus = useCallback(() => {
     setStatus("idle");

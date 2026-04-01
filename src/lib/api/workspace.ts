@@ -53,9 +53,5 @@ export const workspaceApi = {
   async getDirectoryPath(subdir: "workspace" | "memory"): Promise<string> {
     return invoke<string>("get_workspace_directory_path", { subdir });
   },
-
-  async openDirectory(subdir: "workspace" | "memory"): Promise<void> {
-    await invoke("open_workspace_directory", { subdir });
-  },
 };
 

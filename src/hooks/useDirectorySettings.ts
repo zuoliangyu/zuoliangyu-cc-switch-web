@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { homeDir, join } from "@/lib/runtime/tauri/path";
-import { isWebRuntime } from "@/lib/runtime/tauri/env";
 import { settingsApi, type AppId } from "@/lib/api";
 import type { SettingsFormState } from "./useSettingsForm";
 
@@ -59,7 +58,7 @@ const computeDefaultConfigDir = async (
 };
 
 export interface UseDirectorySettingsProps {
-  settings: SettingsFormState | null;
+  settings?: SettingsFormState | null;
   onUpdateSettings: (updates: Partial<SettingsFormState>) => void;
 }
 
@@ -92,11 +91,10 @@ export interface UseDirectorySettingsResult {
  * - 默认值计算
  */
 export function useDirectorySettings({
-  settings,
+  settings: _settings,
   onUpdateSettings,
 }: UseDirectorySettingsProps): UseDirectorySettingsResult {
   const { t } = useTranslation();
-  const isWebMode = isWebRuntime();
 
   const [appConfigDir, setAppConfigDir] = useState<string | undefined>(
     undefined,
@@ -239,78 +237,23 @@ export function useDirectorySettings({
   );
 
   const browseDirectory = useCallback(
-    async (app: AppId) => {
-      if (isWebMode) {
-        toast.info(
-          t("settings.selectFileFailed", {
-            defaultValue: "Web 模式下请直接手动填写目录路径",
-          }),
-        );
-        return;
-      }
-
-      const key: DirectoryKey =
-        app === "claude"
-          ? "claude"
-          : app === "codex"
-            ? "codex"
-            : app === "gemini"
-              ? "gemini"
-              : "opencode";
-      const currentValue =
-        key === "claude"
-          ? (settings?.claudeConfigDir ?? resolvedDirs.claude)
-          : key === "codex"
-            ? (settings?.codexConfigDir ?? resolvedDirs.codex)
-            : key === "gemini"
-              ? (settings?.geminiConfigDir ?? resolvedDirs.gemini)
-              : (settings?.opencodeConfigDir ?? resolvedDirs.opencode);
-
-      try {
-        const picked = await settingsApi.selectConfigDirectory(currentValue);
-        const sanitized = sanitizeDir(picked ?? undefined);
-        if (!sanitized) return;
-        updateDirectoryState(key, sanitized);
-      } catch (error) {
-        console.error("[useDirectorySettings] Failed to pick directory", error);
-        toast.error(
-          t("settings.selectFileFailed", {
-            defaultValue: "选择目录失败",
-          }),
-        );
-      }
+    async (_app: AppId) => {
+      toast.info(
+        t("settings.selectFileFailed", {
+          defaultValue: "Web 版请直接手动填写目录路径",
+        }),
+      );
     },
-    [isWebMode, settings, resolvedDirs, t, updateDirectoryState],
+    [t],
   );
 
   const browseAppConfigDir = useCallback(async () => {
-    if (isWebMode) {
-      toast.info(
-        t("settings.selectFileFailed", {
-          defaultValue: "Web 模式下请直接手动填写目录路径",
-        }),
-      );
-      return;
-    }
-
-    const currentValue = appConfigDir ?? resolvedDirs.appConfig;
-    try {
-      const picked = await settingsApi.selectConfigDirectory(currentValue);
-      const sanitized = sanitizeDir(picked ?? undefined);
-      if (!sanitized) return;
-      updateDirectoryState("appConfig", sanitized);
-    } catch (error) {
-      console.error(
-        "[useDirectorySettings] Failed to pick app config directory",
-        error,
-      );
-      toast.error(
-        t("settings.selectFileFailed", {
-          defaultValue: "选择目录失败",
-        }),
-      );
-    }
-  }, [appConfigDir, isWebMode, resolvedDirs.appConfig, t, updateDirectoryState]);
+    toast.info(
+      t("settings.selectFileFailed", {
+        defaultValue: "Web 版请直接手动填写目录路径",
+      }),
+    );
+  }, [t]);
 
   const resetDirectory = useCallback(
     async (app: AppId) => {

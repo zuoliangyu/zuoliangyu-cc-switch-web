@@ -37,40 +37,12 @@ export const settingsApi = {
     return await invoke("get_config_dir", { app: appId });
   },
 
-  async selectConfigDirectory(defaultPath?: string): Promise<string | null> {
-    return await invoke("pick_directory", { defaultPath });
-  },
-
-  async getClaudeCodeConfigPath(): Promise<string> {
-    return await invoke("get_claude_code_config_path");
-  },
-
-  async getAppConfigPath(): Promise<string> {
-    return await invoke("get_app_config_path");
-  },
-
   async getAppConfigDirOverride(): Promise<string | null> {
     return await invoke("get_app_config_dir_override");
   },
 
   async setAppConfigDirOverride(path: string | null): Promise<boolean> {
     return await invoke("set_app_config_dir_override", { path });
-  },
-
-  async saveFileDialog(defaultName: string): Promise<string | null> {
-    return await invoke("save_file_dialog", { defaultName });
-  },
-
-  async openFileDialog(): Promise<string | null> {
-    return await invoke("open_file_dialog");
-  },
-
-  async exportConfigToFile(filePath: string): Promise<ConfigTransferResult> {
-    return await invoke("export_config_to_file", { filePath });
-  },
-
-  async importConfigFromFile(filePath: string): Promise<ConfigTransferResult> {
-    return await invoke("import_config_from_file", { filePath });
   },
 
   async downloadConfigExport(
