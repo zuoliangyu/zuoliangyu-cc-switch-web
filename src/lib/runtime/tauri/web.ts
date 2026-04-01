@@ -390,6 +390,50 @@ export async function logoutWebManagedAuth(authProvider: string): Promise<void> 
   await requestWithBody("/api/auth/logout", "POST", { authProvider });
 }
 
+export async function getWebCopilotToken(): Promise<string> {
+  return requestJson<string>("/api/copilot/token");
+}
+
+export async function getWebCopilotTokenForAccount(
+  accountId: string,
+): Promise<string> {
+  return requestJson<string>(
+    `/api/copilot/accounts/${encodeURIComponent(accountId)}/token`,
+  );
+}
+
+export async function getWebCopilotModels(): Promise<
+  import("@/lib/api/copilot").CopilotModel[]
+> {
+  return requestJson<import("@/lib/api/copilot").CopilotModel[]>(
+    "/api/copilot/models",
+  );
+}
+
+export async function getWebCopilotModelsForAccount(
+  accountId: string,
+): Promise<import("@/lib/api/copilot").CopilotModel[]> {
+  return requestJson<import("@/lib/api/copilot").CopilotModel[]>(
+    `/api/copilot/accounts/${encodeURIComponent(accountId)}/models`,
+  );
+}
+
+export async function getWebCopilotUsage(): Promise<
+  import("@/lib/api/copilot").CopilotUsageResponse
+> {
+  return requestJson<import("@/lib/api/copilot").CopilotUsageResponse>(
+    "/api/copilot/usage",
+  );
+}
+
+export async function getWebCopilotUsageForAccount(
+  accountId: string,
+): Promise<import("@/lib/api/copilot").CopilotUsageResponse> {
+  return requestJson<import("@/lib/api/copilot").CopilotUsageResponse>(
+    `/api/copilot/accounts/${encodeURIComponent(accountId)}/usage`,
+  );
+}
+
 export async function getWebLiveProviderIds(appId: AppId): Promise<string[]> {
   try {
     return await requestJson<string[]>(

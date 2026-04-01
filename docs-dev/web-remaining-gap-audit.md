@@ -93,7 +93,27 @@
 - Web 启动入口已接回周期备份/维护检查，旧备份策略配置重新对 Web 运行模式生效
 - OMO 仅保留 Web 正在使用的“读取本地配置填充表单”路径，旧的 Rust 侧直接导入生成 provider 逻辑已移除
 
-## 四、当前真正的收尾重点
+## 四、基于前端命令差集的剩余项
+
+以 `src` 中实际 `invoke(...)` 调用与 Web runtime 映射做差后，当前剩余未映射命令主要如下：
+
+| 类别 | 命令 | 当前判断 | 建议 |
+|---|---|---|---|
+| 环境变量治理 | `check_env_conflicts` / `delete_env_vars` / `restore_env_backup` | Web 页面已主动跳过，不属于本地 Web 服务主链 | 保持不映射或直接在 Web 下隐藏相关入口 |
+| 桌面对话框 | `pick_directory` / `open_file_dialog` / `save_file_dialog` / `open_zip_file_dialog` | Web 已改成手填路径、上传下载、浏览器文件选择 | 不再迁移 |
+| 桌面目录打开 | `open_workspace_directory` | Web 已降级为复制路径 | 不再迁移 |
+| 旧 MCP API | `get_claude_mcp_status` / `read_claude_mcp_config` / `upsert_claude_mcp_server` / `delete_claude_mcp_server` / `get_mcp_config` / `upsert_mcp_server_in_config` / `delete_mcp_server_in_config` / `set_mcp_enabled` / `validate_mcp_command` | 当前页面主路径已走统一 MCP API，差集里这批主要是旧封装残留 | 确认无入口后删除旧封装 |
+| 旧 Skills API | `get_skills` / `get_skills_for_app` / `install_skill` / `install_skill_for_app` / `uninstall_skill` / `uninstall_skill_for_app` / `install_skills_from_zip` | 当前页面主路径已走统一 Skills API；ZIP 安装在 Web 下已改为上传归档 | 确认无入口后删除旧封装 |
+| 旧导入导出文件路径 API | `export_config_to_file` / `import_config_from_file` | Web 主路径已改成下载 Blob / 上传 SQL | 保留桌面端即可，Web 不再迁移 |
+| 未接入页面的路径查询 | `get_claude_code_config_path` / `get_app_config_path` | 当前 Web 页面未使用 | 评估后删除或继续仅保留桌面 |
+
+换句话说，当前剩余差集已经不再是“Web 核心功能缺失”，而是：
+
+1. 桌面专属能力的有意识不迁移
+2. 旧 API 别名和死代码的收口
+3. 个别只在桌面模式启用的治理型能力
+
+## 五、当前真正的收尾重点
 
 从 Web 化目标来看，接下来更应该做的是：
 
@@ -102,7 +122,7 @@
 3. 继续审查 Claude 旧集成等是否仍属于产品范围
 4. 补文档，把“哪些功能是 Web 替代方案，不再提供桌面行为”写清楚
 
-## 五、建议的后续执行顺序
+## 六、建议的后续执行顺序
 
 1. 清理桌面专属入口
 2. 清理旧兼容 API

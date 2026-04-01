@@ -2027,6 +2027,85 @@ async fn auth_logout(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn get_copilot_token(State(state): State<WebApiState>) -> Result<Json<String>, ApiError> {
+    let auth_manager = state.copilot_auth_state.read().await;
+    let token = auth_manager
+        .get_valid_token()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load copilot token: {e}")))?;
+    Ok(Json(token))
+}
+
+async fn get_copilot_token_for_account(
+    State(state): State<WebApiState>,
+    Path(account_id): Path<String>,
+) -> Result<Json<String>, ApiError> {
+    let auth_manager = state.copilot_auth_state.read().await;
+    let token = auth_manager
+        .get_valid_token_for_account(&account_id)
+        .await
+        .map_err(|e| {
+            ApiError::internal(format!(
+                "failed to load copilot token for account {account_id}: {e}"
+            ))
+        })?;
+    Ok(Json(token))
+}
+
+async fn get_copilot_models(
+    State(state): State<WebApiState>,
+) -> Result<Json<Vec<crate::proxy::providers::copilot_auth::CopilotModel>>, ApiError> {
+    let auth_manager = state.copilot_auth_state.read().await;
+    let models = auth_manager
+        .fetch_models()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load copilot models: {e}")))?;
+    Ok(Json(models))
+}
+
+async fn get_copilot_models_for_account(
+    State(state): State<WebApiState>,
+    Path(account_id): Path<String>,
+) -> Result<Json<Vec<crate::proxy::providers::copilot_auth::CopilotModel>>, ApiError> {
+    let auth_manager = state.copilot_auth_state.read().await;
+    let models = auth_manager
+        .fetch_models_for_account(&account_id)
+        .await
+        .map_err(|e| {
+            ApiError::internal(format!(
+                "failed to load copilot models for account {account_id}: {e}"
+            ))
+        })?;
+    Ok(Json(models))
+}
+
+async fn get_copilot_usage(
+    State(state): State<WebApiState>,
+) -> Result<Json<crate::proxy::providers::copilot_auth::CopilotUsageResponse>, ApiError> {
+    let auth_manager = state.copilot_auth_state.read().await;
+    let usage = auth_manager
+        .fetch_usage()
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load copilot usage: {e}")))?;
+    Ok(Json(usage))
+}
+
+async fn get_copilot_usage_for_account(
+    State(state): State<WebApiState>,
+    Path(account_id): Path<String>,
+) -> Result<Json<crate::proxy::providers::copilot_auth::CopilotUsageResponse>, ApiError> {
+    let auth_manager = state.copilot_auth_state.read().await;
+    let usage = auth_manager
+        .fetch_usage_for_account(&account_id)
+        .await
+        .map_err(|e| {
+            ApiError::internal(format!(
+                "failed to load copilot usage for account {account_id}: {e}"
+            ))
+        })?;
+    Ok(Json(usage))
+}
+
 async fn create_db_backup(State(state): State<WebApiState>) -> Result<Json<String>, ApiError> {
     let db = state.app_state.db.clone();
     let filename = tokio::task::spawn_blocking(move || match db.backup_database_file()? {
@@ -2944,6 +3023,21 @@ pub async fn run_web_server() -> Result<(), String> {
             post(auth_set_default_account),
         )
         .route("/api/auth/logout", post(auth_logout))
+        .route("/api/copilot/token", get(get_copilot_token))
+        .route(
+            "/api/copilot/accounts/:account_id/token",
+            get(get_copilot_token_for_account),
+        )
+        .route("/api/copilot/models", get(get_copilot_models))
+        .route(
+            "/api/copilot/accounts/:account_id/models",
+            get(get_copilot_models_for_account),
+        )
+        .route("/api/copilot/usage", get(get_copilot_usage))
+        .route(
+            "/api/copilot/accounts/:account_id/usage",
+            get(get_copilot_usage_for_account),
+        )
         .route(
             "/api/backups/db",
             get(list_db_backups).post(create_db_backup),

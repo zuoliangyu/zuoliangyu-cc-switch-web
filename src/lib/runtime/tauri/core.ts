@@ -4,6 +4,12 @@ import {
   addWebProviderToFailoverQueue,
   addWebProvider,
   extractWebCommonConfigSnippet,
+  getWebCopilotModels,
+  getWebCopilotModelsForAccount,
+  getWebCopilotToken,
+  getWebCopilotTokenForAccount,
+  getWebCopilotUsage,
+  getWebCopilotUsageForAccount,
   createWebDbBackup,
   downloadWebConfigExport,
   deleteWebProvider,
@@ -455,6 +461,68 @@ export async function invoke<T>(
       )) as T;
     case "auth_logout":
       return (await logoutWebManagedAuth(args?.authProvider as string)) as T;
+    case "copilot_start_device_flow":
+      return (await startWebManagedAuthLogin("github_copilot")) as T;
+    case "copilot_poll_for_auth":
+      return Boolean(
+        await pollWebManagedAuthAccount(
+          "github_copilot",
+          args?.deviceCode as string,
+        ),
+      ) as T;
+    case "copilot_poll_for_account":
+      return (await pollWebManagedAuthAccount(
+        "github_copilot",
+        args?.deviceCode as string,
+      )) as T;
+    case "copilot_list_accounts":
+      return (await listWebManagedAuthAccounts("github_copilot")) as T;
+    case "copilot_remove_account":
+      return (await removeWebManagedAuthAccount(
+        "github_copilot",
+        args?.accountId as string,
+      )) as T;
+    case "copilot_set_default_account":
+      return (await setWebManagedAuthDefaultAccount(
+        "github_copilot",
+        args?.accountId as string,
+      )) as T;
+    case "copilot_get_auth_status": {
+      const status = await getWebManagedAuthStatus("github_copilot");
+      const defaultAccount =
+        status.accounts.find((account) => account.id === status.default_account_id) ??
+        status.accounts[0];
+      return {
+        authenticated: status.authenticated,
+        default_account_id: status.default_account_id,
+        migration_error: status.migration_error ?? null,
+        username: defaultAccount?.login ?? null,
+        expires_at: null,
+        accounts: status.accounts,
+      } as T;
+    }
+    case "copilot_is_authenticated":
+      return (await getWebManagedAuthStatus("github_copilot")).authenticated as T;
+    case "copilot_logout":
+      return (await logoutWebManagedAuth("github_copilot")) as T;
+    case "copilot_get_token":
+      return (await getWebCopilotToken()) as T;
+    case "copilot_get_token_for_account":
+      return (await getWebCopilotTokenForAccount(
+        args?.accountId as string,
+      )) as T;
+    case "copilot_get_models":
+      return (await getWebCopilotModels()) as T;
+    case "copilot_get_models_for_account":
+      return (await getWebCopilotModelsForAccount(
+        args?.accountId as string,
+      )) as T;
+    case "copilot_get_usage":
+      return (await getWebCopilotUsage()) as T;
+    case "copilot_get_usage_for_account":
+      return (await getWebCopilotUsageForAccount(
+        args?.accountId as string,
+      )) as T;
     case "get_mcp_servers":
       return (await getWebMcpServers()) as T;
     case "upsert_mcp_server":
