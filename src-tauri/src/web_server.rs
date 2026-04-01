@@ -909,7 +909,7 @@ async fn get_workspace_directory_path(
 
 async fn get_openclaw_default_model(
 ) -> Result<Json<Option<crate::openclaw_config::OpenClawDefaultModel>>, ApiError> {
-    let model = crate::openclaw_config::get_default_model()
+    let model = crate::get_openclaw_default_model_internal()
         .map_err(|e| ApiError::internal(format!("failed to load openclaw default model: {e}")))?;
     Ok(Json(model))
 }
@@ -917,7 +917,7 @@ async fn get_openclaw_default_model(
 async fn set_openclaw_default_model(
     Json(model): Json<crate::openclaw_config::OpenClawDefaultModel>,
 ) -> Result<Json<crate::openclaw_config::OpenClawWriteOutcome>, ApiError> {
-    let outcome = crate::openclaw_config::set_default_model(&model)
+    let outcome = crate::set_openclaw_default_model_internal(model)
         .map_err(|e| ApiError::internal(format!("failed to save openclaw default model: {e}")))?;
     Ok(Json(outcome))
 }
@@ -926,7 +926,7 @@ async fn get_openclaw_model_catalog() -> Result<
     Json<Option<HashMap<String, crate::openclaw_config::OpenClawModelCatalogEntry>>>,
     ApiError,
 > {
-    let catalog = crate::openclaw_config::get_model_catalog()
+    let catalog = crate::get_openclaw_model_catalog_internal()
         .map_err(|e| ApiError::internal(format!("failed to load openclaw model catalog: {e}")))?;
     Ok(Json(catalog))
 }
@@ -934,14 +934,14 @@ async fn get_openclaw_model_catalog() -> Result<
 async fn set_openclaw_model_catalog(
     Json(catalog): Json<HashMap<String, crate::openclaw_config::OpenClawModelCatalogEntry>>,
 ) -> Result<Json<crate::openclaw_config::OpenClawWriteOutcome>, ApiError> {
-    let outcome = crate::openclaw_config::set_model_catalog(&catalog)
+    let outcome = crate::set_openclaw_model_catalog_internal(catalog)
         .map_err(|e| ApiError::internal(format!("failed to save openclaw model catalog: {e}")))?;
     Ok(Json(outcome))
 }
 
 async fn get_openclaw_agents_defaults(
 ) -> Result<Json<Option<crate::openclaw_config::OpenClawAgentsDefaults>>, ApiError> {
-    let defaults = crate::openclaw_config::get_agents_defaults()
+    let defaults = crate::get_openclaw_agents_defaults_internal()
         .map_err(|e| ApiError::internal(format!("failed to load openclaw agents defaults: {e}")))?;
     Ok(Json(defaults))
 }
@@ -949,13 +949,13 @@ async fn get_openclaw_agents_defaults(
 async fn set_openclaw_agents_defaults(
     Json(defaults): Json<crate::openclaw_config::OpenClawAgentsDefaults>,
 ) -> Result<Json<crate::openclaw_config::OpenClawWriteOutcome>, ApiError> {
-    let outcome = crate::openclaw_config::set_agents_defaults(&defaults)
+    let outcome = crate::set_openclaw_agents_defaults_internal(defaults)
         .map_err(|e| ApiError::internal(format!("failed to save openclaw agents defaults: {e}")))?;
     Ok(Json(outcome))
 }
 
 async fn get_openclaw_env() -> Result<Json<crate::openclaw_config::OpenClawEnvConfig>, ApiError> {
-    let env = crate::openclaw_config::get_env_config()
+    let env = crate::get_openclaw_env_internal()
         .map_err(|e| ApiError::internal(format!("failed to load openclaw env config: {e}")))?;
     Ok(Json(env))
 }
@@ -963,14 +963,14 @@ async fn get_openclaw_env() -> Result<Json<crate::openclaw_config::OpenClawEnvCo
 async fn set_openclaw_env(
     Json(env): Json<crate::openclaw_config::OpenClawEnvConfig>,
 ) -> Result<Json<crate::openclaw_config::OpenClawWriteOutcome>, ApiError> {
-    let outcome = crate::openclaw_config::set_env_config(&env)
+    let outcome = crate::set_openclaw_env_internal(env)
         .map_err(|e| ApiError::internal(format!("failed to save openclaw env config: {e}")))?;
     Ok(Json(outcome))
 }
 
 async fn get_openclaw_tools() -> Result<Json<crate::openclaw_config::OpenClawToolsConfig>, ApiError>
 {
-    let tools = crate::openclaw_config::get_tools_config()
+    let tools = crate::get_openclaw_tools_internal()
         .map_err(|e| ApiError::internal(format!("failed to load openclaw tools config: {e}")))?;
     Ok(Json(tools))
 }
@@ -978,14 +978,14 @@ async fn get_openclaw_tools() -> Result<Json<crate::openclaw_config::OpenClawToo
 async fn set_openclaw_tools(
     Json(tools): Json<crate::openclaw_config::OpenClawToolsConfig>,
 ) -> Result<Json<crate::openclaw_config::OpenClawWriteOutcome>, ApiError> {
-    let outcome = crate::openclaw_config::set_tools_config(&tools)
+    let outcome = crate::set_openclaw_tools_internal(tools)
         .map_err(|e| ApiError::internal(format!("failed to save openclaw tools config: {e}")))?;
     Ok(Json(outcome))
 }
 
 async fn scan_openclaw_config_health(
 ) -> Result<Json<Vec<crate::openclaw_config::OpenClawHealthWarning>>, ApiError> {
-    let warnings = crate::openclaw_config::scan_openclaw_config_health()
+    let warnings = crate::scan_openclaw_config_health_internal()
         .map_err(|e| ApiError::internal(format!("failed to scan openclaw config health: {e}")))?;
     Ok(Json(warnings))
 }
@@ -993,7 +993,7 @@ async fn scan_openclaw_config_health(
 async fn get_openclaw_live_provider(
     Path(provider_id): Path<String>,
 ) -> Result<Json<Option<serde_json::Value>>, ApiError> {
-    let provider = crate::openclaw_config::get_provider(&provider_id)
+    let provider = crate::get_openclaw_live_provider_internal(&provider_id)
         .map_err(|e| ApiError::internal(format!("failed to load openclaw live provider: {e}")))?;
     Ok(Json(provider))
 }
