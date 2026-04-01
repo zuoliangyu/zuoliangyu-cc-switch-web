@@ -31,7 +31,7 @@ use crate::services::skill::{
     DiscoverableSkill, ImportSkillSelection, SkillBackupEntry, SkillRepo, SkillUninstallResult,
 };
 use crate::services::webdav_sync as webdav_sync_service;
-use crate::services::{PromptService, ProviderService, SwitchResult};
+use crate::services::{ProviderService, SwitchResult};
 use crate::settings::{self, WebDavSyncSettings};
 use crate::store::AppState;
 use crate::Database;
@@ -377,8 +377,8 @@ async fn get_prompts(
     State(state): State<WebApiState>,
     Path(app): Path<String>,
 ) -> Result<Json<indexmap::IndexMap<String, Prompt>>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let prompts = PromptService::get_prompts(state.app_state.as_ref(), app_type)
+    let prompts = crate::commands::get_prompts_internal(state.app_state.as_ref(), app)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to load prompts: {e}")))?;
     Ok(Json(prompts))
 }
@@ -388,8 +388,8 @@ async fn upsert_prompt(
     Path((app, id)): Path<(String, String)>,
     Json(prompt): Json<Prompt>,
 ) -> Result<StatusCode, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    PromptService::upsert_prompt(state.app_state.as_ref(), app_type, &id, prompt)
+    crate::commands::upsert_prompt_internal(state.app_state.as_ref(), app, id, prompt)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to save prompt: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -398,8 +398,8 @@ async fn delete_prompt(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
 ) -> Result<StatusCode, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    PromptService::delete_prompt(state.app_state.as_ref(), app_type, &id)
+    crate::commands::delete_prompt_internal(state.app_state.as_ref(), app, id)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to delete prompt: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -408,8 +408,8 @@ async fn enable_prompt(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
 ) -> Result<StatusCode, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    PromptService::enable_prompt(state.app_state.as_ref(), app_type, &id)
+    crate::commands::enable_prompt_internal(state.app_state.as_ref(), app, id)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to enable prompt: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -418,8 +418,8 @@ async fn import_prompt_from_file(
     State(state): State<WebApiState>,
     Path(app): Path<String>,
 ) -> Result<Json<String>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let id = PromptService::import_from_file(state.app_state.as_ref(), app_type)
+    let id = crate::commands::import_prompt_from_file_internal(state.app_state.as_ref(), app)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to import prompt from file: {e}")))?;
     Ok(Json(id))
 }
@@ -427,8 +427,8 @@ async fn import_prompt_from_file(
 async fn get_current_prompt_file_content(
     Path(app): Path<String>,
 ) -> Result<Json<Option<String>>, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    let content = PromptService::get_current_file_content(app_type)
+    let content = crate::commands::get_current_prompt_file_content_internal(app)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to load current prompt file: {e}")))?;
     Ok(Json(content))
 }
