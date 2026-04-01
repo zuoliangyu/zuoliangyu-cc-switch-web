@@ -22,8 +22,6 @@ export interface GeminiProviderPreset {
   model?: string;
   description?: string;
   category?: ProviderCategory;
-  isPartner?: boolean;
-  partnerPromotionKey?: string;
   endpointCandidates?: string[];
   theme?: GeminiPresetTheme;
   // 图标配置
@@ -41,7 +39,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     },
     description: "Google 官方 Gemini API (OAuth)",
     category: "official",
-    partnerPromotionKey: "google-official",
     theme: {
       icon: "gemini",
       backgroundColor: "#4285F4",
@@ -64,8 +61,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     model: "gemini-3.1-pro",
     description: "PackyCode",
     category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "packycode",
     endpointCandidates: [
       "https://api-slb.packyapi.com",
       "https://www.packyapi.com",
@@ -86,8 +81,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     model: "gemini-3.1-pro",
     description: "Cubence",
     category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "cubence",
     endpointCandidates: [
       "https://api.cubence.com/v1",
       "https://api-cf.cubence.com/v1",
@@ -111,8 +104,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     model: "gemini-3.1-pro",
     description: "AIGoCode",
     category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "aigocode",
     endpointCandidates: ["https://api.aigocode.com"],
     icon: "aigocode",
     iconColor: "#5B7FFF",
@@ -131,8 +122,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     model: "gemini-3.1-pro",
     description: "AICodeMirror",
     category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "aicodemirror",
     endpointCandidates: [
       "https://api.aicodemirror.com/api/gemini",
       "https://api.claudecode.net.cn/api/gemini",
@@ -154,8 +143,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     model: "gemini-3.1-pro",
     description: "AICoding",
     category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "aicoding",
     endpointCandidates: ["https://api.aicoding.sh"],
     icon: "aicoding",
     iconColor: "#000000",
@@ -174,8 +161,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     model: "gemini-3.1-pro",
     description: "CrazyRouter",
     category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "crazyrouter",
     endpointCandidates: ["https://crazyrouter.com"],
     icon: "crazyrouter",
     iconColor: "#000000",
@@ -194,8 +179,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     model: "gemini-3.1-pro",
     description: "SSSAiCode",
     category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "sssaicode",
     endpointCandidates: [
       "https://node-hk.sssaicode.com/api",
       "https://claude2.sssaicode.com/api",
@@ -218,8 +201,6 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     model: "gemini-3.1-pro",
     description: "CTok",
     category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "ctok",
     endpointCandidates: ["https://api.ctok.ai/v1beta"],
     icon: "ctok",
     iconColor: "#000000",

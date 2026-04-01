@@ -77,6 +77,7 @@
 - 桌面自动更新与便携模式检测的 Rust 命令、Updater 插件依赖已从当前分支移除
 - 已无前端入口的 `open_config_folder` / `open_app_config_folder` 命令已从当前分支移除
 - Provider 专属终端与 Session 终端拉起命令已从当前分支移除，统一降级为复制操作
+- Provider 预设中的合作/促销展示已从 Web 分支前端移除，不再在预设选择、配置表单和 Provider 卡片中显示营销信息
 
 ## 四、当前真正的收尾重点
 

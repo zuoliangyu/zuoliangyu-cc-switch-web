@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { FormLabel } from "@/components/ui/form";
 import { ClaudeIcon, CodexIcon, GeminiIcon } from "@/components/BrandIcons";
-import { Zap, Star, Layers, Settings2 } from "lucide-react";
+import { Zap, Layers, Settings2 } from "lucide-react";
 import type { ProviderPreset } from "@/config/claudeProviderPresets";
 import type { CodexProviderPreset } from "@/config/codexProviderPresets";
 import type { GeminiProviderPreset } from "@/config/geminiProviderPresets";
@@ -146,7 +146,6 @@ export function ProviderPresetSelector({
           if (!entries || entries.length === 0) return null;
           return entries.map((entry) => {
             const isSelected = selectedPresetId === entry.id;
-            const isPartner = entry.preset.isPartner;
             return (
               <button
                 key={entry.id}
@@ -162,11 +161,6 @@ export function ProviderPresetSelector({
                 {entry.preset.nameKey
                   ? t(entry.preset.nameKey)
                   : entry.preset.name}
-                {isPartner && (
-                  <span className="absolute -top-1 -right-1 flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-md">
-                    <Star className="h-2.5 w-2.5 fill-current" />
-                  </span>
-                )}
               </button>
             );
           });
