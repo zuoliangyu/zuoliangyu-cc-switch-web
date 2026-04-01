@@ -14,7 +14,7 @@ The current target architecture is:
 - Backend: local Rust service
 - Access pattern: browser opens `http://localhost:xxxx`
 
-This direction is intended to support headless Linux servers in addition to regular Windows and Linux desktop environments.
+This direction targets Windows, macOS, Linux, and headless Linux server environments.
 
 ## Relationship to Upstream
 
@@ -24,7 +24,7 @@ This direction is intended to support headless Linux servers in addition to regu
 
 ## Notes
 
-If you are looking for the original CC Switch project, desktop application, or upstream release information, please visit the upstream repository directly.
+If you are looking for the original CC Switch project or upstream release information, please visit the upstream repository directly.
 
 ## Run
 
@@ -80,7 +80,7 @@ If you are looking for the original CC Switch project, desktop application, or u
 
    Then open [http://localhost:8788](http://localhost:8788).
 
-   In local Web service mode, CC Switch Web stores its own data under the same default directory as the desktop/local branch:
+   In local Web service mode, CC Switch Web stores its own data under the default local config root used by CC Switch:
 
    ```text
    ~/.cc-switch

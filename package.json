@@ -6,9 +6,6 @@
   "scripts": {
     "dev": "pnpm dev:web",
     "build": "pnpm build:d",
-    "tauri": "tauri",
-    "dev:tauri": "pnpm tauri dev",
-    "build:tauri": "pnpm tauri build",
     "dev:renderer": "vite",
     "dev:web": "node scripts/dev-web.mjs",
     "dev:web:ui": "vite --host 127.0.0.1 --port 3000",
@@ -38,7 +35,6 @@
   "author": "Jason Young",
   "license": "MIT",
   "devDependencies": {
-    "@tauri-apps/cli": "^2.8.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
@@ -90,7 +86,6 @@
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "@tauri-apps/plugin-process": "^2.0.0",
     "@tauri-apps/plugin-store": "^2.0.0",
-    "@tauri-apps/plugin-updater": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
