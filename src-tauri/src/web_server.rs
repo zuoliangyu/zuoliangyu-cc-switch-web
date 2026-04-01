@@ -1571,12 +1571,9 @@ async fn get_common_config_snippet(
     State(state): State<WebApiState>,
     Path(app): Path<String>,
 ) -> Result<Json<Option<String>>, ApiError> {
-    let snippet = state
-        .app_state
-        .db
-        .get_config_snippet(&app)
-        .map_err(|e| ApiError::internal(format!("failed to load common config snippet: {e}")))?;
-    Ok(Json(snippet))
+    crate::get_common_config_snippet_internal(state.app_state.as_ref(), &app)
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to load common config snippet: {e}")))
 }
 
 async fn set_common_config_snippet(
@@ -1584,83 +1581,20 @@ async fn set_common_config_snippet(
     Path(app): Path<String>,
     Json(payload): Json<SnippetRequest>,
 ) -> Result<StatusCode, ApiError> {
-    let is_cleared = payload.snippet.trim().is_empty();
-    let old_snippet = state
-        .app_state
-        .db
-        .get_config_snippet(&app)
-        .map_err(|e| ApiError::internal(format!("failed to load current common config snippet: {e}")))?;
-
-    crate::validate_common_config_snippet(&app, &payload.snippet).map_err(ApiError::bad_request)?;
-
-    let value = if is_cleared {
-        None
-    } else {
-        Some(payload.snippet.clone())
-    };
-
-    if matches!(app.as_str(), "claude" | "codex" | "gemini") {
-        if let Some(legacy_snippet) = old_snippet
-            .as_deref()
-            .filter(|value| !value.trim().is_empty())
-        {
-            let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-            ProviderService::migrate_legacy_common_config_usage(
-                state.app_state.as_ref(),
-                app_type,
-                legacy_snippet,
-            )
-            .map_err(|e| {
-                ApiError::internal(format!("failed to migrate legacy common config usage: {e}"))
-            })?;
+    match crate::set_common_config_snippet_internal(
+        state.app_state.as_ref(),
+        &app,
+        payload.snippet,
+    ) {
+        Ok(()) => {}
+        Err(crate::ConfigCommandError::BadRequest(message)) => {
+            return Err(ApiError::bad_request(message));
         }
-    }
-
-    state
-        .app_state
-        .db
-        .set_config_snippet(&app, value)
-        .map_err(|e| ApiError::internal(format!("failed to save common config snippet: {e}")))?;
-    state
-        .app_state
-        .db
-        .set_config_snippet_cleared(&app, is_cleared)
-        .map_err(|e| ApiError::internal(format!("failed to save common config cleared state: {e}")))?;
-
-    if matches!(app.as_str(), "claude" | "codex" | "gemini") {
-        let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-        ProviderService::sync_current_provider_for_app(state.app_state.as_ref(), app_type)
-            .map_err(|e| {
-                ApiError::internal(format!("failed to sync current provider after snippet update: {e}"))
-            })?;
-    }
-
-    if app == "omo"
-        && state
-            .app_state
-            .db
-            .get_current_omo_provider("opencode", "omo")
-            .map_err(|e| ApiError::internal(format!("failed to load current OMO provider: {e}")))?
-            .is_some()
-    {
-        OmoService::write_config_to_file(state.app_state.as_ref(), &STANDARD)
-            .map_err(|e| ApiError::internal(format!("failed to write OMO config after snippet update: {e}")))?;
-    }
-
-    if app == "omo-slim"
-        && state
-            .app_state
-            .db
-            .get_current_omo_provider("opencode", "omo-slim")
-            .map_err(|e| ApiError::internal(format!("failed to load current OMO Slim provider: {e}")))?
-            .is_some()
-    {
-        OmoService::write_config_to_file(state.app_state.as_ref(), &SLIM)
-            .map_err(|e| {
-                ApiError::internal(format!(
-                    "failed to write OMO Slim config after snippet update: {e}"
-                ))
-            })?;
+        Err(crate::ConfigCommandError::Internal(message)) => {
+            return Err(ApiError::internal(format!(
+                "failed to save common config snippet: {message}"
+            )));
+        }
     }
 
     Ok(StatusCode::NO_CONTENT)
@@ -1673,30 +1607,29 @@ async fn extract_common_config_snippet(
 ) -> Result<Json<String>, ApiError> {
     let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
 
-    if let Some(settings_config) = payload
+    let settings = if let Some(settings_config) = payload
         .settings_config
         .as_deref()
         .filter(|value| !value.trim().is_empty())
     {
-        let settings: serde_json::Value = serde_json::from_str(settings_config)
-            .map_err(|e| ApiError::bad_request(crate::invalid_json_format_error(e)))?;
-        let snippet =
-            ProviderService::extract_common_config_snippet_from_settings(app_type, &settings)
-                .map_err(|e| {
-                    ApiError::internal(format!(
-                        "failed to extract common config snippet from settings: {e}"
-                    ))
-                })?;
-        return Ok(Json(snippet));
-    }
+        Some(
+            serde_json::from_str(settings_config)
+                .map_err(|e| ApiError::bad_request(crate::invalid_json_format_error(e)))?,
+        )
+    } else {
+        None
+    };
 
-    let snippet = ProviderService::extract_common_config_snippet(state.app_state.as_ref(), app_type)
-        .map_err(|e| {
-            ApiError::internal(format!(
-                "failed to extract common config snippet from current provider: {e}"
-            ))
-        })?;
-    Ok(Json(snippet))
+    match crate::extract_common_config_snippet_internal(state.app_state.as_ref(), app_type, settings)
+    {
+        Ok(snippet) => Ok(Json(snippet)),
+        Err(crate::ConfigCommandError::BadRequest(message)) => {
+            Err(ApiError::bad_request(message))
+        }
+        Err(crate::ConfigCommandError::Internal(message)) => Err(
+            ApiError::internal(format!("failed to extract common config snippet: {message}")),
+        ),
+    }
 }
 
 async fn sync_current_providers_live(
@@ -2035,8 +1968,7 @@ async fn get_current_provider(
 }
 
 async fn get_config_dir(Path(app): Path<String>) -> Result<Json<String>, ApiError> {
-    let dir = crate::commands::get_config_dir(app)
-        .await
+    let dir = crate::get_config_dir_internal(app)
         .map_err(|e| ApiError::internal(format!("failed to load config dir: {e}")))?;
     Ok(Json(dir))
 }
