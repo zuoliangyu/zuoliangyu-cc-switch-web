@@ -1345,25 +1345,6 @@ async fn install_skill_archives(
     Ok(Json(results))
 }
 
-fn merge_settings_for_save(
-    mut incoming: crate::settings::AppSettings,
-    existing: &crate::settings::AppSettings,
-) -> crate::settings::AppSettings {
-    match (&mut incoming.webdav_sync, &existing.webdav_sync) {
-        (None, _) => {
-            incoming.webdav_sync = existing.webdav_sync.clone();
-        }
-        (Some(incoming_sync), Some(existing_sync))
-            if incoming_sync.password.is_empty() && !existing_sync.password.is_empty() =>
-        {
-            incoming_sync.password = existing_sync.password.clone();
-        }
-        _ => {}
-    }
-
-    incoming
-}
-
 struct ApiError {
     status: StatusCode,
     message: String,
@@ -1413,7 +1394,7 @@ async fn health() -> Json<HealthResponse> {
 }
 
 async fn get_settings() -> Json<crate::settings::AppSettings> {
-    Json(crate::settings::get_settings_for_frontend())
+    Json(crate::get_settings_internal())
 }
 
 async fn export_config_download(
@@ -1569,26 +1550,21 @@ async fn webdav_sync_fetch_remote_info() -> Result<Json<Value>, ApiError> {
 async fn save_settings(
     Json(settings): Json<crate::settings::AppSettings>,
 ) -> Result<Json<bool>, ApiError> {
-    let existing = crate::settings::get_settings();
-    let merged = merge_settings_for_save(settings, &existing);
-    crate::settings::update_settings(merged)
-        .map_err(|e| ApiError::internal(format!("failed to save settings: {e}")))?;
-    Ok(Json(true))
+    crate::save_settings_internal(settings)
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to save settings: {e}")))
 }
 
 async fn get_app_config_dir_override() -> Json<Option<String>> {
-    Json(
-        crate::app_store::refresh_app_config_dir_override()
-            .map(|path| path.to_string_lossy().to_string()),
-    )
+    Json(crate::get_app_config_dir_override_internal().unwrap_or(None))
 }
 
 async fn set_app_config_dir_override(
     Json(payload): Json<OptionalPathRequest>,
 ) -> Result<Json<bool>, ApiError> {
-    crate::app_store::set_app_config_dir_override(payload.path.as_deref())
-        .map_err(|e| ApiError::internal(format!("failed to save app config dir override: {e}")))?;
-    Ok(Json(true))
+    crate::set_app_config_dir_override_internal(payload.path)
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to save app config dir override: {e}")))
 }
 
 async fn get_common_config_snippet(
@@ -1735,78 +1711,50 @@ async fn sync_current_providers_live(
 async fn get_rectifier_config(
     State(state): State<WebApiState>,
 ) -> Result<Json<RectifierConfig>, ApiError> {
-    let config = state
-        .app_state
-        .db
-        .get_rectifier_config()
-        .map_err(|e| ApiError::internal(format!("failed to load rectifier config: {e}")))?;
-    Ok(Json(config))
+    crate::get_rectifier_config_internal(state.app_state.as_ref())
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to load rectifier config: {e}")))
 }
 
 async fn set_rectifier_config(
     State(state): State<WebApiState>,
     Json(config): Json<RectifierConfig>,
 ) -> Result<Json<bool>, ApiError> {
-    state
-        .app_state
-        .db
-        .set_rectifier_config(&config)
-        .map_err(|e| ApiError::internal(format!("failed to save rectifier config: {e}")))?;
-    Ok(Json(true))
+    crate::set_rectifier_config_internal(state.app_state.as_ref(), config)
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to save rectifier config: {e}")))
 }
 
 async fn get_optimizer_config(
     State(state): State<WebApiState>,
 ) -> Result<Json<OptimizerConfig>, ApiError> {
-    let config = state
-        .app_state
-        .db
-        .get_optimizer_config()
-        .map_err(|e| ApiError::internal(format!("failed to load optimizer config: {e}")))?;
-    Ok(Json(config))
+    crate::get_optimizer_config_internal(state.app_state.as_ref())
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to load optimizer config: {e}")))
 }
 
 async fn set_optimizer_config(
     State(state): State<WebApiState>,
     Json(config): Json<OptimizerConfig>,
 ) -> Result<Json<bool>, ApiError> {
-    match config.cache_ttl.as_str() {
-        "5m" | "1h" => {}
-        other => {
-            return Err(ApiError::bad_request(format!(
-                "Invalid cache_ttl value: '{other}'. Allowed values: '5m', '1h'"
-            )));
-        }
-    }
-
-    state
-        .app_state
-        .db
-        .set_optimizer_config(&config)
-        .map_err(|e| ApiError::internal(format!("failed to save optimizer config: {e}")))?;
-    Ok(Json(true))
+    crate::set_optimizer_config_internal(state.app_state.as_ref(), config)
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to save optimizer config: {e}")))
 }
 
 async fn get_log_config(State(state): State<WebApiState>) -> Result<Json<LogConfig>, ApiError> {
-    let config = state
-        .app_state
-        .db
-        .get_log_config()
-        .map_err(|e| ApiError::internal(format!("failed to load log config: {e}")))?;
-    Ok(Json(config))
+    crate::get_log_config_internal(state.app_state.as_ref())
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to load log config: {e}")))
 }
 
 async fn set_log_config(
     State(state): State<WebApiState>,
     Json(config): Json<LogConfig>,
 ) -> Result<Json<bool>, ApiError> {
-    state
-        .app_state
-        .db
-        .set_log_config(&config)
-        .map_err(|e| ApiError::internal(format!("failed to save log config: {e}")))?;
-    log::set_max_level(config.to_level_filter());
-    Ok(Json(true))
+    crate::set_log_config_internal(state.app_state.as_ref(), config)
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to save log config: {e}")))
 }
 
 async fn get_stream_check_config(
