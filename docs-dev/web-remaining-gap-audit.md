@@ -96,6 +96,7 @@
 - Web 启动入口已接回周期备份/维护检查，旧备份策略配置重新对 Web 运行模式生效
 - OMO 仅保留 Web 正在使用的“读取本地配置填充表单”路径，旧的 Rust 侧直接导入生成 provider 逻辑已移除
 - `restart_app` 的测试 mock 已删除，Rust 清单中无引用的 `webkit2gtk` / `winreg` / `objc2` / `objc2-app-kit` 直接依赖已移除
+- Web-only 主链中的导入导出、Session 管理、WebDAV 后置同步、WebDAV 自动同步与测速测试已从 `tauri::async_runtime` 切换到 `tokio`，进一步缩小 Tauri 运行时依赖面
 
 ## 四、基于前端命令差集的剩余项
 

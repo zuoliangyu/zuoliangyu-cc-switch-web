@@ -2,6 +2,7 @@
 
 use serde_json::{json, Value};
 use tauri::State;
+use tokio::task::spawn_blocking;
 
 use crate::database::{backup::BackupEntry, Database};
 use crate::error::AppError;
@@ -13,7 +14,7 @@ use crate::store::AppState;
 #[tauri::command]
 pub async fn sync_current_providers_live(state: State<'_, AppState>) -> Result<Value, String> {
     let db = state.db.clone();
-    tauri::async_runtime::spawn_blocking(move || {
+    spawn_blocking(move || {
         let app_state = AppState::new(db);
         ProviderService::sync_current_to_live(&app_state)?;
         Ok::<_, AppError>(json!({
@@ -32,7 +33,7 @@ pub async fn sync_current_providers_live(state: State<'_, AppState>) -> Result<V
 #[tauri::command]
 pub async fn create_db_backup(state: State<'_, AppState>) -> Result<String, String> {
     let db = state.db.clone();
-    tauri::async_runtime::spawn_blocking(move || match db.backup_database_file()? {
+    spawn_blocking(move || match db.backup_database_file()? {
         Some(path) => Ok(path
             .file_name()
             .map(|f| f.to_string_lossy().into_owned())
@@ -59,7 +60,7 @@ pub async fn restore_db_backup(
     filename: String,
 ) -> Result<String, String> {
     let db = state.db.clone();
-    tauri::async_runtime::spawn_blocking(move || db.restore_from_backup(&filename))
+    spawn_blocking(move || db.restore_from_backup(&filename))
         .await
         .map_err(|e| format!("Restore failed: {e}"))?
         .map_err(|e: AppError| e.to_string())

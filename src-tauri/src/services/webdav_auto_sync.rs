@@ -132,7 +132,7 @@ pub fn start_worker(db: Arc<crate::database::Database>) {
         return;
     }
 
-    tauri::async_runtime::spawn(async move {
+    tokio::spawn(async move {
         run_worker_loop(db, rx).await;
     });
 }

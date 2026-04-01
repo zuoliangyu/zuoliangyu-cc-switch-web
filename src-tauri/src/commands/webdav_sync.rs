@@ -2,6 +2,7 @@
 
 use serde_json::{json, Value};
 use tauri::State;
+use tokio::task::spawn_blocking;
 
 use crate::commands::sync_support::{
     attach_warning, post_sync_warning_from_result, run_post_import_sync,
@@ -126,7 +127,7 @@ pub async fn webdav_sync_download(state: State<'_, AppState>) -> Result<Value, S
 
     // Post-download sync is best-effort: snapshot restore has already succeeded.
     let warning = post_sync_warning_from_result(
-        tauri::async_runtime::spawn_blocking(move || run_post_import_sync(db_for_sync))
+        spawn_blocking(move || run_post_import_sync(db_for_sync))
             .await
             .map_err(|e| e.to_string()),
     );
