@@ -72,15 +72,6 @@ export const useAddProviderMutation = (appId: AppId) => {
         });
       }
 
-      try {
-        await providersApi.updateTrayMenu();
-      } catch (trayError) {
-        console.error(
-          "Failed to update tray menu after adding provider",
-          trayError,
-        );
-      }
-
       toast.success(
         t("notifications.providerAdded", {
           defaultValue: "供应商已添加",
@@ -171,15 +162,6 @@ export const useDeleteProviderMutation = (appId: AppId) => {
         });
       }
 
-      try {
-        await providersApi.updateTrayMenu();
-      } catch (trayError) {
-        console.error(
-          "Failed to update tray menu after deleting provider",
-          trayError,
-        );
-      }
-
       toast.success(
         t("notifications.deleteSuccess", {
           defaultValue: "供应商已删除",
@@ -236,14 +218,6 @@ export const useSwitchProviderMutation = (appId: AppId) => {
         });
       }
 
-      try {
-        await providersApi.updateTrayMenu();
-      } catch (trayError) {
-        console.error(
-          "Failed to update tray menu after switching provider",
-          trayError,
-        );
-      }
     },
     onError: (error: Error) => {
       const detail = extractErrorMessage(error) || t("common.unknown");

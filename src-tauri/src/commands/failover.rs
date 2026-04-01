@@ -160,12 +160,5 @@ pub async fn set_auto_failover_enabled(
         let _ = app.emit("provider-switched", event_data);
     }
 
-    // 刷新托盘菜单，确保状态同步
-    if let Ok(new_menu) = crate::tray::create_tray_menu(&app, &state) {
-        if let Some(tray) = app.tray_by_id("main") {
-            let _ = tray.set_menu(Some(new_menu));
-        }
-    }
-
     Ok(())
 }

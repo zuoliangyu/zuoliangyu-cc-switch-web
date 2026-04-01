@@ -688,8 +688,6 @@ export async function invoke<T>(
       return null as T;
     case "get_config_dir":
       return (await getWebConfigDir(args?.app as AppId)) as T;
-    case "update_tray_menu":
-      return false as T;
     case "set_window_theme":
       return true as T;
     case "open_external": {

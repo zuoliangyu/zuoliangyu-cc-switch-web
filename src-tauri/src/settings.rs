@@ -3,9 +3,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{OnceLock, RwLock};
 
-#[cfg(unix)]
-use std::io::Write;
-
 use crate::app_config::AppType;
 use crate::error::AppError;
 use crate::services::skill::SyncMethod;
@@ -173,10 +170,6 @@ impl WebDavSyncSettings {
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     // ===== 设备级 UI 设置 =====
-    #[serde(default = "default_show_in_tray")]
-    pub show_in_tray: bool,
-    #[serde(default = "default_minimize_to_tray_on_close")]
-    pub minimize_to_tray_on_close: bool,
     /// 是否启用 Claude 插件联动
     #[serde(default)]
     pub enable_claude_plugin_integration: bool,
@@ -186,9 +179,6 @@ pub struct AppSettings {
     /// 是否开机自启
     #[serde(default)]
     pub launch_on_startup: bool,
-    /// 静默启动（程序启动时不显示主窗口，仅托盘运行）
-    #[serde(default)]
-    pub silent_startup: bool,
     /// 是否在主页面启用本地代理功能（默认关闭）
     #[serde(default)]
     pub enable_local_proxy: bool,
@@ -273,23 +263,12 @@ pub struct AppSettings {
     pub preferred_terminal: Option<String>,
 }
 
-fn default_show_in_tray() -> bool {
-    true
-}
-
-fn default_minimize_to_tray_on_close() -> bool {
-    true
-}
-
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            show_in_tray: true,
-            minimize_to_tray_on_close: true,
             enable_claude_plugin_integration: false,
             skip_claude_onboarding: false,
             launch_on_startup: false,
-            silent_startup: false,
             enable_local_proxy: false,
             proxy_confirmed: None,
             usage_confirmed: None,

@@ -16,10 +16,7 @@ const visibleApps: VisibleApps = {
 };
 
 export const getDefaultSettings = (): Settings => ({
-  showInTray: false,
-  minimizeToTrayOnClose: false,
   launchOnStartup: false,
-  silentStartup: false,
   enableLocalProxy: false,
   proxyConfirmed: false,
   usageConfirmed: false,

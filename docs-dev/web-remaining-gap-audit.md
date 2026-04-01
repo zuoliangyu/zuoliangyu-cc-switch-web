@@ -78,6 +78,7 @@
 - 已无前端入口的 `open_config_folder` / `open_app_config_folder` 命令已从当前分支移除
 - Provider 专属终端与 Session 终端拉起命令已从当前分支移除，统一降级为复制操作
 - Provider 预设中的合作/促销展示已从 Web 分支前端移除，不再在预设选择、配置表单和 Provider 卡片中显示营销信息
+- Tauri 托盘、单实例、轻量模式、关闭最小化到托盘与相关前端刷新兼容调用已从当前分支移除
 
 ## 四、当前真正的收尾重点
 

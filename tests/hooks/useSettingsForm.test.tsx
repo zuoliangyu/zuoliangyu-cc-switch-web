@@ -31,8 +31,6 @@ describe("useSettingsForm Hook", () => {
   it("should normalize settings and sync language on initialization", async () => {
     useSettingsQueryMock.mockReturnValue({
       data: {
-        showInTray: undefined,
-        minimizeToTrayOnClose: undefined,
         enableClaudePluginIntegration: undefined,
         claudeConfigDir: "  /Users/demo  ",
         codexConfigDir: "   ",
@@ -48,8 +46,6 @@ describe("useSettingsForm Hook", () => {
     });
 
     const settings = result.current.settings!;
-    expect(settings.showInTray).toBe(true);
-    expect(settings.minimizeToTrayOnClose).toBe(true);
     expect(settings.enableClaudePluginIntegration).toBe(false);
     expect(settings.claudeConfigDir).toBe("/Users/demo");
     expect(settings.codexConfigDir).toBeUndefined();
@@ -61,8 +57,6 @@ describe("useSettingsForm Hook", () => {
   it("should support japanese language preference from server data", async () => {
     useSettingsQueryMock.mockReturnValue({
       data: {
-        showInTray: true,
-        minimizeToTrayOnClose: true,
         enableClaudePluginIntegration: false,
         claudeConfigDir: "/Users/demo",
         codexConfigDir: null,
@@ -104,13 +98,6 @@ describe("useSettingsForm Hook", () => {
     const { result } = renderHook(() => useSettingsForm());
 
     act(() => {
-      result.current.updateSettings({ showInTray: false });
-    });
-
-    expect(result.current.settings?.showInTray).toBe(false);
-
-    changeLanguageSpy.mockClear();
-    act(() => {
       result.current.updateSettings({ language: "en" });
     });
 
@@ -121,8 +108,6 @@ describe("useSettingsForm Hook", () => {
   it("should reset with server data and restore initial language in resetSettings", async () => {
     useSettingsQueryMock.mockReturnValue({
       data: {
-        showInTray: true,
-        minimizeToTrayOnClose: true,
         enableClaudePluginIntegration: false,
         claudeConfigDir: "/origin",
         codexConfigDir: null,
@@ -142,8 +127,6 @@ describe("useSettingsForm Hook", () => {
 
     act(() => {
       result.current.resetSettings({
-        showInTray: false,
-        minimizeToTrayOnClose: false,
         enableClaudePluginIntegration: true,
         claudeConfigDir: "  /reset  ",
         codexConfigDir: "   ",
@@ -152,8 +135,6 @@ describe("useSettingsForm Hook", () => {
     });
 
     const settings = result.current.settings!;
-    expect(settings.showInTray).toBe(false);
-    expect(settings.minimizeToTrayOnClose).toBe(false);
     expect(settings.enableClaudePluginIntegration).toBe(true);
     expect(settings.claudeConfigDir).toBe("/reset");
     expect(settings.codexConfigDir).toBeUndefined();
@@ -165,8 +146,6 @@ describe("useSettingsForm Hook", () => {
   it("should not call changeLanguage repeatedly when language is consistent in syncLanguage", async () => {
     useSettingsQueryMock.mockReturnValue({
       data: {
-        showInTray: true,
-        minimizeToTrayOnClose: true,
         enableClaudePluginIntegration: false,
         claudeConfigDir: null,
         codexConfigDir: null,

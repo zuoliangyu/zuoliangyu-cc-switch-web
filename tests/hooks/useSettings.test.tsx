@@ -10,7 +10,6 @@ const applyClaudePluginConfigMock = vi.fn();
 const applyClaudeOnboardingSkipMock = vi.fn();
 const clearClaudeOnboardingSkipMock = vi.fn();
 const syncCurrentProvidersLiveMock = vi.fn();
-const updateTrayMenuMock = vi.fn();
 const toastErrorMock = vi.fn();
 const toastSuccessMock = vi.fn();
 
@@ -59,15 +58,10 @@ vi.mock("@/lib/api", () => ({
     syncCurrentProvidersLive: (...args: unknown[]) =>
       syncCurrentProvidersLiveMock(...args),
   },
-  providersApi: {
-    updateTrayMenu: (...args: unknown[]) => updateTrayMenuMock(...args),
-  },
 }));
 
 const createSettingsFormMock = (overrides: Record<string, unknown> = {}) => ({
   settings: {
-    showInTray: true,
-    minimizeToTrayOnClose: true,
     enableClaudePluginIntegration: false,
     skipClaudeOnboarding: true,
     claudeConfigDir: "/claude",
@@ -125,8 +119,6 @@ describe("useSettings hook", () => {
     window.localStorage.clear();
 
     serverSettings = {
-      showInTray: true,
-      minimizeToTrayOnClose: true,
       enableClaudePluginIntegration: false,
       skipClaudeOnboarding: true,
       claudeConfigDir: "/server/claude",

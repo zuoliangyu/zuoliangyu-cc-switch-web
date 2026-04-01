@@ -9,8 +9,6 @@ const directorySchema = z
 
 export const settingsSchema = z.object({
   // 设备级 UI 设置
-  showInTray: z.boolean(),
-  minimizeToTrayOnClose: z.boolean(),
   enableClaudePluginIntegration: z.boolean().optional(),
   skipClaudeOnboarding: z.boolean().optional(),
   launchOnStartup: z.boolean().optional(),

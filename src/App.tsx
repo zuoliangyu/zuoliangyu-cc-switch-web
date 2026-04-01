@@ -342,11 +342,6 @@ function App() {
       try {
         unsubscribe = await listen("universal-provider-synced", async () => {
           await queryClient.invalidateQueries({ queryKey: ["providers"] });
-          try {
-            await providersApi.updateTrayMenu();
-          } catch (error) {
-            console.error("[App] Failed to update tray menu", error);
-          }
         });
       } catch (error) {
         console.error(
@@ -697,11 +692,6 @@ function App() {
     } catch (error) {
       console.error("[App] Failed to refresh providers after import", error);
       await refetch();
-    }
-    try {
-      await providersApi.updateTrayMenu();
-    } catch (error) {
-      console.error("[App] Failed to refresh tray menu", error);
     }
   };
 

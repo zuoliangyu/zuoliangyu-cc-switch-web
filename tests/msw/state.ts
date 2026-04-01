@@ -78,8 +78,6 @@ const createDefaultCurrent = (): CurrentProviderState => ({
 let providers = createDefaultProviders();
 let current = createDefaultCurrent();
 let settingsState: Settings = {
-  showInTray: true,
-  minimizeToTrayOnClose: true,
   enableClaudePluginIntegration: false,
   claudeConfigDir: "/default/claude",
   codexConfigDir: "/default/codex",
@@ -187,8 +185,6 @@ export const resetProviderState = () => {
   sessionsState = createDefaultSessions();
   sessionMessagesState = createDefaultSessionMessages();
   settingsState = {
-    showInTray: true,
-    minimizeToTrayOnClose: true,
     enableClaudePluginIntegration: false,
     claudeConfigDir: "/default/claude",
     codexConfigDir: "/default/codex",

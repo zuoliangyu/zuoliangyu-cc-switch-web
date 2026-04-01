@@ -95,16 +95,6 @@ export function useProviderActions(activeApp: AppId, isProxyRunning?: boolean) {
   const updateProvider = useCallback(
     async (provider: Provider) => {
       await updateProviderMutation.mutateAsync(provider);
-
-      // 更新托盘菜单（失败不影响主操作）
-      try {
-        await providersApi.updateTrayMenu();
-      } catch (trayError) {
-        console.error(
-          "Failed to update tray menu after updating provider",
-          trayError,
-        );
-      }
     },
     [updateProviderMutation],
   );

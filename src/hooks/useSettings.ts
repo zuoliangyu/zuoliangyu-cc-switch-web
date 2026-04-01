@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { providersApi, settingsApi, type AppId } from "@/lib/api";
+import { settingsApi, type AppId } from "@/lib/api";
 import { isWebRuntime } from "@/lib/runtime/tauri/env";
 import { syncCurrentProvidersLiveSafe } from "@/utils/postChangeSync";
 import { useSettingsQuery, useSaveSettingsMutation } from "@/lib/query";
@@ -162,15 +162,6 @@ export function useSettings(): UseSettingsResult {
           );
         }
 
-        // 更新托盘菜单
-        if (!isWebMode) {
-          try {
-            await providersApi.updateTrayMenu();
-          } catch (error) {
-            console.warn("[useSettings] Failed to refresh tray menu", error);
-          }
-        }
-
         return { requiresRestart: false };
       } catch (error) {
         console.error("[useSettings] Failed to auto-save settings", error);
@@ -238,14 +229,6 @@ export function useSettings(): UseSettingsResult {
             "[useSettings] Failed to persist language preference",
             error,
           );
-        }
-
-        if (!isWebMode) {
-          try {
-            await providersApi.updateTrayMenu();
-          } catch (error) {
-            console.warn("[useSettings] Failed to refresh tray menu", error);
-          }
         }
 
         // 如果 Claude/Codex/Gemini/OpenCode 的目录覆盖发生变化，则立即将"当前使用的供应商"写回对应应用的 live 配置

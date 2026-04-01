@@ -23,7 +23,6 @@ mod sync_support;
 mod usage;
 mod webdav_sync;
 mod workspace;
-mod lightweight;
 
 pub use auth::*;
 pub use config::*;
@@ -47,4 +46,3 @@ pub use stream_check::*;
 pub use usage::*;
 pub use webdav_sync::*;
 pub use workspace::*;
-pub use lightweight::*;
