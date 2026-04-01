@@ -842,8 +842,7 @@ function App() {
     >
       <div
         className="fixed top-0 left-0 right-0 z-[60]"
-        data-tauri-drag-region
-        style={{ WebkitAppRegion: "drag", height: DRAG_BAR_HEIGHT } as any}
+        style={{ height: DRAG_BAR_HEIGHT }}
       />
       {!isWebMode && showEnvBanner && envConflicts.length > 0 && (
         <EnvWarningBanner
@@ -872,24 +871,17 @@ function App() {
 
       <header
         className="fixed z-50 w-full transition-all duration-300 bg-background/80 backdrop-blur-md"
-        data-tauri-drag-region
         style={
           {
-            WebkitAppRegion: "drag",
             top: DRAG_BAR_HEIGHT,
             height: HEADER_HEIGHT,
-          } as any
+          }
         }
       >
         <div
           className="flex h-full items-center justify-between gap-2 px-6"
-          data-tauri-drag-region
-          style={{ WebkitAppRegion: "drag" } as any}
         >
-          <div
-            className="flex items-center gap-1"
-            style={{ WebkitAppRegion: "no-drag" } as any}
-          >
+          <div className="flex items-center gap-1">
             {currentView !== "providers" ? (
               <div className="flex items-center gap-2">
                 <Button
@@ -979,10 +971,7 @@ function App() {
             {currentView === "providers" &&
               activeApp !== "opencode" &&
               activeApp !== "openclaw" && (
-                <div
-                  className="flex shrink-0 items-center gap-1.5"
-                  style={{ WebkitAppRegion: "no-drag" } as any}
-                >
+                <div className="flex shrink-0 items-center gap-1.5">
                   {settingsData?.enableLocalProxy && (
                     <ProxyToggle activeApp={activeApp} />
                   )}
@@ -995,10 +984,7 @@ function App() {
               ref={toolbarRef}
               className="flex flex-1 min-w-0 overflow-x-hidden items-center"
             >
-              <div
-                className="flex shrink-0 items-center gap-1.5 ml-auto"
-                style={{ WebkitAppRegion: "no-drag" } as any}
-              >
+              <div className="flex shrink-0 items-center gap-1.5 ml-auto">
                 {currentView === "prompts" && (
                   <Button
                     variant="ghost"

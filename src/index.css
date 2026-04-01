@@ -113,15 +113,6 @@
   border-top: 2px solid hsl(var(--border));
 }
 
-[data-tauri-drag-region] {
-  -webkit-app-region: drag;
-}
-
-[data-tauri-no-drag],
-[data-tauri-drag-region] .no-drag {
-  -webkit-app-region: no-drag;
-}
-
 * {
   box-sizing: border-box;
   scrollbar-width: none;
