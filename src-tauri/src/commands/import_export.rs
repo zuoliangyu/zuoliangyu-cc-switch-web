@@ -11,9 +11,7 @@ use crate::store::AppState;
 
 // ─── File import/export ──────────────────────────────────────
 
-#[tauri::command]
-pub async fn sync_current_providers_live(state: State<'_, AppState>) -> Result<Value, String> {
-    let db = state.db.clone();
+pub async fn sync_current_providers_live_internal(db: std::sync::Arc<Database>) -> Result<Value, String> {
     spawn_blocking(move || {
         let app_state = AppState::new(db);
         ProviderService::sync_current_to_live(&app_state)?;
@@ -27,12 +25,15 @@ pub async fn sync_current_providers_live(state: State<'_, AppState>) -> Result<V
     .map_err(|e: AppError| e.to_string())
 }
 
+#[tauri::command]
+pub async fn sync_current_providers_live(state: State<'_, AppState>) -> Result<Value, String> {
+    sync_current_providers_live_internal(state.db.clone()).await
+}
+
 // ─── Database backup management ─────────────────────────────
 
 /// Manually create a database backup
-#[tauri::command]
-pub async fn create_db_backup(state: State<'_, AppState>) -> Result<String, String> {
-    let db = state.db.clone();
+pub async fn create_db_backup_internal(db: std::sync::Arc<Database>) -> Result<String, String> {
     spawn_blocking(move || match db.backup_database_file()? {
         Some(path) => Ok(path
             .file_name()
@@ -47,6 +48,11 @@ pub async fn create_db_backup(state: State<'_, AppState>) -> Result<String, Stri
     .map_err(|e: AppError| e.to_string())
 }
 
+#[tauri::command]
+pub async fn create_db_backup(state: State<'_, AppState>) -> Result<String, String> {
+    create_db_backup_internal(state.db.clone()).await
+}
+
 /// List all database backup files
 #[tauri::command]
 pub fn list_db_backups() -> Result<Vec<BackupEntry>, String> {
@@ -54,16 +60,22 @@ pub fn list_db_backups() -> Result<Vec<BackupEntry>, String> {
 }
 
 /// Restore database from a backup file
+pub async fn restore_db_backup_internal(
+    db: std::sync::Arc<Database>,
+    filename: String,
+) -> Result<String, String> {
+    spawn_blocking(move || db.restore_from_backup(&filename))
+        .await
+        .map_err(|e| format!("Restore failed: {e}"))?
+        .map_err(|e: AppError| e.to_string())
+}
+
 #[tauri::command]
 pub async fn restore_db_backup(
     state: State<'_, AppState>,
     filename: String,
 ) -> Result<String, String> {
-    let db = state.db.clone();
-    spawn_blocking(move || db.restore_from_backup(&filename))
-        .await
-        .map_err(|e| format!("Restore failed: {e}"))?
-        .map_err(|e: AppError| e.to_string())
+    restore_db_backup_internal(state.db.clone(), filename).await
 }
 
 /// Rename a database backup file

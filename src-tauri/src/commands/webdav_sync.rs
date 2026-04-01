@@ -82,8 +82,7 @@ where
     }
 }
 
-#[tauri::command]
-pub async fn webdav_test_connection(
+pub async fn webdav_test_connection_internal(
     settings: WebDavSyncSettings,
     #[allow(non_snake_case)] preserveEmptyPassword: Option<bool>,
 ) -> Result<Value, String> {
@@ -103,8 +102,15 @@ pub async fn webdav_test_connection(
 }
 
 #[tauri::command]
-pub async fn webdav_sync_upload(state: State<'_, AppState>) -> Result<Value, String> {
-    let db = state.db.clone();
+pub async fn webdav_test_connection(
+    settings: WebDavSyncSettings,
+    #[allow(non_snake_case)] preserveEmptyPassword: Option<bool>,
+) -> Result<Value, String> {
+    webdav_test_connection_internal(settings, preserveEmptyPassword).await
+}
+
+#[tauri::command]
+pub async fn webdav_sync_upload_internal(db: std::sync::Arc<crate::database::Database>) -> Result<Value, String> {
     let mut settings = require_enabled_webdav_settings()?;
 
     let result = run_with_webdav_lock(webdav_sync_service::upload(&db, &mut settings)).await;
@@ -114,8 +120,13 @@ pub async fn webdav_sync_upload(state: State<'_, AppState>) -> Result<Value, Str
 }
 
 #[tauri::command]
-pub async fn webdav_sync_download(state: State<'_, AppState>) -> Result<Value, String> {
-    let db = state.db.clone();
+pub async fn webdav_sync_upload(state: State<'_, AppState>) -> Result<Value, String> {
+    webdav_sync_upload_internal(state.db.clone()).await
+}
+
+pub async fn webdav_sync_download_internal(
+    db: std::sync::Arc<crate::database::Database>,
+) -> Result<Value, String> {
     let db_for_sync = db.clone();
     let mut settings = require_enabled_webdav_settings()?;
     let _auto_sync_suppression = crate::services::webdav_auto_sync::AutoSyncSuppressionGuard::new();
@@ -140,7 +151,11 @@ pub async fn webdav_sync_download(state: State<'_, AppState>) -> Result<Value, S
 }
 
 #[tauri::command]
-pub async fn webdav_sync_save_settings(
+pub async fn webdav_sync_download(state: State<'_, AppState>) -> Result<Value, String> {
+    webdav_sync_download_internal(state.db.clone()).await
+}
+
+pub async fn webdav_sync_save_settings_internal(
     settings: WebDavSyncSettings,
     #[allow(non_snake_case)] passwordTouched: Option<bool>,
 ) -> Result<Value, String> {
@@ -161,12 +176,24 @@ pub async fn webdav_sync_save_settings(
 }
 
 #[tauri::command]
-pub async fn webdav_sync_fetch_remote_info() -> Result<Value, String> {
+pub async fn webdav_sync_save_settings(
+    settings: WebDavSyncSettings,
+    #[allow(non_snake_case)] passwordTouched: Option<bool>,
+) -> Result<Value, String> {
+    webdav_sync_save_settings_internal(settings, passwordTouched).await
+}
+
+pub async fn webdav_sync_fetch_remote_info_internal() -> Result<Value, String> {
     let settings = require_enabled_webdav_settings()?;
     let info = webdav_sync_service::fetch_remote_info(&settings)
         .await
         .map_err(|e| e.to_string())?;
     Ok(info.unwrap_or(json!({ "empty": true })))
+}
+
+#[tauri::command]
+pub async fn webdav_sync_fetch_remote_info() -> Result<Value, String> {
+    webdav_sync_fetch_remote_info_internal().await
 }
 
 #[cfg(test)]

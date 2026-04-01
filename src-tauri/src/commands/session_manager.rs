@@ -3,8 +3,7 @@
 use crate::session_manager;
 use tokio::task::spawn_blocking;
 
-#[tauri::command]
-pub async fn list_sessions() -> Result<Vec<session_manager::SessionMeta>, String> {
+pub async fn list_sessions_internal() -> Result<Vec<session_manager::SessionMeta>, String> {
     let sessions = spawn_blocking(session_manager::scan_sessions)
         .await
         .map_err(|e| format!("Failed to scan sessions: {e}"))?;
@@ -12,7 +11,11 @@ pub async fn list_sessions() -> Result<Vec<session_manager::SessionMeta>, String
 }
 
 #[tauri::command]
-pub async fn get_session_messages(
+pub async fn list_sessions() -> Result<Vec<session_manager::SessionMeta>, String> {
+    list_sessions_internal().await
+}
+
+pub async fn get_session_messages_internal(
     providerId: String,
     sourcePath: String,
 ) -> Result<Vec<session_manager::SessionMessage>, String> {
@@ -24,7 +27,14 @@ pub async fn get_session_messages(
 }
 
 #[tauri::command]
-pub async fn delete_session(
+pub async fn get_session_messages(
+    providerId: String,
+    sourcePath: String,
+) -> Result<Vec<session_manager::SessionMessage>, String> {
+    get_session_messages_internal(providerId, sourcePath).await
+}
+
+pub async fn delete_session_internal(
     providerId: String,
     sessionId: String,
     sourcePath: String,
@@ -41,10 +51,25 @@ pub async fn delete_session(
 }
 
 #[tauri::command]
-pub async fn delete_sessions(
+pub async fn delete_session(
+    providerId: String,
+    sessionId: String,
+    sourcePath: String,
+) -> Result<bool, String> {
+    delete_session_internal(providerId, sessionId, sourcePath).await
+}
+
+pub async fn delete_sessions_internal(
     items: Vec<session_manager::DeleteSessionRequest>,
 ) -> Result<Vec<session_manager::DeleteSessionOutcome>, String> {
     spawn_blocking(move || session_manager::delete_sessions(&items))
         .await
         .map_err(|e| format!("Failed to delete sessions: {e}"))
+}
+
+#[tauri::command]
+pub async fn delete_sessions(
+    items: Vec<session_manager::DeleteSessionRequest>,
+) -> Result<Vec<session_manager::DeleteSessionOutcome>, String> {
+    delete_sessions_internal(items).await
 }

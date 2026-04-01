@@ -313,56 +313,6 @@ fn build_post_import_sync_warning(error: impl std::fmt::Display) -> String {
     .to_string()
 }
 
-fn attach_warning_to_value(mut value: Value, warning: Option<String>) -> Value {
-    if let Some(message) = warning {
-        if let Some(object) = value.as_object_mut() {
-            object.insert("warning".to_string(), Value::String(message));
-        }
-    }
-    value
-}
-
-fn persist_webdav_sync_error(
-    settings: &mut WebDavSyncSettings,
-    error: &crate::error::AppError,
-    source: &str,
-) {
-    settings.status.last_error = Some(error.to_string());
-    settings.status.last_error_source = Some(source.to_string());
-    let _ = settings::update_webdav_sync_status(settings.status.clone());
-}
-
-fn webdav_not_configured_error() -> ApiError {
-    ApiError::bad_request(
-        crate::error::AppError::localized(
-            "webdav.sync.not_configured",
-            "未配置 WebDAV 同步",
-            "WebDAV sync is not configured.",
-        )
-        .to_string(),
-    )
-}
-
-fn webdav_sync_disabled_error() -> ApiError {
-    ApiError::bad_request(
-        crate::error::AppError::localized(
-            "webdav.sync.disabled",
-            "WebDAV 同步未启用",
-            "WebDAV sync is disabled.",
-        )
-        .to_string(),
-    )
-}
-
-fn require_enabled_webdav_settings() -> Result<WebDavSyncSettings, ApiError> {
-    let sync_settings =
-        settings::get_webdav_sync_settings().ok_or_else(webdav_not_configured_error)?;
-    if !sync_settings.enabled {
-        return Err(webdav_sync_disabled_error());
-    }
-    Ok(sync_settings)
-}
-
 fn resolve_webdav_password_for_request(
     mut incoming: WebDavSyncSettings,
     existing: Option<WebDavSyncSettings>,
@@ -1049,7 +999,7 @@ async fn get_openclaw_live_provider(
 }
 
 async fn list_sessions() -> Result<Json<Vec<crate::session_manager::SessionMeta>>, ApiError> {
-    let sessions = crate::list_sessions()
+    let sessions = crate::list_sessions_internal()
         .await
         .map_err(|e| ApiError::internal(format!("failed to list sessions: {e}")))?;
     Ok(Json(sessions))
@@ -1058,7 +1008,7 @@ async fn list_sessions() -> Result<Json<Vec<crate::session_manager::SessionMeta>
 async fn get_session_messages(
     Query(query): Query<SessionMessagesQuery>,
 ) -> Result<Json<Vec<crate::session_manager::SessionMessage>>, ApiError> {
-    let messages = crate::get_session_messages(query.provider_id, query.source_path)
+    let messages = crate::get_session_messages_internal(query.provider_id, query.source_path)
         .await
         .map_err(|e| ApiError::internal(format!("failed to load session messages: {e}")))?;
     Ok(Json(messages))
@@ -1067,17 +1017,20 @@ async fn get_session_messages(
 async fn delete_session(
     Json(payload): Json<crate::session_manager::DeleteSessionRequest>,
 ) -> Result<Json<bool>, ApiError> {
-    let deleted =
-        crate::delete_session(payload.provider_id, payload.session_id, payload.source_path)
-            .await
-            .map_err(|e| ApiError::internal(format!("failed to delete session: {e}")))?;
+    let deleted = crate::delete_session_internal(
+        payload.provider_id,
+        payload.session_id,
+        payload.source_path,
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to delete session: {e}")))?;
     Ok(Json(deleted))
 }
 
 async fn delete_sessions(
     Json(items): Json<Vec<crate::session_manager::DeleteSessionRequest>>,
 ) -> Result<Json<Vec<crate::session_manager::DeleteSessionOutcome>>, ApiError> {
-    let results = crate::delete_sessions(items)
+    let results = crate::delete_sessions_internal(items)
         .await
         .map_err(|e| ApiError::internal(format!("failed to delete sessions: {e}")))?;
     Ok(Json(results))
@@ -1584,83 +1537,33 @@ async fn webdav_test_connection(
 }
 
 async fn webdav_sync_upload(State(state): State<WebApiState>) -> Result<Json<Value>, ApiError> {
-    let db = state.app_state.db.clone();
-    let mut sync_settings = require_enabled_webdav_settings()?;
-    let result = webdav_sync_service::run_with_sync_lock(webdav_sync_service::upload(
-        &db,
-        &mut sync_settings,
-    ))
-    .await;
-
-    match result {
-        Ok(value) => Ok(Json(value)),
-        Err(error) => {
-            persist_webdav_sync_error(&mut sync_settings, &error, "manual");
-            Err(ApiError::internal(error.to_string()))
-        }
-    }
+    crate::webdav_sync_upload_internal(state.app_state.db.clone())
+        .await
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to upload webdav snapshot: {e}")))
 }
 
 async fn webdav_sync_download(State(state): State<WebApiState>) -> Result<Json<Value>, ApiError> {
-    let db = state.app_state.db.clone();
-    let mut sync_settings = require_enabled_webdav_settings()?;
-    let _auto_sync_suppression = crate::services::webdav_auto_sync::AutoSyncSuppressionGuard::new();
-
-    let result = webdav_sync_service::run_with_sync_lock(webdav_sync_service::download(
-        &db,
-        &mut sync_settings,
-    ))
-    .await;
-
-    let mut value = match result {
-        Ok(value) => value,
-        Err(error) => {
-            persist_webdav_sync_error(&mut sync_settings, &error, "manual");
-            return Err(ApiError::internal(error.to_string()));
-        }
-    };
-
-    let warning = match ProviderService::sync_current_to_live(state.app_state.as_ref()) {
-        Ok(()) => settings::reload_settings()
-            .err()
-            .map(build_post_import_sync_warning),
-        Err(error) => Some(build_post_import_sync_warning(error)),
-    };
-    if let Some(message) = warning.as_ref() {
-        log::warn!("[WebDAV] post-download sync warning: {message}");
-    }
-    value = attach_warning_to_value(value, warning);
-
-    Ok(Json(value))
+    crate::webdav_sync_download_internal(state.app_state.db.clone())
+        .await
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to download webdav snapshot: {e}")))
 }
 
 async fn webdav_sync_save_settings(
     Json(payload): Json<WebdavSaveSettingsRequest>,
 ) -> Result<Json<Value>, ApiError> {
-    let password_touched = payload.password_touched.unwrap_or(false);
-    let existing = settings::get_webdav_sync_settings();
-    let mut sync_settings =
-        resolve_webdav_password_for_request(payload.settings, existing.clone(), !password_touched);
-
-    if let Some(existing_settings) = existing {
-        sync_settings.status = existing_settings.status;
-    }
-
-    sync_settings.normalize();
-    sync_settings
-        .validate()
-        .map_err(|e| ApiError::bad_request(e.to_string()))?;
-    settings::set_webdav_sync_settings(Some(sync_settings))
-        .map_err(|e| ApiError::internal(format!("failed to save webdav sync settings: {e}")))?;
-    Ok(Json(json!({ "success": true })))
+    crate::webdav_sync_save_settings_internal(payload.settings, payload.password_touched)
+        .await
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to save webdav sync settings: {e}")))
 }
 
 async fn webdav_sync_fetch_remote_info() -> Result<Json<Value>, ApiError> {
-    let sync_settings = require_enabled_webdav_settings()?;
-    let info = webdav_sync_service::fetch_remote_info(&sync_settings)
+    crate::webdav_sync_fetch_remote_info_internal()
         .await
-        .map_err(|e| ApiError::internal(format!("failed to fetch webdav remote info: {e}")))?;
-    Ok(Json(info.unwrap_or(json!({ "empty": true }))))
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to fetch webdav remote info: {e}")))
 }
 
 async fn save_settings(
@@ -1823,12 +1726,10 @@ async fn extract_common_config_snippet(
 async fn sync_current_providers_live(
     State(state): State<WebApiState>,
 ) -> Result<Json<Value>, ApiError> {
-    ProviderService::sync_current_to_live(state.app_state.as_ref())
-        .map_err(|e| ApiError::internal(format!("failed to sync current providers to live: {e}")))?;
-    Ok(Json(json!({
-        "success": true,
-        "message": "Live configuration synchronized",
-    })))
+    crate::sync_current_providers_live_internal(state.app_state.db.clone())
+        .await
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to sync current providers to live: {e}")))
 }
 
 async fn get_rectifier_config(
@@ -2107,21 +2008,10 @@ async fn get_copilot_usage_for_account(
 }
 
 async fn create_db_backup(State(state): State<WebApiState>) -> Result<Json<String>, ApiError> {
-    let db = state.app_state.db.clone();
-    let filename = tokio::task::spawn_blocking(move || match db.backup_database_file()? {
-        Some(path) => Ok(path
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())
-            .unwrap_or_default()),
-        None => Err(crate::error::AppError::Config(
-            "Database file not found, backup skipped".to_string(),
-        )),
-    })
-    .await
-    .map_err(|e| ApiError::internal(format!("failed to create database backup: {e}")))?
-    .map_err(|e| ApiError::internal(format!("failed to create database backup: {e}")))?;
-
-    Ok(Json(filename))
+    crate::create_db_backup_internal(state.app_state.db.clone())
+        .await
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to create database backup: {e}")))
 }
 
 async fn list_db_backups() -> Result<Json<Vec<crate::database::backup::BackupEntry>>, ApiError> {
@@ -2134,12 +2024,10 @@ async fn restore_db_backup(
     State(state): State<WebApiState>,
     Path(filename): Path<String>,
 ) -> Result<Json<String>, ApiError> {
-    let db = state.app_state.db.clone();
-    let safety_backup_id = tokio::task::spawn_blocking(move || db.restore_from_backup(&filename))
+    crate::restore_db_backup_internal(state.app_state.db.clone(), filename)
         .await
-        .map_err(|e| ApiError::internal(format!("failed to restore database backup: {e}")))?
-        .map_err(|e| ApiError::internal(format!("failed to restore database backup: {e}")))?;
-    Ok(Json(safety_backup_id))
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to restore database backup: {e}")))
 }
 
 async fn rename_db_backup(
