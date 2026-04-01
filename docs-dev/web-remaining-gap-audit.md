@@ -82,6 +82,7 @@
 - 默认桌面 `main.rs` 入口、Windows 覆盖配置、`Info.plist`、`wix` 目录和 Common Controls 清单已从当前分支移除
 - 旧桌面 `run()` 启动器、`tauri-build`、`tauri.conf.json`、`tauri-plugin-log/process` 已从当前分支移除
 - `appConfigDir` 覆盖路径已改为本地 Rust 服务写入独立文件，不再依赖 Tauri Store
+- 原生目录选择器、原生文件对话框、系统链接/目录打开命令已从当前分支的 Rust 侧移除，Web 模式统一走手填、上传下载或复制路径
 
 ## 四、当前真正的收尾重点
 

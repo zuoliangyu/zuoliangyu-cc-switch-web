@@ -8,24 +8,6 @@ use regex::Regex;
 use std::collections::HashMap;
 #[cfg(any(test, not(target_os = "windows")))]
 use std::path::Path;
-use tauri::AppHandle;
-use tauri_plugin_opener::OpenerExt;
-
-/// 打开外部链接
-#[tauri::command]
-pub async fn open_external(app: AppHandle, url: String) -> Result<bool, String> {
-    let url = if url.starts_with("http://") || url.starts_with("https://") {
-        url
-    } else {
-        format!("https://{url}")
-    };
-
-    app.opener()
-        .open_url(&url, None::<String>)
-        .map_err(|e| format!("打开链接失败: {e}"))?;
-
-    Ok(true)
-}
 
 /// 获取应用启动阶段的初始化错误（若有）。
 /// 用于前端在早期主动拉取，避免事件订阅竞态导致的提示缺失。
