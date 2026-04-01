@@ -80,7 +80,7 @@
 - Provider 预设中的合作/促销展示已从 Web 分支前端移除，不再在预设选择、配置表单和 Provider 卡片中显示营销信息
 - Tauri 托盘、单实例、轻量模式、关闭最小化到托盘与相关前端刷新兼容调用已从当前分支移除
 - 默认桌面 `main.rs` 入口、Windows 覆盖配置、`Info.plist`、`wix` 目录和 Common Controls 清单已从当前分支移除
-- `tauri.conf.json` 已收缩为最小占位配置，不再保留窗口、打包、更新器和深链接配置
+- 旧桌面 `run()` 启动器、`tauri-build`、`tauri.conf.json`、`tauri-plugin-log/process` 已从当前分支移除
 
 ## 四、当前真正的收尾重点
 
