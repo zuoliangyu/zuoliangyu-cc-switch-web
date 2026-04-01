@@ -183,7 +183,7 @@ fn import_mcp_from_claude_invalid_json_preserves_state() {
 }
 
 #[test]
-fn set_mcp_enabled_for_codex_writes_live_config() {
+fn toggle_mcp_app_for_codex_writes_live_config() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();
     let home = ensure_test_home();

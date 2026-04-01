@@ -89,6 +89,7 @@
 - 前端设置页已收敛为浏览器上传/下载 SQL；工作区和 Daily Memory 页面统一改为复制目录路径；Skills ZIP 安装统一走浏览器多文件上传与拖拽
 - Skills 顶部工具栏已直接提供 ZIP 上传入口；环境变量冲突治理横幅已从 Web-only 主界面移除
 - 旧的 Tauri 命令包装层已继续瘦身，已删除一批无前端入口的 MCP / Skills / 导入导出 / 路径查询兼容命令及对应测试 mock
+- 已删除仅供旧桌面环境冲突治理使用的 env 命令与服务模块，避免继续保留无入口系统级能力
 - `ProxyService -> ProxyServer -> RequestForwarder` 的核心链路已改为显式注入 `copilot_auth_state`，不再通过 `AppHandle.state()` 读取容器状态
 - Failover 热切换与 WebDAV 自动同步的服务层逻辑已去掉 `AppHandle` 依赖，当前 Web-only 主链不再依赖 Tauri 事件才能运行
 - 命令层的故障转移与 Universal Provider 同步事件已从当前分支移除，前端同步改为显式请求/缓存失效而非依赖 Tauri event bus

@@ -1,6 +1,4 @@
 pub mod config;
-pub mod env_checker;
-pub mod env_manager;
 pub mod mcp;
 pub mod omo;
 pub mod prompt;

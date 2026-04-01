@@ -3,7 +3,6 @@
 mod auth;
 mod config;
 mod copilot;
-mod env;
 mod failover;
 mod global_proxy;
 mod import_export;
@@ -27,7 +26,6 @@ mod workspace;
 pub use auth::*;
 pub use config::*;
 pub use copilot::*;
-pub use env::*;
 pub use failover::*;
 pub use global_proxy::*;
 pub use import_export::*;
