@@ -87,6 +87,7 @@
 - `appConfigDir` 覆盖路径已改为本地 Rust 服务写入独立文件，不再依赖 Tauri Store
 - 原生目录选择器、原生文件对话框、系统链接/目录打开命令已从当前分支的 Rust 侧移除，Web 模式统一走手填、上传下载或复制路径
 - 前端设置页已收敛为浏览器上传/下载 SQL；工作区和 Daily Memory 页面统一改为复制目录路径；Skills ZIP 安装统一走浏览器多文件上传与拖拽
+- Skills 顶部工具栏已直接提供 ZIP 上传入口；环境变量冲突治理横幅已从 Web-only 主界面移除
 - `ProxyService -> ProxyServer -> RequestForwarder` 的核心链路已改为显式注入 `copilot_auth_state`，不再通过 `AppHandle.state()` 读取容器状态
 - Failover 热切换与 WebDAV 自动同步的服务层逻辑已去掉 `AppHandle` 依赖，当前 Web-only 主链不再依赖 Tauri 事件才能运行
 - 命令层的故障转移与 Universal Provider 同步事件已从当前分支移除，前端同步改为显式请求/缓存失效而非依赖 Tauri event bus
@@ -100,7 +101,7 @@
 
 | 类别 | 命令 | 当前判断 | 建议 |
 |---|---|---|---|
-| 环境变量治理 | `check_env_conflicts` / `delete_env_vars` / `restore_env_backup` | Web 页面已主动跳过，不属于本地 Web 服务主链 | 保持不映射或直接在 Web 下隐藏相关入口 |
+| 环境变量治理 | `check_env_conflicts` / `delete_env_vars` / `restore_env_backup` | Web 主界面入口已移除，不属于本地 Web 服务主链 | 保持不映射，并继续清理残余运行时代码 |
 | 桌面对话框 | `pick_directory` / `open_file_dialog` / `save_file_dialog` / `open_zip_file_dialog` | Web 前端主路径已不再依赖 | 不再迁移，并继续清理残余封装 |
 | 桌面目录打开 | `open_workspace_directory` | Web 前端主路径已不再依赖 | 不再迁移，并继续清理残余封装 |
 | 旧 MCP API | `get_claude_mcp_status` / `read_claude_mcp_config` / `upsert_claude_mcp_server` / `delete_claude_mcp_server` / `get_mcp_config` / `upsert_mcp_server_in_config` / `delete_mcp_server_in_config` / `set_mcp_enabled` / `validate_mcp_command` | 当前页面主路径已走统一 MCP API，差集里这批主要是旧封装残留 | 确认无入口后删除旧封装 |

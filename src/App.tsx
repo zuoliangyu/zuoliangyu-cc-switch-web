@@ -22,14 +22,12 @@ import {
   Cpu,
 } from "lucide-react";
 import type { Provider, VisibleApps } from "@/types";
-import type { EnvConflict } from "@/types/env";
 import { useProvidersQuery, useSettingsQuery } from "@/lib/query";
 import {
   providersApi,
   settingsApi,
   type AppId,
 } from "@/lib/api";
-import { checkAllEnvConflicts, checkEnvConflicts } from "@/lib/api/env";
 import { useProviderActions } from "@/hooks/useProviderActions";
 import { openclawKeys, useOpenClawHealth } from "@/hooks/useOpenClaw";
 import { useProxyStatus } from "@/hooks/useProxyStatus";
@@ -46,7 +44,6 @@ import { AddProviderDialog } from "@/components/providers/AddProviderDialog";
 import { EditProviderDialog } from "@/components/providers/EditProviderDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SettingsPage } from "@/components/settings/SettingsPage";
-import { EnvWarningBanner } from "@/components/env/EnvWarningBanner";
 import { ProxyToggle } from "@/components/proxy/ProxyToggle";
 import { FailoverToggle } from "@/components/proxy/FailoverToggle";
 import UsageScriptModal from "@/components/UsageScriptModal";
@@ -209,8 +206,6 @@ function App() {
     provider: Provider;
     action: "remove" | "delete";
   } | null>(null);
-  const [envConflicts, setEnvConflicts] = useState<EnvConflict[]>([]);
-  const [showEnvBanner, setShowEnvBanner] = useState(false);
 
   const effectiveEditingProvider = useLastValidValue(editingProvider);
   const effectiveUsageProvider = useLastValidValue(usageProvider);
@@ -305,34 +300,6 @@ function App() {
   };
 
   useEffect(() => {
-    if (isWebMode) {
-      return;
-    }
-
-    const checkEnvOnStartup = async () => {
-      try {
-        const allConflicts = await checkAllEnvConflicts();
-        const flatConflicts = Object.values(allConflicts).flat();
-
-        if (flatConflicts.length > 0) {
-          setEnvConflicts(flatConflicts);
-          const dismissed = sessionStorage.getItem("env_banner_dismissed");
-          if (!dismissed) {
-            setShowEnvBanner(true);
-          }
-        }
-      } catch (error) {
-        console.error(
-          "[App] Failed to check environment conflicts on startup:",
-          error,
-        );
-      }
-    };
-
-    checkEnvOnStartup();
-  }, [isWebMode]);
-
-  useEffect(() => {
     const checkMigration = async () => {
       try {
         const migrated = await invoke<boolean>("get_migration_result");
@@ -377,41 +344,6 @@ function App() {
 
     checkSkillsMigration();
   }, [t, queryClient]);
-
-  useEffect(() => {
-    if (isWebMode) {
-      return;
-    }
-
-    const checkEnvOnSwitch = async () => {
-      try {
-        const conflicts = await checkEnvConflicts(activeApp);
-
-        if (conflicts.length > 0) {
-          setEnvConflicts((prev) => {
-            const existingKeys = new Set(
-              prev.map((c) => `${c.varName}:${c.sourcePath}`),
-            );
-            const newConflicts = conflicts.filter(
-              (c) => !existingKeys.has(`${c.varName}:${c.sourcePath}`),
-            );
-            return [...prev, ...newConflicts];
-          });
-          const dismissed = sessionStorage.getItem("env_banner_dismissed");
-          if (!dismissed) {
-            setShowEnvBanner(true);
-          }
-        }
-      } catch (error) {
-        console.error(
-          "[App] Failed to check environment conflicts on app switch:",
-          error,
-        );
-      }
-    };
-
-    checkEnvOnSwitch();
-  }, [activeApp, isWebMode]);
 
   const currentViewRef = useRef(currentView);
 
@@ -747,30 +679,6 @@ function App() {
         className="fixed top-0 left-0 right-0 z-[60]"
         style={{ height: DRAG_BAR_HEIGHT }}
       />
-      {!isWebMode && showEnvBanner && envConflicts.length > 0 && (
-        <EnvWarningBanner
-          conflicts={envConflicts}
-          onDismiss={() => {
-            setShowEnvBanner(false);
-            sessionStorage.setItem("env_banner_dismissed", "true");
-          }}
-          onDeleted={async () => {
-            try {
-              const allConflicts = await checkAllEnvConflicts();
-              const flatConflicts = Object.values(allConflicts).flat();
-              setEnvConflicts(flatConflicts);
-              if (flatConflicts.length === 0) {
-                setShowEnvBanner(false);
-              }
-            } catch (error) {
-              console.error(
-                "[App] Failed to re-check conflicts after deletion:",
-                error,
-              );
-            }
-          }}
-        />
-      )}
 
       <header
         className="fixed z-50 w-full transition-all duration-300 bg-background/80 backdrop-blur-md"
@@ -921,87 +829,52 @@ function App() {
                     </Button>
                   </>
                 )}
-                {currentView === "skills" &&
-                  (isWebMode ? (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          unifiedSkillsPanelRef.current?.openRestoreFromBackup()
-                        }
-                        className="hover:bg-black/5 dark:hover:bg-white/5"
-                      >
-                        <History className="w-4 h-4 mr-2" />
-                        {t("skills.restoreFromBackup.button")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          unifiedSkillsPanelRef.current?.openImport()
-                        }
-                        className="hover:bg-black/5 dark:hover:bg-white/5"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        {t("skills.import")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentView("skillsDiscovery")}
-                        className="hover:bg-black/5 dark:hover:bg-white/5"
-                      >
-                        <Search className="w-4 h-4 mr-2" />
-                        {t("skills.discover")}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          unifiedSkillsPanelRef.current?.openRestoreFromBackup()
-                        }
-                        className="hover:bg-black/5 dark:hover:bg-white/5"
-                      >
-                        <History className="w-4 h-4 mr-2" />
-                        {t("skills.restoreFromBackup.button")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          unifiedSkillsPanelRef.current?.openInstallFromZip()
-                        }
-                        className="hover:bg-black/5 dark:hover:bg-white/5"
-                      >
-                        <FolderArchive className="w-4 h-4 mr-2" />
-                        {t("skills.installFromZip.button")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          unifiedSkillsPanelRef.current?.openImport()
-                        }
-                        className="hover:bg-black/5 dark:hover:bg-white/5"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        {t("skills.import")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentView("skillsDiscovery")}
-                        className="hover:bg-black/5 dark:hover:bg-white/5"
-                      >
-                        <Search className="w-4 h-4 mr-2" />
-                        {t("skills.discover")}
-                      </Button>
-                    </>
-                  ))}
+                {currentView === "skills" && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        unifiedSkillsPanelRef.current?.openRestoreFromBackup()
+                      }
+                      className="hover:bg-black/5 dark:hover:bg-white/5"
+                    >
+                      <History className="w-4 h-4 mr-2" />
+                      {t("skills.restoreFromBackup.button")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        unifiedSkillsPanelRef.current?.openInstallFromZip()
+                      }
+                      className="hover:bg-black/5 dark:hover:bg-white/5"
+                    >
+                      <FolderArchive className="w-4 h-4 mr-2" />
+                      {t("skills.installFromZip.button")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        unifiedSkillsPanelRef.current?.openImport()
+                      }
+                      className="hover:bg-black/5 dark:hover:bg-white/5"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {t("skills.import")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentView("skillsDiscovery")}
+                      className="hover:bg-black/5 dark:hover:bg-white/5"
+                    >
+                      <Search className="w-4 h-4 mr-2" />
+                      {t("skills.discover")}
+                    </Button>
+                  </>
+                )}
                 {currentView === "skillsDiscovery" && (
                   <>
                     <Button
