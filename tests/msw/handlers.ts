@@ -216,23 +216,6 @@ export const handlers = [
     success(getAppConfigDirOverride()),
   ),
 
-  http.post(
-    `${TAURI_ENDPOINT}/apply_claude_plugin_config`,
-    async ({ request }) => {
-      const { official } = await withJson<{ official: boolean }>(request);
-      setSettings({ enableClaudePluginIntegration: !official });
-      return success(true);
-    },
-  ),
-
-  http.post(`${TAURI_ENDPOINT}/apply_claude_onboarding_skip`, () =>
-    success(true),
-  ),
-
-  http.post(`${TAURI_ENDPOINT}/clear_claude_onboarding_skip`, () =>
-    success(true),
-  ),
-
   http.post(`${TAURI_ENDPOINT}/get_config_dir`, async ({ request }) => {
     const { app } = await withJson<{ app: AppId }>(request);
     return success(app === "claude" ? "/default/claude" : "/default/codex");

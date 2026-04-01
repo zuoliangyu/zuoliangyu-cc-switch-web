@@ -9,9 +9,6 @@ const directorySchema = z
 
 export const settingsSchema = z.object({
   // 设备级 UI 设置
-  enableClaudePluginIntegration: z.boolean().optional(),
-  skipClaudeOnboarding: z.boolean().optional(),
-  launchOnStartup: z.boolean().optional(),
   enableLocalProxy: z.boolean().optional(),
   language: z.enum(["en", "zh", "ja"]).optional(),
 

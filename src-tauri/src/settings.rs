@@ -170,15 +170,6 @@ impl WebDavSyncSettings {
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     // ===== 设备级 UI 设置 =====
-    /// 是否启用 Claude 插件联动
-    #[serde(default)]
-    pub enable_claude_plugin_integration: bool,
-    /// 是否跳过 Claude Code 初次安装确认
-    #[serde(default)]
-    pub skip_claude_onboarding: bool,
-    /// 是否开机自启
-    #[serde(default)]
-    pub launch_on_startup: bool,
     /// 是否在主页面启用本地代理功能（默认关闭）
     #[serde(default)]
     pub enable_local_proxy: bool,
@@ -266,9 +257,6 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            enable_claude_plugin_integration: false,
-            skip_claude_onboarding: false,
-            launch_on_startup: false,
             enable_local_proxy: false,
             proxy_confirmed: None,
             usage_confirmed: None,

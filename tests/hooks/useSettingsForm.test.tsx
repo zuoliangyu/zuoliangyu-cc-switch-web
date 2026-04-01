@@ -31,7 +31,6 @@ describe("useSettingsForm Hook", () => {
   it("should normalize settings and sync language on initialization", async () => {
     useSettingsQueryMock.mockReturnValue({
       data: {
-        enableClaudePluginIntegration: undefined,
         claudeConfigDir: "  /Users/demo  ",
         codexConfigDir: "   ",
         language: "en",
@@ -46,7 +45,6 @@ describe("useSettingsForm Hook", () => {
     });
 
     const settings = result.current.settings!;
-    expect(settings.enableClaudePluginIntegration).toBe(false);
     expect(settings.claudeConfigDir).toBe("/Users/demo");
     expect(settings.codexConfigDir).toBeUndefined();
     expect(settings.language).toBe("en");
@@ -57,7 +55,6 @@ describe("useSettingsForm Hook", () => {
   it("should support japanese language preference from server data", async () => {
     useSettingsQueryMock.mockReturnValue({
       data: {
-        enableClaudePluginIntegration: false,
         claudeConfigDir: "/Users/demo",
         codexConfigDir: null,
         language: "ja",
@@ -108,7 +105,6 @@ describe("useSettingsForm Hook", () => {
   it("should reset with server data and restore initial language in resetSettings", async () => {
     useSettingsQueryMock.mockReturnValue({
       data: {
-        enableClaudePluginIntegration: false,
         claudeConfigDir: "/origin",
         codexConfigDir: null,
         language: "en",
@@ -127,7 +123,6 @@ describe("useSettingsForm Hook", () => {
 
     act(() => {
       result.current.resetSettings({
-        enableClaudePluginIntegration: true,
         claudeConfigDir: "  /reset  ",
         codexConfigDir: "   ",
         language: "zh",
@@ -135,7 +130,6 @@ describe("useSettingsForm Hook", () => {
     });
 
     const settings = result.current.settings!;
-    expect(settings.enableClaudePluginIntegration).toBe(true);
     expect(settings.claudeConfigDir).toBe("/reset");
     expect(settings.codexConfigDir).toBeUndefined();
     expect(settings.language).toBe("zh");
@@ -146,7 +140,6 @@ describe("useSettingsForm Hook", () => {
   it("should not call changeLanguage repeatedly when language is consistent in syncLanguage", async () => {
     useSettingsQueryMock.mockReturnValue({
       data: {
-        enableClaudePluginIntegration: false,
         claudeConfigDir: null,
         codexConfigDir: null,
         language: "zh",

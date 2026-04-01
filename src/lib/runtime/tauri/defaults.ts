@@ -16,7 +16,6 @@ const visibleApps: VisibleApps = {
 };
 
 export const getDefaultSettings = (): Settings => ({
-  launchOnStartup: false,
   enableLocalProxy: false,
   proxyConfirmed: false,
   usageConfirmed: false,

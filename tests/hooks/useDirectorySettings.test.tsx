@@ -43,7 +43,6 @@ vi.mock("react-i18next", () => ({
 const createSettings = (
   overrides: Partial<SettingsFormState> = {},
 ): SettingsFormState => ({
-  enableClaudePluginIntegration: false,
   claudeConfigDir: "/claude/custom",
   codexConfigDir: "/codex/custom",
   language: "zh",

@@ -230,12 +230,6 @@ export interface RemoteSnapshotInfo {
 // 存储在本地 ~/.cc-switch/settings.json，不随数据库同步
 export interface Settings {
   // ===== 设备级 UI 设置 =====
-  // 启用 Claude 插件联动（写入 ~/.claude/config.json 的 primaryApiKey）
-  enableClaudePluginIntegration?: boolean;
-  // 跳过 Claude Code 初次安装确认（写入 ~/.claude.json 的 hasCompletedOnboarding）
-  skipClaudeOnboarding?: boolean;
-  // 是否开机自启
-  launchOnStartup?: boolean;
   // 是否启用主页面本地代理功能（默认关闭）
   enableLocalProxy?: boolean;
   // User has confirmed the local proxy first-run notice

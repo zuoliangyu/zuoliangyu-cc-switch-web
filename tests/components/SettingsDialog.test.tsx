@@ -7,11 +7,13 @@ import { SettingsPage } from "@/components/settings/SettingsPage";
 
 const toastSuccessMock = vi.fn();
 const toastErrorMock = vi.fn();
+const toastInfoMock = vi.fn();
 
 vi.mock("sonner", () => ({
   toast: {
     success: (...args: unknown[]) => toastSuccessMock(...args),
     error: (...args: unknown[]) => toastErrorMock(...args),
+    info: (...args: unknown[]) => toastInfoMock(...args),
   },
 }));
 
@@ -60,9 +62,6 @@ interface SettingsMock {
 const createSettingsMock = (overrides: Partial<SettingsMock> = {}) => {
   const base: SettingsMock = {
     settings: {
-      showInTray: true,
-      minimizeToTrayOnClose: true,
-      enableClaudePluginIntegration: false,
       language: "zh",
       claudeConfigDir: "/claude",
       codexConfigDir: "/codex",
@@ -97,6 +96,7 @@ interface ImportExportMock {
   errorMessage: string | null;
   backupId: string | null;
   isImporting: boolean;
+  selectImportUpload: ReturnType<typeof vi.fn>;
   selectImportFile: ReturnType<typeof vi.fn>;
   importConfig: ReturnType<typeof vi.fn>;
   exportConfig: ReturnType<typeof vi.fn>;
@@ -111,6 +111,7 @@ const createImportExportMock = (overrides: Partial<ImportExportMock> = {}) => {
     errorMessage: null,
     backupId: null,
     isImporting: false,
+    selectImportUpload: vi.fn(),
     selectImportFile: vi.fn(),
     importConfig: vi.fn(),
     exportConfig: vi.fn(),
@@ -133,12 +134,6 @@ vi.mock("@/hooks/useSettings", () => ({
 vi.mock("@/hooks/useImportExport", () => ({
   useImportExport: (options?: Record<string, unknown>) =>
     useImportExportSpy(options),
-}));
-
-vi.mock("@/lib/api", () => ({
-  settingsApi: {
-    restart: vi.fn().mockResolvedValue(true),
-  },
 }));
 
 const TabsContext = createContext<{
@@ -233,8 +228,6 @@ vi.mock("@/components/settings/WebdavSyncSection", () => ({
   ),
 }));
 
-let settingsApi: any;
-
 const renderSettingsPage = (
   props?: Partial<ComponentProps<typeof SettingsPage>>,
 ) => {
@@ -251,7 +244,7 @@ const renderSettingsPage = (
 };
 
 describe("SettingsPage Component", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     tMock.mockImplementation((key: string) => key);
     settingsMock = createSettingsMock();
     importExportMock = createImportExportMock();
@@ -265,8 +258,7 @@ describe("SettingsPage Component", () => {
     lastUseImportExportOptions = undefined;
     toastSuccessMock.mockReset();
     toastErrorMock.mockReset();
-    settingsApi = (await import("@/lib/api")).settingsApi;
-    settingsApi.restart.mockClear();
+    toastInfoMock.mockReset();
   });
 
   afterEach(() => {
@@ -307,13 +299,11 @@ describe("SettingsPage Component", () => {
   });
 
   it("should render general and advanced tabs and trigger child callbacks", () => {
-    const onOpenChange = vi.fn();
-    // 设置 selectedFile 后，按钮显示 settings.import（可执行导入）
     importExportMock = createImportExportMock({
       selectedFile: "/tmp/config.json",
     });
 
-    renderSettingsPage({ onOpenChange });
+    renderSettingsPage();
 
     expect(screen.getByText("language:zh")).toBeInTheDocument();
     expect(screen.getByText("theme-settings")).toBeInTheDocument();
@@ -321,11 +311,6 @@ describe("SettingsPage Component", () => {
     fireEvent.click(screen.getByText("change-language"));
     expect(settingsMock.updateSettings).toHaveBeenCalledWith({
       language: "en",
-    });
-
-    fireEvent.click(screen.getByText("window-settings"));
-    expect(settingsMock.updateSettings).toHaveBeenCalledWith({
-      minimizeToTrayOnClose: false,
     });
 
     fireEvent.click(screen.getByText("settings.tabAdvanced"));
@@ -396,11 +381,11 @@ describe("SettingsPage Component", () => {
       await screen.findByText("settings.restartRequired"),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("settings.restartNow"));
+    fireEvent.click(screen.getByText("settings.webServiceRestartAcknowledge"));
 
     await waitFor(() => {
-      expect(toastSuccessMock).toHaveBeenCalledWith(
-        "settings.devModeRestartHint",
+      expect(toastInfoMock).toHaveBeenCalledWith(
+        "settings.webServiceRestartHint",
         expect.objectContaining({ closeButton: true }),
       );
     });
@@ -423,7 +408,6 @@ describe("SettingsPage Component", () => {
       expect(settingsMock.acknowledgeRestart).toHaveBeenCalledTimes(1);
     });
 
-    expect(settingsApi.restart).not.toHaveBeenCalled();
     expect(toastSuccessMock).not.toHaveBeenCalled();
     expect(toastErrorMock).not.toHaveBeenCalled();
   });
