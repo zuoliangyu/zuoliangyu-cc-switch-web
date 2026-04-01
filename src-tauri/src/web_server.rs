@@ -31,7 +31,7 @@ use crate::services::skill::{
     DiscoverableSkill, ImportSkillSelection, SkillBackupEntry, SkillRepo, SkillUninstallResult,
 };
 use crate::services::webdav_sync as webdav_sync_service;
-use crate::services::{McpService, PromptService, ProviderService, SwitchResult};
+use crate::services::{PromptService, ProviderService, SwitchResult};
 use crate::settings::{self, WebDavSyncSettings};
 use crate::store::AppState;
 use crate::Database;
@@ -329,7 +329,8 @@ fn resolve_webdav_password_for_request(
 async fn get_mcp_servers(
     State(state): State<WebApiState>,
 ) -> Result<Json<indexmap::IndexMap<String, McpServer>>, ApiError> {
-    let servers = McpService::get_all_servers(state.app_state.as_ref())
+    let servers = crate::commands::get_mcp_servers_internal(state.app_state.as_ref())
+        .await
         .map_err(|e| ApiError::internal(format!("failed to load mcp servers: {e}")))?;
     Ok(Json(servers))
 }
@@ -338,7 +339,8 @@ async fn upsert_mcp_server(
     State(state): State<WebApiState>,
     Json(server): Json<McpServer>,
 ) -> Result<StatusCode, ApiError> {
-    McpService::upsert_server(state.app_state.as_ref(), server)
+    crate::commands::upsert_mcp_server_internal(state.app_state.as_ref(), server)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to save mcp server: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -347,7 +349,8 @@ async fn delete_mcp_server(
     State(state): State<WebApiState>,
     Path(id): Path<String>,
 ) -> Result<Json<bool>, ApiError> {
-    let deleted = McpService::delete_server(state.app_state.as_ref(), &id)
+    let deleted = crate::commands::delete_mcp_server_internal(state.app_state.as_ref(), id)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to delete mcp server: {e}")))?;
     Ok(Json(deleted))
 }
@@ -357,18 +360,16 @@ async fn toggle_mcp_app(
     Path((id, app)): Path<(String, String)>,
     Json(payload): Json<ToggleMcpAppRequest>,
 ) -> Result<StatusCode, ApiError> {
-    let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
-    McpService::toggle_app(state.app_state.as_ref(), &id, app_type, payload.enabled)
+    crate::commands::toggle_mcp_app_internal(state.app_state.as_ref(), id, app, payload.enabled)
+        .await
         .map_err(|e| ApiError::internal(format!("failed to toggle mcp app: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
 async fn import_mcp_from_apps(State(state): State<WebApiState>) -> Result<Json<usize>, ApiError> {
-    let mut total = 0;
-    total += McpService::import_from_claude(state.app_state.as_ref()).unwrap_or(0);
-    total += McpService::import_from_codex(state.app_state.as_ref()).unwrap_or(0);
-    total += McpService::import_from_gemini(state.app_state.as_ref()).unwrap_or(0);
-    total += McpService::import_from_opencode(state.app_state.as_ref()).unwrap_or(0);
+    let total = crate::commands::import_mcp_from_apps_internal(state.app_state.as_ref())
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to import mcp servers: {e}")))?;
     Ok(Json(total))
 }
 
