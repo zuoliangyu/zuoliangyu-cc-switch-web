@@ -1,10 +1,9 @@
 #![allow(non_snake_case)]
 
 use serde_json::{json, Value};
-use crate::command_state::State;
 use tokio::task::spawn_blocking;
 
-use crate::database::{backup::BackupEntry, Database};
+use crate::database::Database;
 use crate::error::AppError;
 use crate::services::provider::ProviderService;
 use crate::store::AppState;
@@ -25,10 +24,6 @@ pub async fn sync_current_providers_live_internal(db: std::sync::Arc<Database>) 
     .map_err(|e: AppError| e.to_string())
 }
 
-pub async fn sync_current_providers_live(state: State<'_, AppState>) -> Result<Value, String> {
-    sync_current_providers_live_internal(state.db.clone()).await
-}
-
 // ─── Database backup management ─────────────────────────────
 
 /// Manually create a database backup
@@ -47,15 +42,6 @@ pub async fn create_db_backup_internal(db: std::sync::Arc<Database>) -> Result<S
     .map_err(|e: AppError| e.to_string())
 }
 
-pub async fn create_db_backup(state: State<'_, AppState>) -> Result<String, String> {
-    create_db_backup_internal(state.db.clone()).await
-}
-
-/// List all database backup files
-pub fn list_db_backups() -> Result<Vec<BackupEntry>, String> {
-    Database::list_backups().map_err(|e| e.to_string())
-}
-
 /// Restore database from a backup file
 pub async fn restore_db_backup_internal(
     db: std::sync::Arc<Database>,
@@ -65,24 +51,4 @@ pub async fn restore_db_backup_internal(
         .await
         .map_err(|e| format!("Restore failed: {e}"))?
         .map_err(|e: AppError| e.to_string())
-}
-
-pub async fn restore_db_backup(
-    state: State<'_, AppState>,
-    filename: String,
-) -> Result<String, String> {
-    restore_db_backup_internal(state.db.clone(), filename).await
-}
-
-/// Rename a database backup file
-pub fn rename_db_backup(
-    #[allow(non_snake_case)] oldFilename: String,
-    #[allow(non_snake_case)] newName: String,
-) -> Result<String, String> {
-    Database::rename_backup(&oldFilename, &newName).map_err(|e| e.to_string())
-}
-
-/// Delete a database backup file
-pub fn delete_db_backup(filename: String) -> Result<(), String> {
-    Database::delete_backup(&filename).map_err(|e| e.to_string())
 }

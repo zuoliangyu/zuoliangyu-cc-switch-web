@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use crate::command_state::State;
 
 use crate::openclaw_config;
 use crate::store::AppState;
@@ -8,115 +7,23 @@ use crate::store::AppState;
 // OpenClaw Provider Commands (migrated from provider.rs)
 // ============================================================================
 
-/// Import providers from OpenClaw live config to database.
-///
-/// OpenClaw uses additive mode — users may already have providers
-/// configured in openclaw.json.
-pub fn import_openclaw_providers_from_live(state: State<'_, AppState>) -> Result<usize, String> {
-    import_openclaw_providers_from_live_internal(state.inner())
-        .map_err(|e| e.to_string())
-}
-
 pub(crate) fn import_openclaw_providers_from_live_internal(
     state: &AppState,
 ) -> Result<usize, crate::error::AppError> {
     crate::services::provider::import_openclaw_providers_from_live(state)
 }
 
-/// Get provider IDs in the OpenClaw live config.
-pub fn get_openclaw_live_provider_ids() -> Result<Vec<String>, String> {
-    openclaw_config::get_providers()
-        .map(|providers| providers.keys().cloned().collect())
-        .map_err(|e| e.to_string())
-}
-
-/// Get a single OpenClaw provider fragment from live config.
-pub fn get_openclaw_live_provider(
-    #[allow(non_snake_case)] providerId: String,
-) -> Result<Option<serde_json::Value>, String> {
-    get_openclaw_live_provider_internal(&providerId)
-}
-
-/// Scan openclaw.json for known configuration hazards.
-pub fn scan_openclaw_config_health() -> Result<Vec<openclaw_config::OpenClawHealthWarning>, String>
-{
-    scan_openclaw_config_health_internal()
-}
-
 // ============================================================================
 // Agents Configuration Commands
 // ============================================================================
-
-/// Get OpenClaw default model config (agents.defaults.model)
-pub fn get_openclaw_default_model() -> Result<Option<openclaw_config::OpenClawDefaultModel>, String>
-{
-    get_openclaw_default_model_internal()
-}
-
-/// Set OpenClaw default model config (agents.defaults.model)
-pub fn set_openclaw_default_model(
-    model: openclaw_config::OpenClawDefaultModel,
-) -> Result<openclaw_config::OpenClawWriteOutcome, String> {
-    set_openclaw_default_model_internal(model)
-}
-
-/// Get OpenClaw model catalog/allowlist (agents.defaults.models)
-pub fn get_openclaw_model_catalog(
-) -> Result<Option<HashMap<String, openclaw_config::OpenClawModelCatalogEntry>>, String> {
-    get_openclaw_model_catalog_internal()
-}
-
-/// Set OpenClaw model catalog/allowlist (agents.defaults.models)
-pub fn set_openclaw_model_catalog(
-    catalog: HashMap<String, openclaw_config::OpenClawModelCatalogEntry>,
-) -> Result<openclaw_config::OpenClawWriteOutcome, String> {
-    set_openclaw_model_catalog_internal(catalog)
-}
-
-/// Get full agents.defaults config (all fields)
-pub fn get_openclaw_agents_defaults(
-) -> Result<Option<openclaw_config::OpenClawAgentsDefaults>, String> {
-    get_openclaw_agents_defaults_internal()
-}
-
-/// Set full agents.defaults config (all fields)
-pub fn set_openclaw_agents_defaults(
-    defaults: openclaw_config::OpenClawAgentsDefaults,
-) -> Result<openclaw_config::OpenClawWriteOutcome, String> {
-    set_openclaw_agents_defaults_internal(defaults)
-}
 
 // ============================================================================
 // Env Configuration Commands
 // ============================================================================
 
-/// Get OpenClaw env config (env section of openclaw.json)
-pub fn get_openclaw_env() -> Result<openclaw_config::OpenClawEnvConfig, String> {
-    get_openclaw_env_internal()
-}
-
-/// Set OpenClaw env config (env section of openclaw.json)
-pub fn set_openclaw_env(
-    env: openclaw_config::OpenClawEnvConfig,
-) -> Result<openclaw_config::OpenClawWriteOutcome, String> {
-    set_openclaw_env_internal(env)
-}
-
 // ============================================================================
 // Tools Configuration Commands
 // ============================================================================
-
-/// Get OpenClaw tools config (tools section of openclaw.json)
-pub fn get_openclaw_tools() -> Result<openclaw_config::OpenClawToolsConfig, String> {
-    get_openclaw_tools_internal()
-}
-
-/// Set OpenClaw tools config (tools section of openclaw.json)
-pub fn set_openclaw_tools(
-    tools: openclaw_config::OpenClawToolsConfig,
-) -> Result<openclaw_config::OpenClawWriteOutcome, String> {
-    set_openclaw_tools_internal(tools)
-}
 
 pub(crate) fn get_openclaw_live_provider_internal(
     provider_id: &str,
