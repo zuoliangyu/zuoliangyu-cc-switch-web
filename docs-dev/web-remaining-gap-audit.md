@@ -173,6 +173,7 @@
 - `circuit-breaker-stats` 前后端占位链路已删除：Web runtime/API/hook 无实际消费、后端也仅返回 `None`，因此同步移除未落地接口；同时 `RequestContext.app_type`、`ProviderType` 测试专用 helper、`ApiFormat` 占位枚举与 Copilot token 解析中的过期 `dead_code` 标注也已继续收口
 - `services/provider/live.rs` 中零引用的 `LiveSnapshot` 旧恢复结构已删除；多处测试内仅用于维持临时目录生命周期的字段已改名为 `_dir`；`usage/parser.rs` 中运行时真实使用的方法已移除过期 `dead_code` 标注，纯测试路径则改为测试编译专用
 - `proxy/usage/mod.rs` 与 `proxy/mod.rs` 中仅为迁移期保留的根级 re-export 已继续收窄；外部调用已改为显式子模块路径，减少 Web-only 仓库中的历史耦合出口
+- `proxy/mod.rs` 中仍然标记为 `pub mod` 的内部实现子模块已统一收口为 `pub(crate)`，当前代理子系统进一步明确为 crate 内部实现细节，而非可对外复用的公共库 API
 
 ## 四、基于前端命令差集的剩余项
 
