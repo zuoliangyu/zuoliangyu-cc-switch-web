@@ -3,8 +3,8 @@
 //! 提供本地 Web API 复用的命令入口。
 
 use crate::error::AppError;
+use crate::proxy::circuit_breaker::CircuitBreakerConfig;
 use crate::proxy::types::*;
-use crate::proxy::CircuitBreakerConfig;
 use crate::store::AppState;
 
 fn circuit_breaker_config_from_app(config: &AppProxyConfig) -> CircuitBreakerConfig {

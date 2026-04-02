@@ -6,6 +6,7 @@ use crate::app_config::AppType;
 use crate::config::{get_claude_settings_path, read_json_file, write_json_file};
 use crate::database::Database;
 use crate::provider::Provider;
+use crate::proxy::circuit_breaker::CircuitBreakerConfig;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::proxy::server::ProxyServer;
 use crate::proxy::types::*;
@@ -1632,7 +1633,7 @@ impl ProxyService {
     /// 如果代理服务器正在运行，将新配置应用到所有已创建的熔断器实例
     pub async fn update_circuit_breaker_configs(
         &self,
-        config: crate::proxy::CircuitBreakerConfig,
+        config: CircuitBreakerConfig,
     ) -> Result<(), String> {
         if let Some(server) = self.server.read().await.as_ref() {
             server.update_circuit_breaker_configs(config).await;
