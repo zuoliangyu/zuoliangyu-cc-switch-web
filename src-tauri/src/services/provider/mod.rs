@@ -16,6 +16,7 @@ use crate::app_config::AppType;
 use crate::error::AppError;
 use crate::provider::{Provider, UsageResult};
 use crate::services::mcp::McpService;
+use crate::services::omo::OmoService;
 use crate::settings::CustomEndpoint;
 use crate::store::AppState;
 
@@ -227,7 +228,7 @@ impl ProviderService {
                         .db
                         .is_omo_provider_current(app_type.as_str(), &provider.id, "omo")?;
                 if is_omo_current {
-                    crate::services::OmoService::write_config_to_file(
+                    OmoService::write_config_to_file(
                         state,
                         &crate::services::omo::STANDARD,
                     )?;
@@ -243,7 +244,7 @@ impl ProviderService {
                     "omo-slim",
                 )?;
                 if is_current {
-                    crate::services::OmoService::write_config_to_file(
+                    OmoService::write_config_to_file(
                         state,
                         &crate::services::omo::SLIM,
                     )?;
@@ -309,7 +310,7 @@ impl ProviderService {
 
                     state.db.delete_provider(app_type.as_str(), id)?;
                     if was_current {
-                        crate::services::OmoService::delete_config_file(
+                        OmoService::delete_config_file(
                             &crate::services::omo::STANDARD,
                         )?;
                     }
@@ -324,7 +325,7 @@ impl ProviderService {
 
                     state.db.delete_provider(app_type.as_str(), id)?;
                     if was_current {
-                        crate::services::OmoService::delete_config_file(
+                        OmoService::delete_config_file(
                             &crate::services::omo::SLIM,
                         )?;
                     }
@@ -381,12 +382,12 @@ impl ProviderService {
                         .get_current_omo_provider("opencode", "omo")?
                         .is_some();
                     if still_has_current {
-                        crate::services::OmoService::write_config_to_file(
+                        OmoService::write_config_to_file(
                             state,
                             &crate::services::omo::STANDARD,
                         )?;
                     } else {
-                        crate::services::OmoService::delete_config_file(
+                        OmoService::delete_config_file(
                             &crate::services::omo::STANDARD,
                         )?;
                     }
@@ -399,12 +400,12 @@ impl ProviderService {
                         .get_current_omo_provider("opencode", "omo-slim")?
                         .is_some();
                     if still_has_current {
-                        crate::services::OmoService::write_config_to_file(
+                        OmoService::write_config_to_file(
                             state,
                             &crate::services::omo::SLIM,
                         )?;
                     } else {
-                        crate::services::OmoService::delete_config_file(
+                        OmoService::delete_config_file(
                             &crate::services::omo::SLIM,
                         )?;
                     }
@@ -531,12 +532,12 @@ impl ProviderService {
             state
                 .db
                 .set_omo_provider_current(app_type.as_str(), id, "omo")?;
-            crate::services::OmoService::write_config_to_file(
+            OmoService::write_config_to_file(
                 state,
                 &crate::services::omo::STANDARD,
             )?;
             // OMO ↔ OMO Slim mutually exclusive: remove Slim config
-            let _ = crate::services::OmoService::delete_config_file(&crate::services::omo::SLIM);
+            let _ = OmoService::delete_config_file(&crate::services::omo::SLIM);
             return Ok(SwitchResult::default());
         }
 
@@ -545,10 +546,10 @@ impl ProviderService {
             state
                 .db
                 .set_omo_provider_current(app_type.as_str(), id, "omo-slim")?;
-            crate::services::OmoService::write_config_to_file(state, &crate::services::omo::SLIM)?;
+            OmoService::write_config_to_file(state, &crate::services::omo::SLIM)?;
             // OMO ↔ OMO Slim mutually exclusive: remove Standard config
             let _ =
-                crate::services::OmoService::delete_config_file(&crate::services::omo::STANDARD);
+                OmoService::delete_config_file(&crate::services::omo::STANDARD);
             return Ok(SwitchResult::default());
         }
 

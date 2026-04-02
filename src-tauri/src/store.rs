@@ -1,6 +1,6 @@
 use crate::database::Database;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
-use crate::services::ProxyService;
+use crate::services::proxy::ProxyService;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 

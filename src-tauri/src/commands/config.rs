@@ -146,7 +146,7 @@ pub(crate) fn set_common_config_snippet_internal(
             .map_err(|e| ConfigCommandError::internal(e.to_string()))?
             .is_some()
     {
-        crate::services::OmoService::write_config_to_file(
+        crate::services::omo::OmoService::write_config_to_file(
             state,
             &crate::services::omo::STANDARD,
         )
@@ -159,7 +159,7 @@ pub(crate) fn set_common_config_snippet_internal(
             .map_err(|e| ConfigCommandError::internal(e.to_string()))?
             .is_some()
     {
-        crate::services::OmoService::write_config_to_file(
+        crate::services::omo::OmoService::write_config_to_file(
             state,
             &crate::services::omo::SLIM,
         )

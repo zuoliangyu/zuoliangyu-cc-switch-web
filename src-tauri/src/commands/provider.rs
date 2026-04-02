@@ -2,9 +2,8 @@ use indexmap::IndexMap;
 use crate::app_config::AppType;
 use crate::error::AppError;
 use crate::provider::Provider;
-use crate::services::{
-    EndpointLatency, ProviderService, ProviderSortUpdate, SpeedtestService, SwitchResult,
-};
+use crate::services::provider::{ProviderService, ProviderSortUpdate, SwitchResult};
+use crate::services::speedtest::{EndpointLatency, SpeedtestService};
 use crate::store::AppState;
 use std::str::FromStr;
 use std::sync::Arc;

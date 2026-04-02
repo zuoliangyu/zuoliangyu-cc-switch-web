@@ -26,10 +26,11 @@ use crate::proxy::types::{
     ProxyServerInfo, ProxyStatus, ProxyTakeoverStatus, RectifierConfig,
 };
 use crate::services::omo::OmoLocalFileData;
+use crate::services::provider::{ProviderSortUpdate, SwitchResult};
 use crate::services::skill::{
     DiscoverableSkill, ImportSkillSelection, SkillBackupEntry, SkillRepo, SkillUninstallResult,
 };
-use crate::services::SwitchResult;
+use crate::services::speedtest::EndpointLatency;
 use crate::settings::WebDavSyncSettings;
 use crate::store::AppState;
 use crate::Database;
@@ -557,7 +558,7 @@ async fn test_usage_script(
 
 async fn test_api_endpoints(
     Json(payload): Json<EndpointTestRequest>,
-) -> Result<Json<Vec<crate::services::EndpointLatency>>, ApiError> {
+) -> Result<Json<Vec<EndpointLatency>>, ApiError> {
     let results = crate::commands::test_api_endpoints_internal(payload.urls, payload.timeout_secs)
         .await
         .map_err(|e| ApiError::internal(format!("failed to test api endpoints: {e}")))?;
@@ -1919,7 +1920,7 @@ async fn delete_provider(
 async fn update_providers_sort_order(
     State(state): State<WebApiState>,
     Path(app): Path<String>,
-    Json(updates): Json<Vec<crate::services::ProviderSortUpdate>>,
+    Json(updates): Json<Vec<ProviderSortUpdate>>,
 ) -> Result<Json<bool>, ApiError> {
     let updated =
         crate::commands::update_providers_sort_order_internal(state.app_state.as_ref(), app, updates)

@@ -2,7 +2,7 @@
 
 use indexmap::IndexMap;
 use crate::app_config::AppType;
-use crate::services::McpService;
+use crate::services::mcp::McpService;
 use crate::store::AppState;
 use std::str::FromStr;
 

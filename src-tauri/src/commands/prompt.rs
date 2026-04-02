@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::app_config::AppType;
 use crate::prompt::Prompt;
-use crate::services::PromptService;
+use crate::services::prompt::PromptService;
 use crate::store::AppState;
 
 pub(crate) async fn get_prompts_internal(

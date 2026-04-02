@@ -114,6 +114,7 @@
 - `database/dao/settings.rs` 中无调用点的 `common_config_legacy_migrated_v1` 迁移标记及对应读写函数已删除
 - `services/mod.rs` 中无调用点的 Skills 根级 re-export 已删除，当前调用统一走 `crate::services::skill::*`
 - `services/mod.rs` 中无调用点的 `usage_stats` 根级 re-export 已删除，当前调用统一走 `crate::services::usage_stats::*`
+- `services/mod.rs` 中剩余的根级转发也已继续收窄；命令层、`web_server.rs`、`store.rs` 与 `lib.rs` 已改为显式依赖对应子模块路径
 
 ## 四、基于前端命令差集的剩余项
 

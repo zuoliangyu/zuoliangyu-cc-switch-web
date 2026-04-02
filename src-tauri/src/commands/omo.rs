@@ -1,5 +1,5 @@
 use crate::services::omo::{OmoLocalFileData, SLIM, STANDARD};
-use crate::services::OmoService;
+use crate::services::omo::OmoService;
 use crate::store::AppState;
 
 pub(crate) async fn read_omo_local_file_internal() -> Result<OmoLocalFileData, String> {
