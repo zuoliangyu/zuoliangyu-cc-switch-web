@@ -1783,7 +1783,7 @@
       "autoSwitchDescription": "开启后将立即切换到队列 P1，并在请求失败时自动切换到队列中的下一个供应商"
     },
     "webMode": {
-      "partialSupport": "当前 Web 模式已覆盖本地代理、Provider、代理配置、故障转移、整流器与全局出站代理等主流程能力。桌面壳专属能力不再作为 Web 版目标范围。"
+      "partialSupport": "当前 Web 模式已覆盖本地代理、Provider、代理配置、故障转移、整流器与全局出站代理等主流程能力。部分系统级能力仍受浏览器权限限制。"
     },
     "failoverQueue": {
       "title": "故障转移队列",

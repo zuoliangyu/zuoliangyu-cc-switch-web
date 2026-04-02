@@ -1783,7 +1783,7 @@
       "autoSwitchDescription": "When enabled, switches to queue P1 immediately and automatically tries the next provider in the queue on failures"
     },
     "webMode": {
-      "partialSupport": "The Web runtime now covers the main local-service workflow, including local proxy, providers, proxy configuration, failover, rectifier, and global outbound proxy. Desktop-shell-only capabilities are no longer in scope for the Web edition."
+      "partialSupport": "The Web runtime now covers the main local-service workflow, including local proxy, providers, proxy configuration, failover, rectifier, and global outbound proxy. Some system-level capabilities are still limited by browser permissions."
     },
     "failoverQueue": {
       "title": "Failover Queue",

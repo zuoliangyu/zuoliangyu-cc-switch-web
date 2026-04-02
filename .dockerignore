@@ -1,7 +1,6 @@
 node_modules
 dist
 target
-src-tauri/target
 .git
 .github
 .vscode
@@ -10,4 +9,3 @@ docs
 docs-dev
 *.log
 pnpm-debug.log*
-
