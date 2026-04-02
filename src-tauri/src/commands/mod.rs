@@ -29,7 +29,7 @@ pub use mcp::*;
 pub use misc::*;
 pub use omo::*;
 pub use openclaw::*;
-pub use prompt::*;
+pub(crate) use prompt::*;
 pub use provider::*;
 pub use proxy::*;
 pub use session_manager::*;

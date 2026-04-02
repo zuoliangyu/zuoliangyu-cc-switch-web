@@ -10,10 +10,6 @@ pub async fn list_sessions_internal() -> Result<Vec<session_manager::SessionMeta
     Ok(sessions)
 }
 
-pub async fn list_sessions() -> Result<Vec<session_manager::SessionMeta>, String> {
-    list_sessions_internal().await
-}
-
 pub async fn get_session_messages_internal(
     providerId: String,
     sourcePath: String,
@@ -23,13 +19,6 @@ pub async fn get_session_messages_internal(
     spawn_blocking(move || session_manager::load_messages(&provider_id, &source_path))
     .await
     .map_err(|e| format!("Failed to load session messages: {e}"))?
-}
-
-pub async fn get_session_messages(
-    providerId: String,
-    sourcePath: String,
-) -> Result<Vec<session_manager::SessionMessage>, String> {
-    get_session_messages_internal(providerId, sourcePath).await
 }
 
 pub async fn delete_session_internal(
@@ -48,24 +37,10 @@ pub async fn delete_session_internal(
     .map_err(|e| format!("Failed to delete session: {e}"))?
 }
 
-pub async fn delete_session(
-    providerId: String,
-    sessionId: String,
-    sourcePath: String,
-) -> Result<bool, String> {
-    delete_session_internal(providerId, sessionId, sourcePath).await
-}
-
 pub async fn delete_sessions_internal(
     items: Vec<session_manager::DeleteSessionRequest>,
 ) -> Result<Vec<session_manager::DeleteSessionOutcome>, String> {
     spawn_blocking(move || session_manager::delete_sessions(&items))
         .await
         .map_err(|e| format!("Failed to delete sessions: {e}"))
-}
-
-pub async fn delete_sessions(
-    items: Vec<session_manager::DeleteSessionRequest>,
-) -> Result<Vec<session_manager::DeleteSessionOutcome>, String> {
-    delete_sessions_internal(items).await
 }
