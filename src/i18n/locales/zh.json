@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "CC Switch",
-    "description": "Claude Code / Codex / Gemini CLI 全方位辅助工具"
+    "description": "CC Switch 的 Web 分支，采用浏览器界面与本地 Rust 服务"
   },
   "common": {
     "add": "添加",

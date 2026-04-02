@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "CC Switch",
-    "description": "Claude Code・Codex・Gemini CLI のためのオールインワンアシスタント"
+    "description": "CC Switch の Web ブランチ。ブラウザ UI とローカル Rust サービスで動作"
   },
   "common": {
     "add": "追加",

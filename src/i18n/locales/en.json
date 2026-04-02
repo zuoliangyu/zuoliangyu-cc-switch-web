@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "CC Switch",
-    "description": "All-in-One Assistant for Claude Code, Codex & Gemini CLI"
+    "description": "CC Switch Web branch with browser UI and local Rust service"
   },
   "common": {
     "add": "Add",
