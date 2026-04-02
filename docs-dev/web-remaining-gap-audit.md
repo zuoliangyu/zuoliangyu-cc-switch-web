@@ -183,6 +183,7 @@
 - MCP 导入链已不再通过 `MultiAppConfig` 这个旧配置容器做中转，而是直接围绕统一 `McpServer` 集合导入和落库；同步接口也移除了无意义的 `_config` 形参，进一步切断运行时对旧配置结构的依赖
 - 历史目录名 `src-tauri/` 已重命名为 `backend/`，并同步修正 package scripts、Dockerfile、启动脚本与 GitHub Actions，仓库层面的 Tauri 命名残留已进一步减少
 - 既然 `MultiAppConfig` 与 `database::migration` 已只剩测试用途，当前也已整体收回测试编译域；正式 Web 后端不再编译旧 `config.json` 容器及其 JSON→SQLite 迁移模块
+- 前端启动阶段原本保留的 `get_migration_result` / `get_skills_migration_result` 空转检查已删除；Web runtime 先前仅固定返回 `false/null`，当前已不再保留这层无后端入口的历史迁移提示链
 
 ## 四、基于前端命令差集的剩余项
 
