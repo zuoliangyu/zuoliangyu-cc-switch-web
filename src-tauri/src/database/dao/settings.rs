@@ -7,8 +7,6 @@ use crate::error::AppError;
 use rusqlite::params;
 
 impl Database {
-    const LEGACY_COMMON_CONFIG_MIGRATED_KEY: &'static str = "common_config_legacy_migrated_v1";
-
     fn config_snippet_cleared_key(app_type: &str) -> String {
         format!("common_config_{app_type}_cleared")
     }
@@ -80,29 +78,6 @@ impl Database {
     pub fn should_auto_extract_config_snippet(&self, app_type: &str) -> Result<bool, AppError> {
         Ok(self.get_config_snippet(app_type)?.is_none()
             && !self.is_config_snippet_cleared(app_type)?)
-    }
-
-    /// 检查历史通用配置迁移是否已经执行过
-    pub fn is_legacy_common_config_migrated(&self) -> Result<bool, AppError> {
-        Ok(self
-            .get_setting(Self::LEGACY_COMMON_CONFIG_MIGRATED_KEY)?
-            .as_deref()
-            == Some("true"))
-    }
-
-    /// 标记历史通用配置迁移已经执行完成
-    pub fn set_legacy_common_config_migrated(&self, migrated: bool) -> Result<(), AppError> {
-        if migrated {
-            self.set_setting(Self::LEGACY_COMMON_CONFIG_MIGRATED_KEY, "true")
-        } else {
-            let conn = lock_conn!(self.conn);
-            conn.execute(
-                "DELETE FROM settings WHERE key = ?1",
-                params![Self::LEGACY_COMMON_CONFIG_MIGRATED_KEY],
-            )
-            .map_err(|e| AppError::Database(e.to_string()))?;
-            Ok(())
-        }
     }
 
     /// 设置通用配置片段
