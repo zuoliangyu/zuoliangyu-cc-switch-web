@@ -444,25 +444,6 @@ export async function invoke<T>(
       )) as T;
     case "auth_logout":
       return (await logoutWebManagedAuth(args?.authProvider as string)) as T;
-    case "copilot_poll_for_account":
-      return (await pollWebManagedAuthAccount(
-        "github_copilot",
-        args?.deviceCode as string,
-      )) as T;
-    case "copilot_list_accounts":
-      return (await listWebManagedAuthAccounts("github_copilot")) as T;
-    case "copilot_remove_account":
-      return (await removeWebManagedAuthAccount(
-        "github_copilot",
-        args?.accountId as string,
-      )) as T;
-    case "copilot_set_default_account":
-      return (await setWebManagedAuthDefaultAccount(
-        "github_copilot",
-        args?.accountId as string,
-      )) as T;
-    case "copilot_logout":
-      return (await logoutWebManagedAuth("github_copilot")) as T;
     case "copilot_get_token":
       return (await getWebCopilotToken()) as T;
     case "copilot_get_token_for_account":

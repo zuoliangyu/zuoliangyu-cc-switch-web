@@ -1,7 +1,7 @@
 /**
  * GitHub Copilot API
  *
- * 提供 GitHub Copilot 可用模型、Token、使用量与账号管理相关的 API 函数。
+ * 提供 GitHub Copilot 可用模型、Token 与使用量相关的 API 函数。
  */
 
 import { invoke } from "@/lib/runtime/client/core";
@@ -18,13 +18,6 @@ export interface GitHubAccount {
   avatar_url: string | null;
   /** 认证时间戳（Unix 秒） */
   authenticated_at: number;
-}
-
-/**
- * 注销 Copilot 认证
- */
-export async function copilotLogout(): Promise<void> {
-  return invoke("copilot_logout");
 }
 
 /**
@@ -92,54 +85,6 @@ export interface CopilotUsageResponse {
  */
 export async function copilotGetUsage(): Promise<CopilotUsageResponse> {
   return invoke<CopilotUsageResponse>("copilot_get_usage");
-}
-
-// ==================== 多账号管理 API ====================
-
-/**
- * 列出所有已认证的 GitHub 账号
- *
- * @returns 账号列表
- */
-export async function copilotListAccounts(): Promise<GitHubAccount[]> {
-  return invoke<GitHubAccount[]>("copilot_list_accounts");
-}
-
-/**
- * 轮询 OAuth Token（多账号版本）
- *
- * 使用设备码轮询 GitHub，等待用户完成授权。
- * 授权成功后返回新添加的账号信息。
- *
- * @param deviceCode - 设备码
- * @returns 新添加的账号信息，如果仍在等待则返回 null
- */
-export async function copilotPollForAccount(
-  deviceCode: string,
-): Promise<GitHubAccount | null> {
-  return invoke<GitHubAccount | null>("copilot_poll_for_account", {
-    deviceCode,
-  });
-}
-
-/**
- * 移除指定的 GitHub 账号
- *
- * @param accountId - GitHub 用户 ID
- */
-export async function copilotRemoveAccount(accountId: string): Promise<void> {
-  return invoke("copilot_remove_account", { accountId });
-}
-
-/**
- * 设置默认 GitHub 账号
- *
- * @param accountId - GitHub 用户 ID
- */
-export async function copilotSetDefaultAccount(
-  accountId: string,
-): Promise<void> {
-  return invoke("copilot_set_default_account", { accountId });
 }
 
 /**
