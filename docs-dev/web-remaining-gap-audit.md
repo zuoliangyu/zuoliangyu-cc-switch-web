@@ -1,6 +1,6 @@
 # Web 化剩余缺口审计
 
-更新时间：2026-04-01（完成 Web runtime 差集复核后）
+更新时间：2026-04-02（完成 Web 命令层 service 直调收口后）
 
 ## 结论
 
@@ -97,6 +97,8 @@
 - OMO 仅保留 Web 正在使用的“读取本地配置填充表单”路径，旧的 Rust 侧直接导入生成 provider 逻辑已移除
 - `restart_app` 的测试 mock 已删除，Rust 清单中无引用的 `webkit2gtk` / `winreg` / `objc2` / `objc2-app-kit` 直接依赖已移除
 - Web-only 主链中的导入导出、Session 管理、WebDAV 后置同步、WebDAV 自动同步与测速测试已从 `tauri::async_runtime` 切换到 `tokio`，进一步缩小 Tauri 运行时依赖面
+- `web_server.rs` 中原本直接调用 `McpService` / `PromptService` / `ProviderService` / `SkillService` / `OmoService` / `SpeedtestService` / live provider import 的重复逻辑已全部收口到 `commands/*_internal`，当前这批 Web handler 的 service 直调差集已清零
+- Skills ZIP 上传安装、配置导入后的后置同步告警计算等残余共享流程也已收口到命令层辅助函数，`web_server.rs` 的职责进一步收敛为 HTTP 协议适配
 
 ## 四、基于前端命令差集的剩余项
 
@@ -117,6 +119,13 @@
 2. 旧 API 别名和死代码的收口
 3. `tauri` crate 本体与命令宏/运行时依赖仍在 Rust 侧保留，后续若要彻底去壳，需要一次单独重构
 
+补充说明：
+
+- 当前仓库已经没有桌面 `main.rs` / `tauri::Builder` / `generate_handler!` / 托盘或窗口启动入口
+- 当前可执行入口是 `src-tauri/src/bin/cc-switch-web.rs`
+- 因此 `tauri` crate 现在主要承担的是命令层 `#[tauri::command]` 宏和 `tauri::State` 参数包装，而不是桌面运行时
+- 下一阶段的重点已经从“Web 能力补齐”切换为“去掉命令层对 `tauri` crate 的编译依赖”
+
 ## 五、当前真正的收尾重点
 
 从 Web 化目标来看，接下来更应该做的是：
@@ -128,7 +137,7 @@
 
 ## 六、建议的后续执行顺序
 
-1. 清理桌面专属入口
-2. 清理旧兼容 API
-3. 更新 README 与开发计划文档，明确 Web 版边界
-4. 继续审查 `src-tauri` 中仅桌面有意义的命令与依赖，分批删除
+1. 以批次方式替换 `commands/*.rs` 中的 `tauri::State` 和 `#[tauri::command]`
+2. 移除 `src-tauri/Cargo.toml` 中的 `tauri` 依赖，并验证 `cc-switch-web` 可独立编译
+3. 清理仍仅对桌面命令包装有意义的兼容层
+4. 更新 README 与开发计划文档，明确“本仓库已不再包含桌面运行时，仅保留 Web + 本地 Rust 服务”
