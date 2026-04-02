@@ -27,4 +27,3 @@ CODEBUDDY.md
 !.github/workflows/
 !.github/workflows/*.yml
 docker-compose.host.yml
-/docs-dev
