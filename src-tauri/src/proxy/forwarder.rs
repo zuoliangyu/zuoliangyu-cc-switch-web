@@ -665,7 +665,7 @@ impl RequestForwarder {
                             // 继续尝试下一个供应商
                             continue;
                         }
-                        ErrorCategory::NonRetryable | ErrorCategory::ClientAbort => {
+                        ErrorCategory::NonRetryable => {
                             // 不可重试：直接返回错误
                             {
                                 let mut status = self.status.write().await;
@@ -1222,7 +1222,6 @@ impl RequestForwarder {
             // 网络和上游错误：都应该尝试下一个供应商
             ProxyError::Timeout(_) => ErrorCategory::Retryable,
             ProxyError::ForwardFailed(_) => ErrorCategory::Retryable,
-            ProxyError::ProviderUnhealthy(_) => ErrorCategory::Retryable,
             // 上游 HTTP 错误：无论状态码如何，都尝试下一个供应商
             // 原因：不同供应商有不同的限制和认证，一个供应商的 4xx 错误
             // 不代表其他供应商也会失败
@@ -1231,7 +1230,6 @@ impl RequestForwarder {
             ProxyError::ConfigError(_) => ErrorCategory::Retryable,
             ProxyError::TransformError(_) => ErrorCategory::Retryable,
             ProxyError::AuthError(_) => ErrorCategory::Retryable,
-            ProxyError::StreamIdleTimeout(_) => ErrorCategory::Retryable,
             // 无可用供应商：所有供应商都试过了，无法重试
             ProxyError::NoAvailableProvider => ErrorCategory::NonRetryable,
             // 其他错误（数据库/内部错误等）：不是换供应商能解决的问题

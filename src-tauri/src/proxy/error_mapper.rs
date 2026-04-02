@@ -36,9 +36,6 @@ pub fn map_proxy_error_to_status(error: &ProxyError) -> u16 {
         // 重试耗尽：503 Service Unavailable
         ProxyError::MaxRetriesExceeded => 503,
 
-        // Provider 不健康：503 Service Unavailable
-        ProxyError::ProviderUnhealthy(_) => 503,
-
         // 数据库错误：500 Internal Server Error
         ProxyError::DatabaseError(_) => 500,
 
@@ -66,7 +63,6 @@ pub fn get_error_message(error: &ProxyError) -> String {
         ProxyError::AllProvidersCircuitOpen => "所有供应商已熔断，无可用渠道".to_string(),
         ProxyError::NoProvidersConfigured => "未配置供应商".to_string(),
         ProxyError::MaxRetriesExceeded => "所有 Provider 都失败，重试耗尽".to_string(),
-        ProxyError::ProviderUnhealthy(msg) => format!("Provider 不健康: {msg}"),
         ProxyError::DatabaseError(msg) => format!("数据库错误: {msg}"),
         ProxyError::TransformError(msg) => format!("请求/响应转换错误: {msg}"),
         _ => error.to_string(),
