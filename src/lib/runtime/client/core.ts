@@ -191,13 +191,6 @@ export async function invoke<T>(
       return (await getWebSettings()) as T;
     case "save_settings":
       return (await saveWebSettings(args?.settings as any)) as T;
-    case "get_claude_common_config_snippet":
-      return (await getWebCommonConfigSnippet("claude")) as T;
-    case "set_claude_common_config_snippet":
-      return (await setWebCommonConfigSnippet(
-        "claude",
-        (args?.snippet as string | undefined) ?? "",
-      )) as T;
     case "get_common_config_snippet":
       return (await getWebCommonConfigSnippet(args?.appType as string)) as T;
     case "set_common_config_snippet":
