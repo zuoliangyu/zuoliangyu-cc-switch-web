@@ -45,18 +45,6 @@ impl Database {
         Ok(items)
     }
 
-    /// 获取故障转移队列中的供应商（完整 Provider 信息，按顺序）
-    pub fn get_failover_providers(&self, app_type: &str) -> Result<Vec<Provider>, AppError> {
-        let all_providers = self.get_all_providers(app_type)?;
-
-        let result: Vec<Provider> = all_providers
-            .into_values()
-            .filter(|p| p.in_failover_queue)
-            .collect();
-
-        Ok(result)
-    }
-
     /// 添加供应商到故障转移队列
     pub fn add_to_failover_queue(&self, app_type: &str, provider_id: &str) -> Result<(), AppError> {
         let conn = lock_conn!(self.conn);
@@ -95,38 +83,6 @@ impl Database {
         log::info!("已从故障转移队列移除供应商 {provider_id} ({app_type}), 并清除其健康状态");
 
         Ok(())
-    }
-
-    /// 清空故障转移队列
-    pub fn clear_failover_queue(&self, app_type: &str) -> Result<(), AppError> {
-        let conn = lock_conn!(self.conn);
-
-        conn.execute(
-            "UPDATE providers SET in_failover_queue = 0 WHERE app_type = ?1",
-            [app_type],
-        )
-        .map_err(|e| AppError::Database(e.to_string()))?;
-
-        Ok(())
-    }
-
-    /// 检查供应商是否在故障转移队列中
-    pub fn is_in_failover_queue(
-        &self,
-        app_type: &str,
-        provider_id: &str,
-    ) -> Result<bool, AppError> {
-        let conn = lock_conn!(self.conn);
-
-        let in_queue: bool = conn
-            .query_row(
-                "SELECT in_failover_queue FROM providers WHERE id = ?1 AND app_type = ?2",
-                rusqlite::params![provider_id, app_type],
-                |row| row.get(0),
-            )
-            .unwrap_or(false);
-
-        Ok(in_queue)
     }
 
     /// 获取可添加到故障转移队列的供应商（不在队列中的）

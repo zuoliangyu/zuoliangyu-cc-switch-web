@@ -148,6 +148,8 @@
 - `database/dao/proxy.rs` 中零调用的同步兼容方法 `get_proxy_flags_sync / set_proxy_flags_sync` 已删除，避免继续保留只服务旧同步调用模型的 DAO 接口
 - `database/backup.rs` 中零调用的文件路径导入导出 wrapper `export_sql / import_sql` 已删除；当前数据库备份主链统一走字符串导入导出接口以匹配 Web 上传/下载流程
 - `database/mod.rs` 中零调用的 `is_mcp_table_empty / is_prompts_table_empty` 表空判断接口已删除，避免继续暴露未接入主链的数据库辅助查询
+- `database/dao/failover.rs` 中零调用的 `get_failover_providers / clear_failover_queue / is_in_failover_queue` 已删除；当前故障转移主链统一走已接入 Web 路由的队列查询、增删和可选列表接口
+- `database/dao/proxy.rs` 中零调用的 `reset_provider_health / has_any_live_backup` 已删除；当前健康状态与 Live 备份主链均走更细粒度的现用接口
 
 ## 四、基于前端命令差集的剩余项
 

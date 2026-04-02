@@ -509,25 +509,6 @@ impl Database {
         Ok(())
     }
 
-    /// 重置Provider健康状态
-    pub async fn reset_provider_health(
-        &self,
-        provider_id: &str,
-        app_type: &str,
-    ) -> Result<(), AppError> {
-        let conn = lock_conn!(self.conn);
-
-        conn.execute(
-            "DELETE FROM provider_health WHERE provider_id = ?1 AND app_type = ?2",
-            rusqlite::params![provider_id, app_type],
-        )
-        .map_err(|e| AppError::Database(e.to_string()))?;
-
-        log::debug!("Reset health status for provider {provider_id} (app: {app_type})");
-
-        Ok(())
-    }
-
     /// 清空指定应用的健康状态（关闭单个代理时使用）
     pub async fn clear_provider_health_for_app(&self, app_type: &str) -> Result<(), AppError> {
         let conn = lock_conn!(self.conn);
@@ -573,17 +554,6 @@ impl Database {
 
         log::info!("已备份 {app_type} Live 配置");
         Ok(())
-    }
-
-    /// 检查是否存在任意 Live 配置备份
-    pub async fn has_any_live_backup(&self) -> Result<bool, AppError> {
-        let conn = lock_conn!(self.conn);
-        let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM proxy_live_backup", [], |row| {
-                row.get(0)
-            })
-            .map_err(|e| AppError::Database(e.to_string()))?;
-        Ok(count > 0)
     }
 
     /// 获取 Live 配置备份
