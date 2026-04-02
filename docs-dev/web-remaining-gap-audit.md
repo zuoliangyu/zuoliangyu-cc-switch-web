@@ -145,6 +145,7 @@
 - Web 设置页已重新暴露 `Skill Sync` 与 `appConfigDir` 覆盖入口；在浏览器中保持“手动填写/重置可用、原生浏览按钮禁用”的 Web 行为
 - `App.tsx` 中迁移期遗留的 Web 视图黑名单占位逻辑已删除；当前顶层视图不再保留空集合拦截分支
 - 目录设置默认值与“重置”逻辑已改为完全由本地 Rust 服务返回真实路径，Web 前端不再自行猜测宿主机 home 目录
+- `database/dao/proxy.rs` 中零调用的同步兼容方法 `get_proxy_flags_sync / set_proxy_flags_sync` 已删除，避免继续保留只服务旧同步调用模型的 DAO 接口
 
 ## 四、基于前端命令差集的剩余项
 

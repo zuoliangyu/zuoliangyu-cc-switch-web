@@ -634,52 +634,6 @@ impl Database {
         Ok(())
     }
 
-    // ==================== Sync Methods for Compatibility ====================
-
-    /// 同步获取应用的 proxy 启用状态和自动故障转移状态
-    ///
-    /// 用于需要同步读取 proxy 标记的兼容场景
-    /// 返回 (enabled, auto_failover_enabled)
-    pub fn get_proxy_flags_sync(&self, app_type: &str) -> (bool, bool) {
-        let conn = match self.conn.lock() {
-            Ok(c) => c,
-            Err(_) => return (false, false),
-        };
-
-        conn.query_row(
-            "SELECT enabled, auto_failover_enabled FROM proxy_config WHERE app_type = ?1",
-            [app_type],
-            |row| Ok((row.get::<_, i32>(0)? != 0, row.get::<_, i32>(1)? != 0)),
-        )
-        .unwrap_or((false, false))
-    }
-
-    /// 同步设置应用的 proxy 启用状态和自动故障转移状态
-    ///
-    /// 用于需要同步写入 proxy 标记的兼容场景
-    pub fn set_proxy_flags_sync(
-        &self,
-        app_type: &str,
-        enabled: bool,
-        auto_failover_enabled: bool,
-    ) -> Result<(), AppError> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| AppError::Database(format!("Mutex lock failed: {e}")))?;
-
-        conn.execute(
-            "UPDATE proxy_config SET enabled = ?2, auto_failover_enabled = ?3, updated_at = datetime('now') WHERE app_type = ?1",
-            rusqlite::params![
-                app_type,
-                if enabled { 1 } else { 0 },
-                if auto_failover_enabled { 1 } else { 0 },
-            ],
-        )
-        .map_err(|e| AppError::Database(e.to_string()))?;
-
-        Ok(())
-    }
 }
 
 #[cfg(test)]
