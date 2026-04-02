@@ -123,6 +123,7 @@
 - `ProviderService` 中仅作为旧转发存在、且已无调用点的 `write_gemini_live` 包装方法已删除
 - `src-tauri/target`、`src-tauri/gen` 与空的 `src-tauri/capabilities` 旧桌面生成/编译目录已从当前仓库工作区清理，避免继续与 Web-only 代码混放
 - `services/mod.rs` 已整体收窄为 `pub(crate)` 模块可见性；`webdav_auto_sync` 中仅 crate 内使用的入口也已收窄，继续减少对外暴露的桌面遗留服务面
+- `.github/workflows/web-ci.yml` 的 Linux 依赖已去掉 `webkit2gtk`、`libsoup`、`libgtk-3`、`appindicator` 等 Tauri 桌面构建包，CI 现仅保留 Web 前端与 Rust 本地服务所需检查依赖
 
 ## 四、基于前端命令差集的剩余项
 
