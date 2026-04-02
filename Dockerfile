@@ -8,7 +8,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN pnpm build:web
+RUN pnpm exec vite build
 
 
 FROM rust:1.85-bookworm AS service-builder
@@ -33,9 +33,8 @@ FROM debian:bookworm-slim AS package-linux-dir
 WORKDIR /out/cc-switch-web-linux-x64
 
 COPY --from=service-builder /app/backend/target/release/cc-switch-web ./cc-switch-web
-COPY scripts/run-web-release.sh ./run-web.sh
 
-RUN chmod +x ./cc-switch-web ./run-web.sh
+RUN chmod +x ./cc-switch-web
 
 
 FROM debian:bookworm-slim AS package-linux-tar

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "CC Switch",
+    "title": "CC Switch Web",
     "description": "CC Switch Web branch with browser UI and local Rust service"
   },
   "common": {

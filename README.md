@@ -38,20 +38,14 @@ If you are looking for the original CC Switch project or upstream release inform
 
 ### Quick Commands
 
-| Scenario                | Command        |
-| ----------------------- | -------------- |
-| Default Web development | `pnpm dev`     |
-| Foreground Docker stack | `pnpm dev:d`   |
-| Standard Docker build   | `pnpm build`   |
-| Background Docker start | `pnpm up:d`    |
-| Follow Docker logs      | `pnpm logs:d`  |
-| Stop Docker stack       | `pnpm down:d`  |
-| Package Linux via Docker | `pnpm build:pkg:l` |
-| Direct run on macOS     | `pnpm start:m` |
-| Direct run on Linux     | `pnpm start:l` |
-| Direct run on Windows   | `pnpm start:w` |
+| Scenario | Command |
+| --- | --- |
+| Local development (`w`) | `pnpm dev` |
+| Docker foreground development (`d`) | `pnpm dev -- d` |
+| Local release build (`w`) | `pnpm build` |
+| Docker image build (`d`) | `pnpm build -- d` |
 
-### Local Run
+### Local Development
 
 1. Install dependencies:
 
@@ -59,36 +53,54 @@ If you are looking for the original CC Switch project or upstream release inform
    pnpm install --frozen-lockfile
    ```
 
-2. Default Web development mode:
+2. Start development mode:
 
    ```bash
    pnpm dev
    ```
 
-   Equivalent to:
+   Equivalent explicit form:
 
    ```bash
-   pnpm dev:web
+   pnpm dev -- w
    ```
 
-   Open [http://localhost:3000](http://localhost:3000). The frontend talks to the local Rust service at `http://127.0.0.1:8788`.
+   On Windows, you can also run:
 
-3. If you want to run the Docker stack in the foreground, use:
+   ```powershell
+   .\scripts\dev.ps1 w
+   ```
+
+3. Open [http://localhost:3000](http://localhost:3000). The frontend connects to the local Rust service at `http://127.0.0.1:8788`.
+
+### Local Release Binary
+
+1. Build the embedded release binary:
 
    ```bash
-   pnpm dev:d
+   pnpm build
    ```
 
-4. Start a production-style local run:
+   Equivalent explicit form:
 
    ```bash
-   pnpm build:web
-   pnpm start:web
+   pnpm build -- w
    ```
 
-   Then open [http://localhost:8788](http://localhost:8788).
+   On Windows, you can also run:
 
-   In local Web service mode, CC Switch Web stores its own data under the default local config root used by CC Switch:
+   ```powershell
+   .\scripts\build.ps1 w
+   ```
+
+2. Output path:
+
+   - Windows: `backend\target\release\cc-switch-web.exe`
+   - Linux/macOS: `backend/target/release/cc-switch-web`
+
+3. Run the binary directly, then open [http://localhost:8788](http://localhost:8788).
+
+4. In local Web service mode, CC Switch Web stores its own data under the default CC Switch local config root:
 
    ```text
    ~/.cc-switch
@@ -96,88 +108,43 @@ If you are looking for the original CC Switch project or upstream release inform
 
    This includes files such as `settings.json`, `cc-switch.db`, backup data, and the unified Skills storage. Legacy `config.json` is not part of the active Web runtime data path.
 
-5. Build once and run the release binary directly:
+### Docker
+
+1. Build the Docker image:
 
    ```bash
-   pnpm build:web
-   pnpm build:web:service
+   pnpm build -- d
    ```
 
-   `pnpm build:web` builds the frontend bundle, and `pnpm build:web:service` embeds that bundle into the release binary.
-
-   Linux:
-
-   ```bash
-   pnpm start:l
-   ```
-
-   macOS:
-
-   ```bash
-   pnpm start:m
-   ```
-
-   Windows:
+   On Windows, you can also run:
 
    ```powershell
-   pnpm start:w
+   .\scripts\build.ps1 d
    ```
 
-   The launcher scripts only start the local service and print the access URL. They do not open the browser automatically.
-
-### Docker Run
-
-1. Default standard build:
+2. Run the Docker stack in the foreground:
 
    ```bash
-   pnpm build
+   pnpm dev -- d
    ```
 
-   Equivalent to:
+   On Windows, you can also run:
+
+   ```powershell
+   .\scripts\dev.ps1 d
+   ```
+
+3. If you want background mode after the image is built, use Docker directly:
 
    ```bash
-   pnpm build:d
+   docker compose up -d
+   docker compose logs -f
+   docker compose down
    ```
 
-   This builds the frontend and Rust service directly inside the Docker build environment.
+4. Open [http://localhost:8788](http://localhost:8788). Persistent data is stored in the `cc-switch-web-data` volume.
 
-2. Build and start in the foreground:
-
-   ```bash
-   pnpm dev:d
-   ```
-
-   This runs `docker compose up --build` in the foreground.
-
-3. If the image is already built and you only want to start it in the background:
-
-   ```bash
-   pnpm up:d
-   ```
-
-4. Rebuild image only:
-
-   ```bash
-   pnpm build:d
-   ```
-
-5. View logs:
-
-   ```bash
-   pnpm logs:d
-   ```
-
-6. Stop:
-
-   ```bash
-   pnpm down:d
-   ```
-
-7. Open [http://localhost:8788](http://localhost:8788).
-
-8. Persistent data is stored in the `cc-switch-web-data` volume.
-
-9. If you want the containerized service to manage host-side CLI config directories directly, first copy the example file:
+5. If you want the containerized service to manage host-side CLI config directories directly, first copy the example file:
 
    ```bash
    cp docker-compose.host.example.yml docker-compose.host.yml
@@ -193,55 +160,41 @@ If you are looking for the original CC Switch project or upstream release inform
 
 ### Export Linux Package Inside Docker
 
-If you want a Linux release package without polluting the host build environment, run:
+If you want a Linux release package without polluting the host build environment, use Docker Buildx directly:
 
 ```bash
-pnpm build:pkg:l
+docker buildx build --target package-linux-tar --output type=local,dest=release/docker-linux .
 ```
 
-This uses `docker buildx build` and exports:
+Exported archive:
 
 ```text
 release/docker-linux/cc-switch-web-linux-x64.tar.gz
 ```
 
-If you want the unpacked directory instead, run:
+If you want the unpacked directory instead:
 
 ```bash
-pnpm build:pkg:l:dir
+docker buildx build --target package-linux-dir --output type=local,dest=release/docker-linux .
 ```
 
-The exported directory is:
+Exported directory:
 
 ```text
 release/docker-linux/cc-switch-web-linux-x64/
 ```
 
-The package contains:
-
-- `cc-switch-web`
-- `run-web.sh`
-
-After extracting on Linux, run:
-
-```bash
-bash run-web.sh
-```
+The package contains the single executable `cc-switch-web`. After extracting on Linux, run that binary directly.
 
 ### Linux systemd Example
 
-If you want to keep the service running on a headless Linux server, use the example file in the repository:
+If you want to keep the service running on a headless Linux server, use:
 
 `deploy/systemd/cc-switch-web.service.example`
 
 Recommended steps:
 
-1. Build the frontend and local service first:
-
-   ```bash
-   pnpm build:web
-   pnpm build:web:service
-   ```
+1. Build the release binary on Linux, or copy a packaged Linux artifact into `/opt/cc-switch-web`.
 
 2. Copy the service file into the system directory:
 
@@ -254,6 +207,7 @@ Recommended steps:
    - `Group`
    - `WorkingDirectory`
    - `HOME`
+   - `ExecStart`
 
 4. Reload and start:
 

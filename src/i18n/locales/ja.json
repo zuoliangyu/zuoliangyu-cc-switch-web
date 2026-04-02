@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "CC Switch",
+    "title": "CC Switch Web",
     "description": "CC Switch の Web ブランチ。ブラウザ UI とローカル Rust サービスで動作"
   },
   "common": {

@@ -69,7 +69,7 @@ jobs:
 
       - name: Build frontend dist
         if: runner.os != 'Linux'
-        run: pnpm build:web
+        run: pnpm exec vite build
 
       - name: Build Windows service
         if: runner.os == 'Windows'
@@ -91,8 +91,6 @@ jobs:
           $pkgDir = Join-Path $PWD '${{ matrix.artifact_name }}'
           New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
           Copy-Item 'backend/target/release/cc-switch-web.exe' (Join-Path $pkgDir 'cc-switch-web.exe')
-          Copy-Item 'scripts/run-web-release.cmd' (Join-Path $pkgDir 'run-web.cmd')
-          Copy-Item 'scripts/run-web-release.ps1' (Join-Path $pkgDir 'run-web.ps1')
           Compress-Archive -Path $pkgDir -DestinationPath '${{ matrix.archive_name }}' -Force
 
       - name: Package Linux archive
@@ -121,9 +119,7 @@ jobs:
             "backend/target/x86_64-apple-darwin/release/cc-switch-web" \
             "backend/target/aarch64-apple-darwin/release/cc-switch-web" \
             -output "$pkg_dir/cc-switch-web"
-          cp scripts/run-web-release.command "$pkg_dir/run-web.command"
-          cp scripts/run-web-release.sh "$pkg_dir/run-web.sh"
-          chmod +x "$pkg_dir/cc-switch-web" "$pkg_dir/run-web.command" "$pkg_dir/run-web.sh"
+          chmod +x "$pkg_dir/cc-switch-web"
           ditto -c -k --keepParent "$pkg_dir" "${{ matrix.archive_name }}"
 
       - name: Upload package artifact

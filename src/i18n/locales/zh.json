@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "CC Switch",
+    "title": "CC Switch Web",
     "description": "CC Switch 的 Web 分支，采用浏览器界面与本地 Rust 服务"
   },
   "common": {
