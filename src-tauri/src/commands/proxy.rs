@@ -1,6 +1,6 @@
-//! 代理服务相关的 Tauri 命令
+//! 代理服务相关命令
 //!
-//! 提供前端调用的 API 接口
+//! 提供本地 Web API 复用的命令入口。
 
 use crate::error::AppError;
 use crate::proxy::types::*;

@@ -66,7 +66,7 @@ pub(crate) use lock_conn;
 
 /// 数据库连接封装
 ///
-/// 使用 Mutex 包装 Connection 以支持在多线程环境（如 Tauri State）中共享。
+/// 使用 Mutex 包装 Connection 以支持在多线程环境中共享。
 /// rusqlite::Connection 本身不是 Sync 的，因此需要这层包装。
 pub struct Database {
     pub(crate) conn: Mutex<Connection>,

@@ -1,6 +1,6 @@
 //! 全局出站代理相关命令
 //!
-//! 提供获取、设置和测试全局代理的 Tauri 命令。
+//! 提供获取、设置和测试全局代理的本地服务命令。
 
 use crate::proxy::http_client;
 use crate::store::AppState;
