@@ -18,8 +18,6 @@ pub use omo::OmoService;
 pub use prompt::PromptService;
 pub use provider::{ProviderService, ProviderSortUpdate, SwitchResult};
 pub use proxy::ProxyService;
-#[allow(unused_imports)]
-pub use skill::{DiscoverableSkill, SkillRepo, SkillService};
 pub use speedtest::{EndpointLatency, SpeedtestService};
 #[allow(unused_imports)]
 pub use usage_stats::{

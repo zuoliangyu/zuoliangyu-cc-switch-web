@@ -112,6 +112,7 @@
 - `services/mcp.rs` 中无调用点的旧 MCP 兼容方法，以及 `services/skill.rs` 中无调用点的 `copy_to_app` 废弃别名已删除
 - `services/skill.rs` 中旧的 `Skill` 兼容结构与 `list_skills()` 兼容列表接口已删除，当前 Skills Web 主链只保留 `DiscoverableSkill` 发现模型
 - `database/dao/settings.rs` 中无调用点的 `common_config_legacy_migrated_v1` 迁移标记及对应读写函数已删除
+- `services/mod.rs` 中无调用点的 Skills 根级 re-export 已删除，当前调用统一走 `crate::services::skill::*`
 
 ## 四、基于前端命令差集的剩余项
 
