@@ -437,8 +437,8 @@ impl MultiAppConfig {
         if is_v1 {
             return Err(AppError::localized(
                 "config.unsupported_v1",
-                "检测到旧版 v1 配置格式。当前版本已不再支持运行时自动迁移。\n\n解决方案：\n1. 安装 v3.2.x 版本进行一次性自动迁移\n2. 或手动编辑 ~/.cc-switch/config.json，将顶层结构调整为：\n   {\"version\": 2, \"claude\": {...}, \"codex\": {...}, \"mcp\": {...}}\n\n",
-                "Detected legacy v1 config. Runtime auto-migration is no longer supported.\n\nSolutions:\n1. Install v3.2.x for one-time auto-migration\n2. Or manually edit ~/.cc-switch/config.json to adjust the top-level structure:\n   {\"version\": 2, \"claude\": {...}, \"codex\": {...}, \"mcp\": {...}}\n\n",
+                "检测到旧版 v1 配置格式。当前版本已不再支持运行时自动迁移。\n\n解决方案：\n1. 先备份 ~/.cc-switch/config.json\n2. 手动将顶层结构调整为：\n   {\"version\": 2, \"claude\": {...}, \"codex\": {...}, \"mcp\": {...}}\n3. 或删除旧配置文件后，重新导入或重新配置\n\n",
+                "Detected legacy v1 config. Runtime auto-migration is no longer supported.\n\nSolutions:\n1. Back up ~/.cc-switch/config.json first\n2. Manually adjust the top-level structure to:\n   {\"version\": 2, \"claude\": {...}, \"codex\": {...}, \"mcp\": {...}}\n3. Or remove the old config file and re-import or recreate the configuration\n\n",
             ));
         }
 
