@@ -471,7 +471,7 @@ async fn import_default_provider_config(
 ) -> Result<Json<bool>, ApiError> {
     let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
     let imported =
-        crate::commands::import_default_config_test_hook(state.app_state.as_ref(), app_type)
+        crate::commands::import_default_config_for_app_internal(state.app_state.as_ref(), app_type)
             .map_err(|e| ApiError::internal(format!("failed to import default config: {e}")))?;
     Ok(Json(imported))
 }

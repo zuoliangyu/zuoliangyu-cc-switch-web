@@ -111,8 +111,7 @@ fn import_default_config_internal(state: &AppState, app_type: AppType) -> Result
     Ok(imported)
 }
 
-#[cfg_attr(not(feature = "test-hooks"), doc(hidden))]
-pub(crate) fn import_default_config_test_hook(
+pub(crate) fn import_default_config_for_app_internal(
     state: &AppState,
     app_type: AppType,
 ) -> Result<bool, AppError> {
