@@ -1,6 +1,6 @@
 # Web 化剩余缺口审计
 
-更新时间：2026-04-02（继续收拢 Web-only 残留终端语义后）
+更新时间：2026-04-02（继续收拢 Web-only 桌面残留文案与配置后）
 
 ## 结论
 
@@ -9,7 +9,9 @@
 补充结论（2026-04-02 本轮仓库复扫）：
 
 - 当前源码、脚本、测试与 README 中，已未再发现会影响 Web-only 运行的明确桌面端残留入口
+- 当前仓库级忽略规则中的 `src-tauri/target`、flatpak 产物残留已清理，Vite 也不再继续接收 `TAURI_` 环境变量前缀
 - 仍然大量出现的 `legacy / 兼容 / deprecated` 关键字，当前主要集中在旧数据迁移、旧配置读取、WebDAV 旧布局兼容和 OpenClaw 历史字段迁移
+- 前端关于 Web 能力边界的提示已改为“浏览器权限限制”口径，不再继续以“桌面壳专属能力”描述当前产品形态
 - 这意味着后续继续收口时，重点已不再是“删桌面端代码”，而是“判断哪些历史兼容层还能继续减量”
 
 补充说明：
@@ -135,6 +137,9 @@
 - 前端测试基建已改为 mock 当前运行时适配层而非直接 mock `@tauri-apps/api`；`useDirectorySettings` 测试已同步为 Web 模式“手动填写路径”行为，清理旧桌面目录选择假设
 - 前端运行时适配层中仅剩的 `@tauri-apps/api/core` 动态导入已删除，`package.json` 与 lockfile 也已移除 `@tauri-apps/api` 依赖；当前前端依赖面已不再包含桌面端 JS SDK
 - 前端运行时适配目录已从 `src/lib/runtime/tauri` 更名为 `src/lib/runtime/client`，测试 mock 也同步改为 `runtimeMocks`，避免继续以旧桌面运行时命名误导 Web-only 仓库结构
+- 仓库级 `.dockerignore` / `.gitignore` 中仅服务旧桌面目录与 flatpak 构建的忽略项已删除，减少对当前 Web-only 打包形态的误导
+- `vite.config.ts` 已移除 `TAURI_` 环境变量前缀兼容，前端构建配置不再继续暗示桌面运行时注入
+- 设置页中的 Web 能力提示已同步为“部分系统级能力受浏览器权限限制”，避免继续以桌面壳能力边界描述当前产品定位
 - `docs-dev/web-local-service-migration-plan.md` 已标注为早期迁移阶段的历史计划归档；当前状态与剩余收尾项统一以本审计文档为准
 - 零调用的前端重复 hook `src/hooks/useProxyConfig.ts` 已删除，代理配置主路径继续统一收敛到 `src/lib/query/proxy.ts`
 - 零调用的前端废弃 wrapper `getClaudeCommonConfigSnippet / setClaudeCommonConfigSnippet` 以及运行时中的对应旧命令映射已删除，通用配置片段入口统一为 `getCommonConfigSnippet / setCommonConfigSnippet`
