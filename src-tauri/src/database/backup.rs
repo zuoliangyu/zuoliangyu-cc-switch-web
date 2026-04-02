@@ -55,31 +55,6 @@ impl Database {
         Self::dump_sql(&snapshot, SYNC_SKIP_TABLES)
     }
 
-    /// 导出为 SQLite 兼容的 SQL 文本
-    pub fn export_sql(&self, target_path: &Path) -> Result<(), AppError> {
-        let dump = self.export_sql_string()?;
-
-        if let Some(parent) = target_path.parent() {
-            fs::create_dir_all(parent).map_err(|e| AppError::io(parent, e))?;
-        }
-
-        crate::config::atomic_write(target_path, dump.as_bytes())
-    }
-
-    /// 从 SQL 文件导入，返回生成的备份 ID（若无备份则为空字符串）
-    pub fn import_sql(&self, source_path: &Path) -> Result<String, AppError> {
-        if !source_path.exists() {
-            return Err(AppError::InvalidInput(format!(
-                "SQL 文件不存在: {}",
-                source_path.display()
-            )));
-        }
-
-        let sql_raw = fs::read_to_string(source_path).map_err(|e| AppError::io(source_path, e))?;
-        let sql_content = sql_raw.trim_start_matches('\u{feff}');
-        self.import_sql_string(sql_content)
-    }
-
     /// 从 SQL 字符串导入，返回生成的备份 ID（若无备份则为空字符串）
     pub fn import_sql_string(&self, sql_raw: &str) -> Result<String, AppError> {
         self.import_sql_string_inner(sql_raw, &[])

@@ -146,6 +146,8 @@
 - `App.tsx` 中迁移期遗留的 Web 视图黑名单占位逻辑已删除；当前顶层视图不再保留空集合拦截分支
 - 目录设置默认值与“重置”逻辑已改为完全由本地 Rust 服务返回真实路径，Web 前端不再自行猜测宿主机 home 目录
 - `database/dao/proxy.rs` 中零调用的同步兼容方法 `get_proxy_flags_sync / set_proxy_flags_sync` 已删除，避免继续保留只服务旧同步调用模型的 DAO 接口
+- `database/backup.rs` 中零调用的文件路径导入导出 wrapper `export_sql / import_sql` 已删除；当前数据库备份主链统一走字符串导入导出接口以匹配 Web 上传/下载流程
+- `database/mod.rs` 中零调用的 `is_mcp_table_empty / is_prompts_table_empty` 表空判断接口已删除，避免继续暴露未接入主链的数据库辅助查询
 
 ## 四、基于前端命令差集的剩余项
 
