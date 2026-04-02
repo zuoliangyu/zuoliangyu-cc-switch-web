@@ -13,29 +13,6 @@ use crate::proxy::error::ProxyError;
 /// Gemini 适配器
 pub struct GeminiAdapter;
 
-/// OAuth 凭证结构
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub struct OAuthCredentials {
-    pub access_token: String,
-    pub refresh_token: Option<String>,
-    pub client_id: Option<String>,
-    pub client_secret: Option<String>,
-}
-
-#[allow(dead_code)]
-impl OAuthCredentials {
-    /// 检查是否需要刷新 token（有 refresh_token 但没有有效的 access_token）
-    pub fn needs_refresh(&self) -> bool {
-        self.refresh_token.is_some() && self.access_token.is_empty()
-    }
-
-    /// 检查是否可以刷新 token
-    pub fn can_refresh(&self) -> bool {
-        self.refresh_token.is_some() && self.client_id.is_some() && self.client_secret.is_some()
-    }
-}
-
 impl GeminiAdapter {
     pub fn new() -> Self {
         Self
@@ -68,16 +45,11 @@ impl GeminiAdapter {
         }
     }
 
-    /// 解析 OAuth 凭证
-    pub fn parse_oauth_credentials(&self, key: &str) -> Option<OAuthCredentials> {
+    /// 解析 OAuth access token。
+    pub fn parse_oauth_access_token(&self, key: &str) -> Option<String> {
         // 直接是 access_token
         if key.starts_with("ya29.") {
-            return Some(OAuthCredentials {
-                access_token: key.to_string(),
-                refresh_token: None,
-                client_id: None,
-                client_secret: None,
-            });
+            return Some(key.to_string());
         }
 
         // JSON 格式
@@ -103,12 +75,9 @@ impl GeminiAdapter {
 
                 // 如果有 access_token 或 refresh_token，返回凭证
                 if !access_token.is_empty() || refresh_token.is_some() {
-                    return Some(OAuthCredentials {
-                        access_token,
-                        refresh_token,
-                        client_id,
-                        client_secret,
-                    });
+                    let _ = client_id;
+                    let _ = client_secret;
+                    return Some(access_token);
                 }
             }
         }
@@ -187,8 +156,8 @@ impl ProviderAdapter for GeminiAdapter {
         match strategy {
             AuthStrategy::GoogleOAuth => {
                 // 解析 OAuth 凭证
-                if let Some(creds) = self.parse_oauth_credentials(&key) {
-                    Some(AuthInfo::with_access_token(key, creds.access_token))
+                if let Some(access_token) = self.parse_oauth_access_token(&key) {
+                    Some(AuthInfo::with_access_token(key, access_token))
                 } else {
                     // 回退到普通 API Key
                     Some(AuthInfo::new(key, AuthStrategy::Google))
@@ -400,31 +369,29 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_oauth_credentials_direct_token() {
+    fn test_parse_oauth_access_token_direct_token() {
         let adapter = GeminiAdapter::new();
-        let creds = adapter
-            .parse_oauth_credentials("ya29.test-access-token")
+        let access_token = adapter
+            .parse_oauth_access_token("ya29.test-access-token")
             .unwrap();
-        assert_eq!(creds.access_token, "ya29.test-access-token");
-        assert!(creds.refresh_token.is_none());
+        assert_eq!(access_token, "ya29.test-access-token");
     }
 
     #[test]
-    fn test_parse_oauth_credentials_json() {
+    fn test_parse_oauth_access_token_json() {
         let adapter = GeminiAdapter::new();
-        let creds = adapter
-            .parse_oauth_credentials(
+        let access_token = adapter
+            .parse_oauth_access_token(
                 "{\"access_token\":\"ya29.test\",\"refresh_token\":\"1//refresh\"}",
             )
             .unwrap();
-        assert_eq!(creds.access_token, "ya29.test");
-        assert_eq!(creds.refresh_token, Some("1//refresh".to_string()));
+        assert_eq!(access_token, "ya29.test");
     }
 
     #[test]
-    fn test_parse_oauth_credentials_invalid() {
+    fn test_parse_oauth_access_token_invalid() {
         let adapter = GeminiAdapter::new();
-        assert!(adapter.parse_oauth_credentials("AIza-api-key").is_none());
-        assert!(adapter.parse_oauth_credentials("invalid-json{").is_none());
+        assert!(adapter.parse_oauth_access_token("AIza-api-key").is_none());
+        assert!(adapter.parse_oauth_access_token("invalid-json{").is_none());
     }
 }

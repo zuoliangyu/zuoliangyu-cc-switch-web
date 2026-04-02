@@ -163,6 +163,7 @@
 - `provider_defaults.rs` 整个零引用默认图标模块已删除；同时 `codex_config.rs` 与 `config.rs` 中只服务旧供应商文件拆分方案的路径辅助函数也已移除，避免继续保留无入口的历史文件布局接口
 - `tests/support.rs` 中只供 `skill_sync` 使用的 `create_test_state()` 已下沉到对应测试文件；`gemini_config.rs` 中仅被单测使用的严格 `.env` 解析 helper 也已收回测试模块，避免在运行时代码中保留无入口辅助函数
 - `proxy/health.rs` 中未接入任何主链的占位 `HealthChecker` 模块已删除；当前代理子模块不再保留纯占位健康检查文件
+- `proxy/providers/codex.rs` 中仅供单测使用的官方客户端识别 helper 已下沉到测试模块；`proxy/providers/gemini.rs` 中未被运行时消费的 `OAuthCredentials` 结构已收窄为只提取 access token 的私有逻辑，继续收紧代理适配层的测试专用辅助面
 
 ## 四、基于前端命令差集的剩余项
 
