@@ -58,10 +58,6 @@ impl McpApps {
         apps
     }
 
-    /// 检查是否所有应用都未启用
-    pub fn is_empty(&self) -> bool {
-        !self.claude && !self.codex && !self.gemini && !self.opencode
-    }
 }
 
 /// Skill 应用启用状态（标记 Skill 应用到哪些客户端）
@@ -100,24 +96,6 @@ impl SkillApps {
         }
     }
 
-    /// 获取所有启用的应用列表
-    pub fn enabled_apps(&self) -> Vec<AppType> {
-        let mut apps = Vec::new();
-        if self.claude {
-            apps.push(AppType::Claude);
-        }
-        if self.codex {
-            apps.push(AppType::Codex);
-        }
-        if self.gemini {
-            apps.push(AppType::Gemini);
-        }
-        if self.opencode {
-            apps.push(AppType::OpenCode);
-        }
-        apps
-    }
-
     /// 检查是否所有应用都未启用
     pub fn is_empty(&self) -> bool {
         !self.claude && !self.codex && !self.gemini && !self.opencode
@@ -130,19 +108,6 @@ impl SkillApps {
         apps
     }
 
-    /// 从来源标签列表构建启用状态
-    ///
-    /// 标签与 AppType::as_str() 一致时启用对应应用，
-    /// 其他标签（如 "agents", "cc-switch"）忽略。
-    pub fn from_labels(labels: &[String]) -> Self {
-        let mut apps = Self::default();
-        for label in labels {
-            if let Ok(app) = label.parse::<AppType>() {
-                apps.set_enabled_for(&app, true);
-            }
-        }
-        apps
-    }
 }
 
 /// 已安装的 Skill（v3.10.0+ 统一结构）
@@ -284,10 +249,13 @@ pub struct PromptRoot {
     pub openclaw: PromptConfig,
 }
 
-use crate::config::{copy_file, get_app_config_dir, get_app_config_path, write_json_file};
 use crate::error::AppError;
-use crate::prompt_files::prompt_file_path;
 use crate::provider::ProviderManager;
+
+#[cfg(test)]
+use crate::config::{copy_file, get_app_config_dir, get_app_config_path, write_json_file};
+#[cfg(test)]
+use crate::prompt_files::prompt_file_path;
 
 /// 应用类型
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -371,30 +339,6 @@ pub struct CommonConfigSnippets {
     pub openclaw: Option<String>,
 }
 
-impl CommonConfigSnippets {
-    /// 获取指定应用的通用配置片段
-    pub fn get(&self, app: &AppType) -> Option<&String> {
-        match app {
-            AppType::Claude => self.claude.as_ref(),
-            AppType::Codex => self.codex.as_ref(),
-            AppType::Gemini => self.gemini.as_ref(),
-            AppType::OpenCode => self.opencode.as_ref(),
-            AppType::OpenClaw => self.openclaw.as_ref(),
-        }
-    }
-
-    /// 设置指定应用的通用配置片段
-    pub fn set(&mut self, app: &AppType, snippet: Option<String>) {
-        match app {
-            AppType::Claude => self.claude = snippet,
-            AppType::Codex => self.codex = snippet,
-            AppType::Gemini => self.gemini = snippet,
-            AppType::OpenCode => self.opencode = snippet,
-            AppType::OpenClaw => self.openclaw = snippet,
-        }
-    }
-}
-
 /// 多应用配置结构（向后兼容）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MultiAppConfig {
@@ -447,6 +391,7 @@ impl Default for MultiAppConfig {
 
 impl MultiAppConfig {
     /// 从文件加载配置（仅支持 v2 结构）
+    #[cfg(test)]
     pub fn load() -> Result<Self, AppError> {
         let config_path = get_app_config_path();
 
@@ -552,6 +497,7 @@ impl MultiAppConfig {
     }
 
     /// 保存配置到文件
+    #[cfg(test)]
     pub fn save(&self) -> Result<(), AppError> {
         let config_path = get_app_config_path();
         // 先备份旧版（若存在）到 ~/.cc-switch/config.json.bak，再写入新内容
@@ -567,46 +513,13 @@ impl MultiAppConfig {
     }
 
     /// 获取指定应用的管理器
+    #[cfg(test)]
     pub fn get_manager(&self, app: &AppType) -> Option<&ProviderManager> {
         self.apps.get(app.as_str())
     }
 
-    /// 获取指定应用的管理器（可变引用）
-    pub fn get_manager_mut(&mut self, app: &AppType) -> Option<&mut ProviderManager> {
-        self.apps.get_mut(app.as_str())
-    }
-
-    /// 确保应用存在
-    pub fn ensure_app(&mut self, app: &AppType) {
-        if !self.apps.contains_key(app.as_str()) {
-            self.apps
-                .insert(app.as_str().to_string(), ProviderManager::default());
-        }
-    }
-
-    /// 获取指定客户端的 MCP 配置（不可变引用）
-    pub fn mcp_for(&self, app: &AppType) -> &McpConfig {
-        match app {
-            AppType::Claude => &self.mcp.claude,
-            AppType::Codex => &self.mcp.codex,
-            AppType::Gemini => &self.mcp.gemini,
-            AppType::OpenCode => &self.mcp.opencode,
-            AppType::OpenClaw => &self.mcp.openclaw,
-        }
-    }
-
-    /// 获取指定客户端的 MCP 配置（可变引用）
-    pub fn mcp_for_mut(&mut self, app: &AppType) -> &mut McpConfig {
-        match app {
-            AppType::Claude => &mut self.mcp.claude,
-            AppType::Codex => &mut self.mcp.codex,
-            AppType::Gemini => &mut self.mcp.gemini,
-            AppType::OpenCode => &mut self.mcp.opencode,
-            AppType::OpenClaw => &mut self.mcp.openclaw,
-        }
-    }
-
     /// 创建默认配置并自动导入已存在的提示词文件
+    #[cfg(test)]
     fn default_with_auto_import() -> Result<Self, AppError> {
         log::info!("首次启动，创建默认配置并检测提示词文件");
 
@@ -632,6 +545,7 @@ impl MultiAppConfig {
     /// 返回值：
     /// - Ok(true)  表示至少有一个应用成功导入了提示词
     /// - Ok(false) 表示无需导入或未导入任何内容
+    #[cfg(test)]
     fn maybe_auto_import_prompts_for_existing_config(&mut self) -> Result<bool, AppError> {
         // 如果任一应用已经有提示词配置，说明用户已经在使用 Prompt 功能，避免再次自动导入
         if !self.prompts.claude.prompts.is_empty()
@@ -667,6 +581,7 @@ impl MultiAppConfig {
     /// 返回值：
     /// - Ok(true)  表示成功导入了非空文件
     /// - Ok(false) 表示未导入（文件不存在、内容为空或读取失败）
+    #[cfg(test)]
     fn auto_import_prompt_if_exists(config: &mut Self, app: AppType) -> Result<bool, AppError> {
         let file_path = prompt_file_path(&app)?;
 
@@ -738,6 +653,7 @@ impl MultiAppConfig {
     /// 2. 收集所有应用的 MCP，按 ID 去重合并
     /// 3. 生成统一的 McpServer 结构，标记应用到哪些客户端
     /// 4. 清空旧的分应用配置
+    #[cfg(test)]
     pub fn migrate_mcp_to_unified(&mut self) -> Result<bool, AppError> {
         // 检查是否已经是新结构
         if self.mcp.servers.is_some() {

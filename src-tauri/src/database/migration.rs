@@ -2,15 +2,22 @@
 //!
 //! 将旧版 config.json (MultiAppConfig) 数据迁移到 SQLite 数据库。
 
-use super::{to_json_string, Database};
+use super::Database;
+
+#[cfg(test)]
+use super::to_json_string;
+#[cfg(test)]
 use crate::app_config::MultiAppConfig;
+#[cfg(test)]
 use crate::error::AppError;
+#[cfg(test)]
 use rusqlite::{params, Connection};
 
 impl Database {
     /// 运行迁移的 dry-run 模式（在内存数据库中验证，不写入磁盘）
     ///
     /// 用于部署前验证迁移逻辑是否正确。
+    #[cfg(test)]
     pub fn migrate_from_json_dry_run(config: &MultiAppConfig) -> Result<(), AppError> {
         let mut conn =
             Connection::open_in_memory().map_err(|e| AppError::Database(e.to_string()))?;
@@ -28,6 +35,7 @@ impl Database {
     }
 
     /// 在事务中执行迁移
+    #[cfg(test)]
     fn migrate_from_json_tx(
         tx: &rusqlite::Transaction<'_>,
         config: &MultiAppConfig,
@@ -51,6 +59,7 @@ impl Database {
     }
 
     /// 迁移供应商数据
+    #[cfg(test)]
     fn migrate_providers(
         tx: &rusqlite::Transaction<'_>,
         config: &MultiAppConfig,
@@ -104,6 +113,7 @@ impl Database {
     }
 
     /// 迁移 MCP 服务器数据
+    #[cfg(test)]
     fn migrate_mcp_servers(
         tx: &rusqlite::Transaction<'_>,
         config: &MultiAppConfig,
@@ -135,6 +145,7 @@ impl Database {
     }
 
     /// 迁移提示词数据
+    #[cfg(test)]
     fn migrate_prompts(
         tx: &rusqlite::Transaction<'_>,
         config: &MultiAppConfig,
@@ -174,6 +185,7 @@ impl Database {
     }
 
     /// 迁移 Skills 数据
+    #[cfg(test)]
     fn migrate_skills(
         tx: &rusqlite::Transaction<'_>,
         config: &MultiAppConfig,
@@ -200,6 +212,7 @@ impl Database {
     }
 
     /// 迁移通用配置片段
+    #[cfg(test)]
     fn migrate_common_config(
         tx: &rusqlite::Transaction<'_>,
         config: &MultiAppConfig,

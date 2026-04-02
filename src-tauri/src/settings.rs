@@ -50,19 +50,6 @@ impl Default for VisibleApps {
     }
 }
 
-impl VisibleApps {
-    /// Check if the specified app is visible
-    pub fn is_visible(&self, app: &AppType) -> bool {
-        match app {
-            AppType::Claude => self.claude,
-            AppType::Codex => self.codex,
-            AppType::Gemini => self.gemini,
-            AppType::OpenCode => self.opencode,
-            AppType::OpenClaw => self.openclaw,
-        }
-    }
-}
-
 /// WebDAV 同步状态（持久化同步进度信息）
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]

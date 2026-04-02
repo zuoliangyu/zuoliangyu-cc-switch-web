@@ -316,6 +316,7 @@ impl ProviderMeta {
 
 impl ProviderManager {
     /// 获取所有供应商
+    #[cfg(test)]
     pub fn get_all_providers(&self) -> &IndexMap<String, Provider> {
         &self.providers
     }
@@ -437,6 +438,7 @@ pub struct UniversalProvider {
 
 impl UniversalProvider {
     /// 创建新的统一供应商
+    #[cfg(test)]
     pub fn new(
         id: String,
         name: String,

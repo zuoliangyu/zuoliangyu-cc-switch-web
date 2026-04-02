@@ -130,6 +130,7 @@ pub fn get_app_config_dir() -> PathBuf {
 }
 
 /// 获取应用配置文件路径
+#[cfg(test)]
 pub fn get_app_config_path() -> PathBuf {
     get_app_config_dir().join("config.json")
 }
@@ -260,6 +261,7 @@ mod tests {
 }
 
 /// 复制文件
+#[cfg(test)]
 pub fn copy_file(from: &Path, to: &Path) -> Result<(), AppError> {
     fs::copy(from, to).map_err(|e| AppError::IoContext {
         context: format!("复制文件失败 ({} -> {})", from.display(), to.display()),

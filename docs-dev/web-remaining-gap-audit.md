@@ -177,6 +177,9 @@
 - `src-tauri/src/lib.rs` 的根级公共导出面已进一步缩到仅保留 Web 二进制入口真实需要的 `run_web_server`；`Database`、`AppState` 等内部类型已回退为显式模块路径引用，避免继续把内部实现包装成库级公共 API
 - 为适配上述收口，`src-tauri/tests/` 下依赖根级公共导出的历史集成测试已迁回 `app_config.rs` 与 `services/skill.rs` 模块内测试，避免仅为测试维持一层面向外部的伪公共 API
 - `mcp`、`database::dao`、`session_manager::providers` 等只在 crate 内部流转的模块/类型已继续改为 crate 级或私有可见性，进一步去掉“可当通用库复用”的历史错觉
+- `Database::memory`、`Database::migrate_from_json_dry_run`、`ProxyService::new`、`UniversalProvider::new` 等仅测试路径使用的辅助 API 已收回测试编译域；同时清除了 `VisibleApps::is_visible` 与 Copilot 认证管理器中零引用的方法/错误枚举项
+- `clear_skills`、`LegacySkillMigrationRow`、`migrate_skills_to_ssot` 等当前只剩单测消费的旧迁移辅助逻辑，也已缩到测试编译域，避免继续进入 Web 正式产物
+- `MultiAppConfig::load/save` 及其 `config.json` 兼容迁移 helper、`get_app_config_path`、`copy_file` 等旧配置时代辅助函数，已明确限定到测试编译域；正式 Web 产物不再携带这层未接线兼容加载器
 
 ## 四、基于前端命令差集的剩余项
 

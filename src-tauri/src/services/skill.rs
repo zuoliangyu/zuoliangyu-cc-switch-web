@@ -168,6 +168,7 @@ pub struct ImportSkillSelection {
     pub apps: SkillApps,
 }
 
+#[cfg(test)]
 #[derive(Debug, Clone, Deserialize)]
 struct LegacySkillMigrationRow {
     directory: String,
@@ -2057,6 +2058,7 @@ fn save_repos_from_lock(
     }
 }
 
+#[cfg(test)]
 /// 首次启动迁移：扫描应用目录，重建数据库
 pub fn migrate_skills_to_ssot(db: &Arc<Database>) -> Result<usize> {
     let ssot_dir = SkillService::get_ssot_dir()?;

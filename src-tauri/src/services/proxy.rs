@@ -44,6 +44,7 @@ pub struct ProxyService {
 }
 
 impl ProxyService {
+    #[cfg(test)]
     pub fn new(db: Arc<Database>) -> Self {
         let copilot_auth_state = Arc::new(RwLock::new(CopilotAuthManager::new(
             crate::config::get_app_config_dir(),

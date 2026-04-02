@@ -133,6 +133,7 @@ impl Database {
     }
 
     /// 清空所有 Skills（用于迁移）
+    #[cfg(test)]
     pub fn clear_skills(&self) -> Result<(), AppError> {
         let conn = lock_conn!(self.conn);
         conn.execute("DELETE FROM skills", [])

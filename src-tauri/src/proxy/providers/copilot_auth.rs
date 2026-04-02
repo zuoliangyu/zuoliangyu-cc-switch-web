@@ -121,9 +121,6 @@ struct CopilotModelsResponseItem {
 /// Copilot 认证错误
 #[derive(Debug, thiserror::Error)]
 pub enum CopilotAuthError {
-    #[error("设备码流程未启动")]
-    DeviceFlowNotStarted,
-
     #[error("等待用户授权中")]
     AuthorizationPending,
 
@@ -348,19 +345,6 @@ impl CopilotAuthManager {
     }
 
     // ==================== 多账号管理方法 ====================
-
-    /// 列出所有已认证的账号
-    pub async fn list_accounts(&self) -> Vec<GitHubAccount> {
-        let accounts = self.accounts.read().await.clone();
-        let default_account_id = self.resolve_default_account_id().await;
-        Self::sorted_accounts(&accounts, default_account_id.as_deref())
-    }
-
-    /// 获取指定账号信息
-    pub async fn get_account(&self, account_id: &str) -> Option<GitHubAccount> {
-        let accounts = self.accounts.read().await;
-        accounts.get(account_id).map(GitHubAccount::from)
-    }
 
     /// 移除指定账号
     pub async fn remove_account(&self, account_id: &str) -> Result<(), CopilotAuthError> {
@@ -826,12 +810,6 @@ impl CopilotAuthManager {
             username,
             expires_at,
         }
-    }
-
-    /// 检查是否已认证（有任意账号）
-    pub async fn is_authenticated(&self) -> bool {
-        let accounts = self.accounts.read().await;
-        !accounts.is_empty()
     }
 
     /// 清除所有认证（登出所有账号）

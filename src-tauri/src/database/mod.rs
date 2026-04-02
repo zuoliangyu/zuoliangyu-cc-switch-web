@@ -154,6 +154,7 @@ impl Database {
     }
 
     /// 创建内存数据库（用于测试）
+    #[cfg(test)]
     pub fn memory() -> Result<Self, AppError> {
         let conn = Connection::open_in_memory().map_err(|e| AppError::Database(e.to_string()))?;
 
