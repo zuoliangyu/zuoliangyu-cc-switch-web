@@ -33,7 +33,7 @@ use crate::services::skill::{
 use crate::services::speedtest::EndpointLatency;
 use crate::settings::WebDavSyncSettings;
 use crate::store::AppState;
-use crate::Database;
+use crate::database::Database;
 use tokio::sync::RwLock;
 
 #[derive(Clone)]
@@ -1787,7 +1787,7 @@ async fn create_db_backup(State(state): State<WebApiState>) -> Result<Json<Strin
 }
 
 async fn list_db_backups() -> Result<Json<Vec<crate::database::backup::BackupEntry>>, ApiError> {
-    let backups = crate::Database::list_backups()
+    let backups = crate::database::Database::list_backups()
         .map_err(|e| ApiError::internal(format!("failed to list database backups: {e}")))?;
     Ok(Json(backups))
 }
@@ -1805,13 +1805,13 @@ async fn restore_db_backup(
 async fn rename_db_backup(
     Json(payload): Json<RenameBackupRequest>,
 ) -> Result<Json<String>, ApiError> {
-    let filename = crate::Database::rename_backup(&payload.old_filename, &payload.new_name)
+    let filename = crate::database::Database::rename_backup(&payload.old_filename, &payload.new_name)
         .map_err(|e| ApiError::internal(format!("failed to rename database backup: {e}")))?;
     Ok(Json(filename))
 }
 
 async fn delete_db_backup(Path(filename): Path<String>) -> Result<StatusCode, ApiError> {
-    crate::Database::delete_backup(&filename)
+    crate::database::Database::delete_backup(&filename)
         .map_err(|e| ApiError::internal(format!("failed to delete database backup: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }

@@ -2170,3 +2170,401 @@ pub fn migrate_skills_to_ssot(db: &Arc<Database>) -> Result<usize> {
 
     Ok(count)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::database::Database;
+    use crate::settings::{update_settings, AppSettings};
+    use serial_test::serial;
+    use std::env;
+    use std::sync::Arc;
+    use tempfile::TempDir;
+
+    struct TempHome {
+        _dir: TempDir,
+        original_home: Option<String>,
+        original_userprofile: Option<String>,
+        original_test_home: Option<String>,
+    }
+
+    impl TempHome {
+        fn new() -> Self {
+            let dir = TempDir::new().expect("failed to create temp home");
+            let original_home = env::var("HOME").ok();
+            let original_userprofile = env::var("USERPROFILE").ok();
+            let original_test_home = env::var("CC_SWITCH_TEST_HOME").ok();
+
+            env::set_var("HOME", dir.path());
+            env::set_var("USERPROFILE", dir.path());
+            env::set_var("CC_SWITCH_TEST_HOME", dir.path());
+            reset_test_fs();
+
+            Self {
+                _dir: dir,
+                original_home,
+                original_userprofile,
+                original_test_home,
+            }
+        }
+    }
+
+    impl Drop for TempHome {
+        fn drop(&mut self) {
+            match &self.original_home {
+                Some(value) => env::set_var("HOME", value),
+                None => env::remove_var("HOME"),
+            }
+            match &self.original_userprofile {
+                Some(value) => env::set_var("USERPROFILE", value),
+                None => env::remove_var("USERPROFILE"),
+            }
+            match &self.original_test_home {
+                Some(value) => env::set_var("CC_SWITCH_TEST_HOME", value),
+                None => env::remove_var("CC_SWITCH_TEST_HOME"),
+            }
+        }
+    }
+
+    fn reset_test_fs() {
+        let home = crate::config::get_home_dir();
+        for sub in [
+            ".claude",
+            ".codex",
+            ".cc-switch",
+            ".gemini",
+            ".config",
+            ".openclaw",
+        ] {
+            let path = home.join(sub);
+            if path.exists() {
+                let _ = fs::remove_dir_all(&path);
+            }
+        }
+        let claude_json = home.join(".claude.json");
+        if claude_json.exists() {
+            let _ = fs::remove_file(&claude_json);
+        }
+        let _ = update_settings(AppSettings::default());
+    }
+
+    fn create_test_db() -> Arc<Database> {
+        Arc::new(Database::init().expect("init db"))
+    }
+
+    fn write_skill(dir: &Path, name: &str) {
+        fs::create_dir_all(dir).expect("create skill dir");
+        fs::write(
+            dir.join("SKILL.md"),
+            format!("---\nname: {name}\ndescription: Test skill\n---\n"),
+        )
+        .expect("write SKILL.md");
+    }
+
+    #[cfg(unix)]
+    fn symlink_dir(src: &Path, dest: &Path) {
+        std::os::unix::fs::symlink(src, dest).expect("create symlink");
+    }
+
+    #[cfg(windows)]
+    fn symlink_dir(src: &Path, dest: &Path) {
+        std::os::windows::fs::symlink_dir(src, dest).expect("create symlink");
+    }
+
+    #[test]
+    #[serial]
+    fn import_from_apps_respects_explicit_app_selection() {
+        let _home = TempHome::new();
+        let home = crate::config::get_home_dir();
+
+        write_skill(
+            &home.join(".claude").join("skills").join("shared-skill"),
+            "Shared",
+        );
+        write_skill(
+            &home
+                .join(".config")
+                .join("opencode")
+                .join("skills")
+                .join("shared-skill"),
+            "Shared",
+        );
+
+        let db = create_test_db();
+
+        let imported = SkillService::import_from_apps(
+            &db,
+            vec![ImportSkillSelection {
+                directory: "shared-skill".to_string(),
+                apps: SkillApps {
+                    claude: false,
+                    codex: false,
+                    gemini: false,
+                    opencode: true,
+                },
+            }],
+        )
+        .expect("import skills");
+
+        assert_eq!(imported.len(), 1, "expected exactly one imported skill");
+        let skill = imported.first().expect("imported skill");
+        assert!(skill.apps.opencode);
+        assert!(!skill.apps.claude && !skill.apps.codex && !skill.apps.gemini);
+    }
+
+    #[test]
+    #[serial]
+    fn sync_to_app_removes_disabled_and_orphaned_ssot_symlinks() {
+        let _home = TempHome::new();
+        let home = crate::config::get_home_dir();
+
+        let ssot_dir = home.join(".cc-switch").join("skills");
+        let disabled_skill = ssot_dir.join("disabled-skill");
+        let orphan_skill = ssot_dir.join("orphan-skill");
+        write_skill(&disabled_skill, "Disabled");
+        write_skill(&orphan_skill, "Orphan");
+
+        let opencode_skills_dir = home.join(".config").join("opencode").join("skills");
+        fs::create_dir_all(&opencode_skills_dir).expect("create opencode skills dir");
+        symlink_dir(&disabled_skill, &opencode_skills_dir.join("disabled-skill"));
+        symlink_dir(&orphan_skill, &opencode_skills_dir.join("orphan-skill"));
+
+        let db = create_test_db();
+        db.save_skill(&InstalledSkill {
+            id: "local:disabled-skill".to_string(),
+            name: "Disabled".to_string(),
+            description: None,
+            directory: "disabled-skill".to_string(),
+            repo_owner: None,
+            repo_name: None,
+            repo_branch: None,
+            readme_url: None,
+            apps: SkillApps {
+                claude: false,
+                codex: false,
+                gemini: false,
+                opencode: false,
+            },
+            installed_at: 0,
+        })
+        .expect("save disabled skill");
+
+        SkillService::sync_to_app(&db, &AppType::OpenCode).expect("reconcile skills");
+
+        assert!(!opencode_skills_dir.join("disabled-skill").exists());
+        assert!(!opencode_skills_dir.join("orphan-skill").exists());
+    }
+
+    #[test]
+    #[serial]
+    fn uninstall_skill_creates_backup_before_removing_ssot() {
+        let _home = TempHome::new();
+        let home = crate::config::get_home_dir();
+
+        let ssot_skill_dir = home.join(".cc-switch").join("skills").join("backup-skill");
+        write_skill(&ssot_skill_dir, "Backup Skill");
+        fs::write(ssot_skill_dir.join("prompt.md"), "backup me").expect("write prompt.md");
+
+        let db = create_test_db();
+        db.save_skill(&InstalledSkill {
+            id: "local:backup-skill".to_string(),
+            name: "Backup Skill".to_string(),
+            description: Some("Back me up before uninstall".to_string()),
+            directory: "backup-skill".to_string(),
+            repo_owner: None,
+            repo_name: None,
+            repo_branch: None,
+            readme_url: None,
+            apps: SkillApps {
+                claude: true,
+                codex: false,
+                gemini: false,
+                opencode: false,
+            },
+            installed_at: 123,
+        })
+        .expect("save skill");
+
+        let result = SkillService::uninstall(&db, "local:backup-skill").expect("uninstall skill");
+        let backup_path = result.backup_path.expect("backup path should be returned");
+        let backup_dir = PathBuf::from(&backup_path);
+
+        assert!(backup_dir.exists());
+        assert!(backup_dir.join("skill").join("SKILL.md").exists());
+        assert_eq!(
+            fs::read_to_string(backup_dir.join("skill").join("prompt.md"))
+                .expect("read backed up prompt"),
+            "backup me"
+        );
+
+        let metadata: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(backup_dir.join("meta.json")).expect("read backup metadata"),
+        )
+        .expect("parse backup metadata");
+        assert_eq!(metadata["skill"]["directory"], "backup-skill");
+        assert_eq!(metadata["skill"]["name"], "Backup Skill");
+        assert!(!ssot_skill_dir.exists());
+        assert!(db
+            .get_installed_skill("local:backup-skill")
+            .expect("query skill")
+            .is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn restore_skill_backup_restores_files_to_ssot_and_current_app() {
+        let _home = TempHome::new();
+        let home = crate::config::get_home_dir();
+
+        let ssot_skill_dir = home.join(".cc-switch").join("skills").join("restore-skill");
+        write_skill(&ssot_skill_dir, "Restore Skill");
+        fs::write(ssot_skill_dir.join("prompt.md"), "restore me").expect("write prompt.md");
+
+        let db = create_test_db();
+        db.save_skill(&InstalledSkill {
+            id: "local:restore-skill".to_string(),
+            name: "Restore Skill".to_string(),
+            description: Some("Bring the files back".to_string()),
+            directory: "restore-skill".to_string(),
+            repo_owner: None,
+            repo_name: None,
+            repo_branch: None,
+            readme_url: None,
+            apps: SkillApps {
+                claude: true,
+                codex: false,
+                gemini: false,
+                opencode: false,
+            },
+            installed_at: 456,
+        })
+        .expect("save skill");
+
+        let uninstall =
+            SkillService::uninstall(&db, "local:restore-skill").expect("uninstall skill");
+        let backup_id = Path::new(
+            &uninstall
+                .backup_path
+                .expect("backup path should be returned on uninstall"),
+        )
+        .file_name()
+        .expect("backup dir name")
+        .to_string_lossy()
+        .to_string();
+
+        let restored =
+            SkillService::restore_from_backup(&db, &backup_id, &AppType::Claude)
+                .expect("restore from backup");
+
+        assert_eq!(restored.directory, "restore-skill");
+        assert!(restored.apps.claude);
+        assert!(!restored.apps.codex && !restored.apps.gemini && !restored.apps.opencode);
+        assert!(home
+            .join(".cc-switch")
+            .join("skills")
+            .join("restore-skill")
+            .join("prompt.md")
+            .exists());
+        assert!(home
+            .join(".claude")
+            .join("skills")
+            .join("restore-skill")
+            .join("prompt.md")
+            .exists());
+        assert!(db
+            .get_installed_skill("local:restore-skill")
+            .expect("query restored skill")
+            .is_some());
+    }
+
+    #[test]
+    #[serial]
+    fn delete_skill_backup_removes_backup_directory() {
+        let _home = TempHome::new();
+        let home = crate::config::get_home_dir();
+
+        let ssot_skill_dir = home
+            .join(".cc-switch")
+            .join("skills")
+            .join("delete-backup-skill");
+        write_skill(&ssot_skill_dir, "Delete Backup Skill");
+
+        let db = create_test_db();
+        db.save_skill(&InstalledSkill {
+            id: "local:delete-backup-skill".to_string(),
+            name: "Delete Backup Skill".to_string(),
+            description: Some("Remove my backup".to_string()),
+            directory: "delete-backup-skill".to_string(),
+            repo_owner: None,
+            repo_name: None,
+            repo_branch: None,
+            readme_url: None,
+            apps: SkillApps {
+                claude: true,
+                codex: false,
+                gemini: false,
+                opencode: false,
+            },
+            installed_at: 789,
+        })
+        .expect("save skill");
+
+        let uninstall =
+            SkillService::uninstall(&db, "local:delete-backup-skill").expect("uninstall skill");
+        let backup_path = uninstall
+            .backup_path
+            .expect("backup path should be returned on uninstall");
+        let backup_id = Path::new(&backup_path)
+            .file_name()
+            .expect("backup dir name")
+            .to_string_lossy()
+            .to_string();
+
+        assert!(Path::new(&backup_path).exists());
+        SkillService::delete_backup(&backup_id).expect("delete backup");
+        assert!(!Path::new(&backup_path).exists());
+        assert!(SkillService::list_backups()
+            .expect("list backups")
+            .into_iter()
+            .all(|entry| entry.backup_id != backup_id));
+    }
+
+    #[test]
+    #[serial]
+    fn migration_snapshot_overrides_multi_source_directory_inference() {
+        let _home = TempHome::new();
+        let home = crate::config::get_home_dir();
+
+        write_skill(
+            &home.join(".claude").join("skills").join("demo-skill"),
+            "Demo",
+        );
+        write_skill(
+            &home
+                .join(".config")
+                .join("opencode")
+                .join("skills")
+                .join("demo-skill"),
+            "Demo",
+        );
+
+        let db = create_test_db();
+        db.set_setting(
+            "skills_ssot_migration_snapshot",
+            r#"[{"directory":"demo-skill","app_type":"claude"}]"#,
+        )
+        .expect("seed migration snapshot");
+
+        let count = migrate_skills_to_ssot(&db).expect("migrate skills to ssot");
+        assert_eq!(count, 1);
+
+        let skills = db.get_all_installed_skills().expect("get skills");
+        let migrated = skills
+            .values()
+            .find(|skill| skill.directory == "demo-skill")
+            .expect("migrated demo-skill");
+
+        assert!(migrated.apps.claude);
+        assert!(!migrated.apps.opencode);
+    }
+}

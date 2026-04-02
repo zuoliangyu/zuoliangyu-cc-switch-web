@@ -174,13 +174,13 @@ mod tests {
 
 /// 获取整流器配置
 pub fn get_rectifier_config_internal(
-    state: &crate::AppState,
+    state: &crate::store::AppState,
 ) -> Result<crate::proxy::types::RectifierConfig, String> {
     state.db.get_rectifier_config().map_err(|e| e.to_string())
 }
 
 pub fn set_rectifier_config_internal(
-    state: &crate::AppState,
+    state: &crate::store::AppState,
     config: crate::proxy::types::RectifierConfig,
 ) -> Result<bool, String> {
     state
@@ -192,13 +192,13 @@ pub fn set_rectifier_config_internal(
 
 /// 获取优化器配置
 pub fn get_optimizer_config_internal(
-    state: &crate::AppState,
+    state: &crate::store::AppState,
 ) -> Result<crate::proxy::types::OptimizerConfig, String> {
     state.db.get_optimizer_config().map_err(|e| e.to_string())
 }
 
 pub fn set_optimizer_config_internal(
-    state: &crate::AppState,
+    state: &crate::store::AppState,
     config: crate::proxy::types::OptimizerConfig,
 ) -> Result<bool, String> {
     // Validate cache_ttl: only allow known values
@@ -219,13 +219,13 @@ pub fn set_optimizer_config_internal(
 
 /// 获取日志配置
 pub fn get_log_config_internal(
-    state: &crate::AppState,
+    state: &crate::store::AppState,
 ) -> Result<crate::proxy::types::LogConfig, String> {
     state.db.get_log_config().map_err(|e| e.to_string())
 }
 
 pub fn set_log_config_internal(
-    state: &crate::AppState,
+    state: &crate::store::AppState,
     config: crate::proxy::types::LogConfig,
 ) -> Result<bool, String> {
     state

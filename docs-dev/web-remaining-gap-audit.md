@@ -174,6 +174,8 @@
 - `services/provider/live.rs` 中零引用的 `LiveSnapshot` 旧恢复结构已删除；多处测试内仅用于维持临时目录生命周期的字段已改名为 `_dir`；`usage/parser.rs` 中运行时真实使用的方法已移除过期 `dead_code` 标注，纯测试路径则改为测试编译专用
 - `proxy/usage/mod.rs` 与 `proxy/mod.rs` 中仅为迁移期保留的根级 re-export 已继续收窄；外部调用已改为显式子模块路径，减少 Web-only 仓库中的历史耦合出口
 - `proxy/mod.rs` 中仍然标记为 `pub mod` 的内部实现子模块已统一收口为 `pub(crate)`，当前代理子系统进一步明确为 crate 内部实现细节，而非可对外复用的公共库 API
+- `src-tauri/src/lib.rs` 的根级公共导出面已进一步缩到仅保留 Web 二进制入口真实需要的 `run_web_server`；`Database`、`AppState` 等内部类型已回退为显式模块路径引用，避免继续把内部实现包装成库级公共 API
+- 为适配上述收口，`src-tauri/tests/` 下依赖根级公共导出的历史集成测试已迁回 `app_config.rs` 与 `services/skill.rs` 模块内测试，避免仅为测试维持一层面向外部的伪公共 API
 
 ## 四、基于前端命令差集的剩余项
 
