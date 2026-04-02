@@ -21,8 +21,8 @@ import {
   X,
   User,
 } from "lucide-react";
-import { useCopilotAuth } from "./hooks/useCopilotAuth";
-import type { GitHubAccount } from "@/lib/api";
+import { useManagedAuth } from "./hooks/useManagedAuth";
+import type { ManagedAuthAccount } from "@/lib/api";
 
 interface CopilotAuthSectionProps {
   className?: string;
@@ -62,7 +62,7 @@ export const CopilotAuthSection: React.FC<CopilotAuthSectionProps> = ({
     setDefaultAccount,
     cancelAuth,
     logout,
-  } = useCopilotAuth();
+  } = useManagedAuth("github_copilot");
 
   // 复制用户码
   const copyUserCode = async () => {
@@ -90,7 +90,7 @@ export const CopilotAuthSection: React.FC<CopilotAuthSectionProps> = ({
   };
 
   // 渲染账号头像
-  const renderAvatar = (account: GitHubAccount) => {
+  const renderAvatar = (account: ManagedAuthAccount) => {
     return <CopilotAccountAvatar account={account} />;
   };
 
@@ -343,7 +343,7 @@ export const CopilotAuthSection: React.FC<CopilotAuthSectionProps> = ({
   );
 };
 
-const CopilotAccountAvatar: React.FC<{ account: GitHubAccount }> = ({
+const CopilotAccountAvatar: React.FC<{ account: ManagedAuthAccount }> = ({
   account,
 }) => {
   const [failed, setFailed] = React.useState(false);

@@ -15,7 +15,6 @@ export * as configApi from "./config";
 export * as authApi from "./auth";
 export * as copilotApi from "./copilot";
 export type { Prompt } from "./prompts";
-export type { GitHubAccount } from "./copilot";
 export type {
   ManagedAuthProvider,
   ManagedAuthAccount,

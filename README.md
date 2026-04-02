@@ -16,6 +16,12 @@ The current target architecture is:
 
 This direction targets Windows, macOS, Linux, and headless Linux server environments.
 
+## Version
+
+The current repository version is `0.1.0`.
+
+This repository now treats `0.1.0` as its initial Web release baseline. Previous inherited release history has been removed from this repository and should be considered part of the upstream project history.
+
 ## Relationship to Upstream
 
 - Upstream project: [cc-switch](https://github.com/farion1231/cc-switch)

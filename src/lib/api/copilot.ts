@@ -7,20 +7,6 @@
 import { invoke } from "@/lib/runtime/client/core";
 
 /**
- * GitHub 账号信息（公开信息）
- */
-export interface GitHubAccount {
-  /** GitHub 用户 ID（唯一标识） */
-  id: string;
-  /** GitHub 用户名 */
-  login: string;
-  /** 头像 URL */
-  avatar_url: string | null;
-  /** 认证时间戳（Unix 秒） */
-  authenticated_at: number;
-}
-
-/**
  * Copilot 可用模型
  */
 export interface CopilotModel {

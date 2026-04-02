@@ -80,7 +80,7 @@ import {
   useOpencodeFormState,
   useOmoDraftState,
   useOpenclawFormState,
-  useCopilotAuth,
+  useManagedAuth,
 } from "./hooks";
 import {
   CLAUDE_DEFAULT_CONFIG,
@@ -340,7 +340,8 @@ export function ProviderForm({
   );
 
   // Copilot OAuth 认证状态（仅 Claude 应用需要）
-  const { isAuthenticated: isCopilotAuthenticated } = useCopilotAuth();
+  const { isAuthenticated: isCopilotAuthenticated } =
+    useManagedAuth("github_copilot");
 
   // 选中的 GitHub 账号 ID（多账号支持）
   const [selectedGitHubAccountId, setSelectedGitHubAccountId] = useState<
