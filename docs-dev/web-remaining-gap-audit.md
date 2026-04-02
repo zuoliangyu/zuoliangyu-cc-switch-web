@@ -119,6 +119,8 @@
 - `services/prompt.rs` 中零调用的首次启动自动导入逻辑 `import_from_file_on_first_launch()` 已删除，避免继续保留未接入的旧启动兼容路径
 - `ProviderService` 中 legacy common-config 迁移方法已收窄为 `pub(crate)`，保留现有迁移行为但不再作为对外公共服务 API 暴露
 - `ProxyService` 中零调用的整机接管/异常恢复旧入口 `start_with_takeover / stop_with_restore_keep_state / recover_from_crash / detect_takeover_in_live_configs` 已删除，当前 Web 主链统一走按应用接管的显式流程
+- 零调用的 `ConfigService` 已整体删除，相关同步/备份逻辑不再作为独立服务层残留
+- `ProviderService` 中仅作为旧转发存在、且已无调用点的 `write_gemini_live` 包装方法已删除
 
 ## 四、基于前端命令差集的剩余项
 

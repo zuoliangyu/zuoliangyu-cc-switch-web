@@ -35,9 +35,7 @@ pub(crate) use live::{
 };
 
 // Internal re-exports
-use live::{
-    remove_openclaw_provider_from_live, remove_opencode_provider_from_live, write_gemini_live,
-};
+use live::{remove_openclaw_provider_from_live, remove_opencode_provider_from_live};
 use usage::validate_usage_script;
 
 /// Provider business logic service
@@ -1052,10 +1050,6 @@ impl ProviderService {
             template_type,
         )
         .await
-    }
-
-    pub(crate) fn write_gemini_live(provider: &Provider) -> Result<(), AppError> {
-        write_gemini_live(provider)
     }
 
     fn validate_provider_settings(app_type: &AppType, provider: &Provider) -> Result<(), AppError> {

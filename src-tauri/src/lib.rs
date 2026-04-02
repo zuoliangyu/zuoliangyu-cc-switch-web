@@ -36,7 +36,6 @@ pub use mcp::{
     sync_single_server_to_codex, sync_single_server_to_gemini,
 };
 pub use provider::{Provider, ProviderMeta};
-pub use services::config::ConfigService;
 pub use services::mcp::McpService;
 pub use services::prompt::PromptService;
 pub use services::provider::ProviderService;

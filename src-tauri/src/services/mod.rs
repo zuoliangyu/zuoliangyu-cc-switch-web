@@ -1,4 +1,3 @@
-pub mod config;
 pub mod mcp;
 pub mod omo;
 pub mod prompt;
