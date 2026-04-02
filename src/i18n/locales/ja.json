@@ -614,7 +614,6 @@
     "roleUser": "ユーザー",
     "roleSystem": "システム",
     "roleTool": "ツール",
-    "resume": "セッションを再開",
     "resumeTooltip": "このセッションの再開コマンドをコピー",
     "noResumeCommand": "このセッションは再開できません",
     "copyCommand": "コマンドをコピー",

@@ -614,7 +614,6 @@
     "roleUser": "用户",
     "roleSystem": "系统",
     "roleTool": "工具",
-    "resume": "恢复会话",
     "resumeTooltip": "复制此会话的恢复命令",
     "noResumeCommand": "此会话无法恢复",
     "copyCommand": "复制命令",

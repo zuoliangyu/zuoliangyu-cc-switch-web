@@ -614,7 +614,6 @@
     "roleUser": "User",
     "roleSystem": "System",
     "roleTool": "Tool",
-    "resume": "Resume Session",
     "resumeTooltip": "Copy the resume command for this session",
     "noResumeCommand": "This session cannot be resumed",
     "copyCommand": "Copy Command",

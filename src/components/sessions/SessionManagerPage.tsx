@@ -868,8 +868,8 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                               >
                                 <Play className="size-3.5" />
                                 <span className="hidden sm:inline">
-                                  {t("sessionManager.resume", {
-                                    defaultValue: "恢复会话",
+                                  {t("sessionManager.copyResumeCommand", {
+                                    defaultValue: "复制恢复命令",
                                   })}
                                 </span>
                               </Button>
