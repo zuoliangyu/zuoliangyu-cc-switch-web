@@ -12,6 +12,7 @@ const joinMock = vi.hoisted(() =>
   vi.fn(async (...segments: string[]) => segments.join("/")),
 );
 const toastErrorMock = vi.hoisted(() => vi.fn());
+const toastInfoMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/api", () => ({
   settingsApi: {
@@ -22,7 +23,7 @@ vi.mock("@/lib/api", () => ({
   },
 }));
 
-vi.mock("@tauri-apps/api/path", () => ({
+vi.mock("@/lib/runtime/tauri/path", () => ({
   homeDir: homeDirMock,
   join: joinMock,
 }));
@@ -30,6 +31,7 @@ vi.mock("@tauri-apps/api/path", () => ({
 vi.mock("sonner", () => ({
   toast: {
     error: (...args: unknown[]) => toastErrorMock(...args),
+    info: (...args: unknown[]) => toastInfoMock(...args),
   },
 }));
 
@@ -89,9 +91,7 @@ describe("useDirectorySettings", () => {
     });
   });
 
-  it("updates claude directory when browsing succeeds", async () => {
-    selectConfigDirectoryMock.mockResolvedValue("/picked/claude");
-
+  it("shows manual input notice when browsing directory in web mode", async () => {
     const { result } = renderHook(() =>
       useDirectorySettings({
         settings: createSettings({ claudeConfigDir: undefined }),
@@ -105,16 +105,13 @@ describe("useDirectorySettings", () => {
       await result.current.browseDirectory("claude");
     });
 
-    expect(selectConfigDirectoryMock).toHaveBeenCalledWith("/remote/claude");
-    expect(onUpdateSettings).toHaveBeenCalledWith({
-      claudeConfigDir: "/picked/claude",
-    });
-    expect(result.current.resolvedDirs.claude).toBe("/picked/claude");
+    expect(toastInfoMock).toHaveBeenCalled();
+    expect(selectConfigDirectoryMock).not.toHaveBeenCalled();
+    expect(onUpdateSettings).not.toHaveBeenCalled();
+    expect(result.current.resolvedDirs.claude).toBe("/remote/claude");
   });
 
-  it("reports error when directory selection fails", async () => {
-    selectConfigDirectoryMock.mockResolvedValue(null);
-
+  it("browseDirectory does not mutate state in web mode", async () => {
     const { result } = renderHook(() =>
       useDirectorySettings({ settings: createSettings(), onUpdateSettings }),
     );
@@ -128,39 +125,11 @@ describe("useDirectorySettings", () => {
     expect(onUpdateSettings).not.toHaveBeenCalledWith({
       codexConfigDir: expect.anything(),
     });
-    expect(selectConfigDirectoryMock).toHaveBeenCalled();
-
-    selectConfigDirectoryMock.mockRejectedValue(new Error("dialog failed"));
-    toastErrorMock.mockClear();
-
-    await act(async () => {
-      await result.current.browseDirectory("codex");
-    });
-
-    expect(toastErrorMock).toHaveBeenCalled();
+    expect(toastInfoMock).toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
   });
 
-  it("warns when directory selection promise rejects", async () => {
-    selectConfigDirectoryMock.mockRejectedValue(new Error("dialog failed"));
-
-    const { result } = renderHook(() =>
-      useDirectorySettings({ settings: createSettings(), onUpdateSettings }),
-    );
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-    await act(async () => {
-      await result.current.browseDirectory("codex");
-    });
-
-    expect(toastErrorMock).toHaveBeenCalled();
-    expect(onUpdateSettings).not.toHaveBeenCalledWith({
-      codexConfigDir: expect.anything(),
-    });
-  });
-
-  it("updates app config directory via browseAppConfigDir", async () => {
-    selectConfigDirectoryMock.mockResolvedValue("  /new/app  ");
-
+  it("shows manual input notice when browsing app config directory in web mode", async () => {
     const { result } = renderHook(() =>
       useDirectorySettings({
         settings: createSettings(),
@@ -173,10 +142,9 @@ describe("useDirectorySettings", () => {
       await result.current.browseAppConfigDir();
     });
 
-    expect(result.current.appConfigDir).toBe("/new/app");
-    expect(selectConfigDirectoryMock).toHaveBeenCalledWith(
-      "/home/mock/.cc-switch",
-    );
+    expect(result.current.appConfigDir).toBeUndefined();
+    expect(toastInfoMock).toHaveBeenCalled();
+    expect(selectConfigDirectoryMock).not.toHaveBeenCalled();
   });
 
   it("resets directories to computed defaults", async () => {

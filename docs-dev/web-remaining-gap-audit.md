@@ -126,6 +126,7 @@
 - `.github/workflows/web-ci.yml` 的 Linux 依赖已去掉 `webkit2gtk`、`libsoup`、`libgtk-3`、`appindicator` 等 Tauri 桌面构建包，CI 现仅保留 Web 前端与 Rust 本地服务所需检查依赖
 - `src-tauri/icons` 旧桌面打包图标资源目录已删除；当前仓库图标资产仅保留前端 `src/assets` 与页面实际使用的资源
 - `Dockerfile` 的构建/运行阶段已去掉 WebKitGTK、GTK、tray/appindicator 等旧桌面依赖，当前容器仅保留 Rust 服务编译与运行所需的 OpenSSL/证书基础环境
+- 前端测试基建已改为 mock 当前运行时适配层而非直接 mock `@tauri-apps/api`；`useDirectorySettings` 测试已同步为 Web 模式“手动填写路径”行为，清理旧桌面目录选择假设
 
 ## 四、基于前端命令差集的剩余项
 

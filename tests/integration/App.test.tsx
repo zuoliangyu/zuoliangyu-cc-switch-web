@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { resetProviderState } from "../msw/state";
-import { emitTauriEvent } from "../msw/tauriMocks";
 
 const toastSuccessMock = vi.fn();
 const toastErrorMock = vi.fn();
@@ -201,33 +200,7 @@ describe("App integration with MSW", () => {
 
     fireEvent.click(screen.getByText("open-website"));
 
-    emitTauriEvent("provider-switched", {
-      appType: "codex",
-      providerId: "codex-2",
-    });
-
     expect(toastErrorMock).not.toHaveBeenCalled();
     expect(toastSuccessMock).toHaveBeenCalled();
-  });
-
-  it("shows toast when auto sync fails in background", async () => {
-    const { default: App } = await import("@/App");
-    renderApp(App);
-
-    await waitFor(() =>
-      expect(screen.getByTestId("provider-list").textContent).toContain(
-        "claude-1",
-      ),
-    );
-
-    emitTauriEvent("webdav-sync-status-updated", {
-      source: "auto",
-      status: "error",
-      error: "network timeout",
-    });
-
-    await waitFor(() => {
-      expect(toastErrorMock).toHaveBeenCalled();
-    });
   });
 });

@@ -2,11 +2,11 @@ import "cross-fetch/polyfill";
 import { vi } from "vitest";
 import { server } from "./server";
 
-const TAURI_ENDPOINT = "http://tauri.local";
+const RUNTIME_ENDPOINT = "http://runtime.local";
 
-vi.mock("@tauri-apps/api/core", () => ({
+vi.mock("@/lib/runtime/tauri/core", () => ({
   invoke: async (command: string, payload: Record<string, unknown> = {}) => {
-    const response = await fetch(`${TAURI_ENDPOINT}/${command}`, {
+    const response = await fetch(`${RUNTIME_ENDPOINT}/${command}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -38,12 +38,12 @@ const ensureListenerSet = (event: string) => {
   return listeners.get(event)!;
 };
 
-export const emitTauriEvent = (event: string, payload: unknown) => {
+export const emitRuntimeEvent = (event: string, payload: unknown) => {
   const handlers = listeners.get(event);
   handlers?.forEach((handler) => handler({ payload }));
 };
 
-vi.mock("@tauri-apps/api/event", () => ({
+vi.mock("@/lib/runtime/tauri/event", () => ({
   listen: async (
     event: string,
     handler: (event: { payload: unknown }) => void,
@@ -59,7 +59,7 @@ vi.mock("@tauri-apps/api/event", () => ({
 // Ensure the MSW server is referenced so tree shaking doesn't remove imports
 void server;
 
-vi.mock("@tauri-apps/api/path", () => ({
+vi.mock("@/lib/runtime/tauri/path", () => ({
   homeDir: async () => "/home/mock",
   join: async (...segments: string[]) => segments.join("/"),
 }));

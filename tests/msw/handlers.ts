@@ -20,7 +20,7 @@ import {
   setAppConfigDirOverrideState,
 } from "./state";
 
-const TAURI_ENDPOINT = "http://tauri.local";
+const TAURI_ENDPOINT = "http://runtime.local";
 
 const withJson = async <T>(request: Request): Promise<T> => {
   try {

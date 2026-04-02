@@ -16,7 +16,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-vi.mock("@tauri-apps/api/core", () => ({
+vi.mock("@/lib/runtime/tauri/core", () => ({
   invoke: (...args: unknown[]) => invokeMock(...args),
 }));
 

@@ -1,4 +1,4 @@
-import eflowcodeLogo from "@/assets/icons/eflowcode.jpg";
+import eflowcodeLogo from "@/assets/icons/eflowcode.png";
 
 const localIcons: Record<string, string> = {
   eflowcode: eflowcodeLogo,
