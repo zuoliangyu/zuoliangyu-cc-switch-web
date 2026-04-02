@@ -1,6 +1,4 @@
 use indexmap::IndexMap;
-use crate::command_state::State;
-
 use crate::app_config::AppType;
 use crate::error::AppError;
 use crate::provider::Provider;
@@ -24,21 +22,9 @@ pub(crate) fn get_providers_internal(
     ProviderService::list(state, app_type).map_err(|e| e.to_string())
 }
 
-/// 获取所有供应商
-pub fn get_providers(
-    state: State<'_, AppState>,
-    app: String,
-) -> Result<IndexMap<String, Provider>, String> {
-    get_providers_internal(state.inner(), app)
-}
-
 pub(crate) fn get_current_provider_internal(state: &AppState, app: String) -> Result<String, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
     ProviderService::current(state, app_type).map_err(|e| e.to_string())
-}
-
-pub fn get_current_provider(state: State<'_, AppState>, app: String) -> Result<String, String> {
-    get_current_provider_internal(state.inner(), app)
 }
 
 pub(crate) fn add_provider_internal(
@@ -50,14 +36,6 @@ pub(crate) fn add_provider_internal(
     ProviderService::add(state, app_type, provider).map_err(|e| e.to_string())
 }
 
-pub fn add_provider(
-    state: State<'_, AppState>,
-    app: String,
-    provider: Provider,
-) -> Result<bool, String> {
-    add_provider_internal(state.inner(), app, provider)
-}
-
 pub(crate) fn update_provider_internal(
     state: &AppState,
     app: String,
@@ -65,14 +43,6 @@ pub(crate) fn update_provider_internal(
 ) -> Result<bool, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
     ProviderService::update(state, app_type, provider).map_err(|e| e.to_string())
-}
-
-pub fn update_provider(
-    state: State<'_, AppState>,
-    app: String,
-    provider: Provider,
-) -> Result<bool, String> {
-    update_provider_internal(state.inner(), app, provider)
 }
 
 pub(crate) fn delete_provider_internal(
@@ -84,22 +54,6 @@ pub(crate) fn delete_provider_internal(
     ProviderService::delete(state, app_type, &id)
         .map(|_| true)
         .map_err(|e| e.to_string())
-}
-
-pub fn delete_provider(
-    state: State<'_, AppState>,
-    app: String,
-    id: String,
-) -> Result<bool, String> {
-    delete_provider_internal(state.inner(), app, id)
-}
-
-pub fn remove_provider_from_live_config(
-    state: crate::command_state::State<'_, AppState>,
-    app: String,
-    id: String,
-) -> Result<bool, String> {
-    remove_provider_from_live_config_internal(state.inner(), app, id)
 }
 
 pub(crate) fn remove_provider_from_live_config_internal(
@@ -128,23 +82,6 @@ pub(crate) fn switch_provider_by_name_internal(
 ) -> Result<SwitchResult, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
     switch_provider_internal(state, app_type, &id).map_err(|e| e.to_string())
-}
-
-#[cfg_attr(not(feature = "test-hooks"), doc(hidden))]
-pub fn switch_provider_test_hook(
-    state: &AppState,
-    app_type: AppType,
-    id: &str,
-) -> Result<SwitchResult, AppError> {
-    switch_provider_internal(state, app_type, id)
-}
-
-pub fn switch_provider(
-    state: State<'_, AppState>,
-    app: String,
-    id: String,
-) -> Result<SwitchResult, String> {
-    switch_provider_by_name_internal(state.inner(), app, id)
 }
 
 fn import_default_config_internal(state: &AppState, app_type: AppType) -> Result<bool, AppError> {
@@ -176,19 +113,14 @@ fn import_default_config_internal(state: &AppState, app_type: AppType) -> Result
 }
 
 #[cfg_attr(not(feature = "test-hooks"), doc(hidden))]
-pub fn import_default_config_test_hook(
+pub(crate) fn import_default_config_test_hook(
     state: &AppState,
     app_type: AppType,
 ) -> Result<bool, AppError> {
     import_default_config_internal(state, app_type)
 }
 
-pub fn import_default_config(state: State<'_, AppState>, app: String) -> Result<bool, String> {
-    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    import_default_config_internal(&state, app_type).map_err(Into::into)
-}
-
-pub async fn query_provider_usage_internal(
+pub(crate) async fn query_provider_usage_internal(
     state: &AppState,
     copilot_state: &Arc<RwLock<crate::proxy::providers::copilot_auth::CopilotAuthManager>>,
     app_type: AppType,
@@ -248,7 +180,7 @@ pub async fn query_provider_usage_internal(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub async fn test_usage_script_internal(
+pub(crate) async fn test_usage_script_internal(
     state: &AppState,
     app_type: AppType,
     provider_id: &str,
@@ -275,52 +207,9 @@ pub async fn test_usage_script_internal(
     .await
 }
 
-#[allow(non_snake_case)]
-#[allow(clippy::too_many_arguments)]
-pub async fn testUsageScript(
-    state: State<'_, AppState>,
-    #[allow(non_snake_case)] providerId: String,
-    app: String,
-    #[allow(non_snake_case)] scriptCode: String,
-    timeout: Option<u64>,
-    #[allow(non_snake_case)] apiKey: Option<String>,
-    #[allow(non_snake_case)] baseUrl: Option<String>,
-    #[allow(non_snake_case)] accessToken: Option<String>,
-    #[allow(non_snake_case)] userId: Option<String>,
-    #[allow(non_snake_case)] templateType: Option<String>,
-) -> Result<crate::provider::UsageResult, String> {
-    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    test_usage_script_internal(
-        state.inner(),
-        app_type,
-        &providerId,
-        &scriptCode,
-        timeout,
-        apiKey.as_deref(),
-        baseUrl.as_deref(),
-        accessToken.as_deref(),
-        userId.as_deref(),
-        templateType.as_deref(),
-    )
-    .await
-    .map_err(|e| e.to_string())
-}
-
-pub fn read_live_provider_settings(app: String) -> Result<serde_json::Value, String> {
-    read_live_provider_settings_internal(app)
-}
-
 pub(crate) fn read_live_provider_settings_internal(app: String) -> Result<serde_json::Value, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
     ProviderService::read_live_settings(app_type).map_err(|e| e.to_string())
-}
-
-pub async fn test_api_endpoints(
-    urls: Vec<String>,
-    #[allow(non_snake_case)] timeoutSecs: Option<u64>,
-) -> Result<Vec<EndpointLatency>, String> {
-    test_api_endpoints_internal(urls, timeoutSecs)
-        .await
 }
 
 pub(crate) async fn test_api_endpoints_internal(
@@ -332,14 +221,6 @@ pub(crate) async fn test_api_endpoints_internal(
         .map_err(|e| e.to_string())
 }
 
-pub fn get_custom_endpoints(
-    state: State<'_, AppState>,
-    app: String,
-    #[allow(non_snake_case)] providerId: String,
-) -> Result<Vec<crate::settings::CustomEndpoint>, String> {
-    get_custom_endpoints_internal(state.inner(), app, providerId)
-}
-
 pub(crate) fn get_custom_endpoints_internal(
     state: &AppState,
     app: String,
@@ -348,15 +229,6 @@ pub(crate) fn get_custom_endpoints_internal(
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
     ProviderService::get_custom_endpoints(state, app_type, &provider_id)
         .map_err(|e| e.to_string())
-}
-
-pub fn add_custom_endpoint(
-    state: State<'_, AppState>,
-    app: String,
-    #[allow(non_snake_case)] providerId: String,
-    url: String,
-) -> Result<(), String> {
-    add_custom_endpoint_internal(state.inner(), app, providerId, url)
 }
 
 pub(crate) fn add_custom_endpoint_internal(
@@ -370,15 +242,6 @@ pub(crate) fn add_custom_endpoint_internal(
         .map_err(|e| e.to_string())
 }
 
-pub fn remove_custom_endpoint(
-    state: State<'_, AppState>,
-    app: String,
-    #[allow(non_snake_case)] providerId: String,
-    url: String,
-) -> Result<(), String> {
-    remove_custom_endpoint_internal(state.inner(), app, providerId, url)
-}
-
 pub(crate) fn remove_custom_endpoint_internal(
     state: &AppState,
     app: String,
@@ -390,15 +253,6 @@ pub(crate) fn remove_custom_endpoint_internal(
         .map_err(|e| e.to_string())
 }
 
-pub fn update_endpoint_last_used(
-    state: State<'_, AppState>,
-    app: String,
-    #[allow(non_snake_case)] providerId: String,
-    url: String,
-) -> Result<(), String> {
-    update_endpoint_last_used_internal(state.inner(), app, providerId, url)
-}
-
 pub(crate) fn update_endpoint_last_used_internal(
     state: &AppState,
     app: String,
@@ -408,14 +262,6 @@ pub(crate) fn update_endpoint_last_used_internal(
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
     ProviderService::update_endpoint_last_used(state, app_type, &provider_id, url)
         .map_err(|e| e.to_string())
-}
-
-pub fn update_providers_sort_order(
-    state: State<'_, AppState>,
-    app: String,
-    updates: Vec<ProviderSortUpdate>,
-) -> Result<bool, String> {
-    update_providers_sort_order_internal(state.inner(), app, updates)
 }
 
 pub(crate) fn update_providers_sort_order_internal(
@@ -430,23 +276,10 @@ pub(crate) fn update_providers_sort_order_internal(
 use crate::provider::UniversalProvider;
 use std::collections::HashMap;
 
-pub fn get_universal_providers(
-    state: State<'_, AppState>,
-) -> Result<HashMap<String, UniversalProvider>, String> {
-    get_universal_providers_internal(state.inner())
-}
-
 pub(crate) fn get_universal_providers_internal(
     state: &AppState,
 ) -> Result<HashMap<String, UniversalProvider>, String> {
     ProviderService::list_universal(state).map_err(|e| e.to_string())
-}
-
-pub fn get_universal_provider(
-    state: State<'_, AppState>,
-    id: String,
-) -> Result<Option<UniversalProvider>, String> {
-    get_universal_provider_internal(state.inner(), id)
 }
 
 pub(crate) fn get_universal_provider_internal(
@@ -456,25 +289,11 @@ pub(crate) fn get_universal_provider_internal(
     ProviderService::get_universal(state, &id).map_err(|e| e.to_string())
 }
 
-pub fn upsert_universal_provider(
-    state: State<'_, AppState>,
-    provider: UniversalProvider,
-) -> Result<bool, String> {
-    upsert_universal_provider_internal(state.inner(), provider)
-}
-
 pub(crate) fn upsert_universal_provider_internal(
     state: &AppState,
     provider: UniversalProvider,
 ) -> Result<bool, String> {
     ProviderService::upsert_universal(state, provider).map_err(|e| e.to_string())
-}
-
-pub fn delete_universal_provider(
-    state: State<'_, AppState>,
-    id: String,
-) -> Result<bool, String> {
-    delete_universal_provider_internal(state.inner(), id)
 }
 
 pub(crate) fn delete_universal_provider_internal(
@@ -484,13 +303,6 @@ pub(crate) fn delete_universal_provider_internal(
     ProviderService::delete_universal(state, &id).map_err(|e| e.to_string())
 }
 
-pub fn sync_universal_provider(
-    state: State<'_, AppState>,
-    id: String,
-) -> Result<bool, String> {
-    sync_universal_provider_internal(state.inner(), id)
-}
-
 pub(crate) fn sync_universal_provider_internal(
     state: &AppState,
     id: String,
@@ -498,25 +310,10 @@ pub(crate) fn sync_universal_provider_internal(
     ProviderService::sync_universal_to_apps(state, &id).map_err(|e| e.to_string())
 }
 
-pub fn import_opencode_providers_from_live(state: State<'_, AppState>) -> Result<usize, String> {
-    import_opencode_providers_from_live_internal(state.inner())
-        .map_err(|e| e.to_string())
-}
-
 pub(crate) fn import_opencode_providers_from_live_internal(
     state: &AppState,
 ) -> Result<usize, crate::error::AppError> {
     crate::services::provider::import_opencode_providers_from_live(state)
-}
-
-pub fn get_opencode_live_provider_ids() -> Result<Vec<String>, String> {
-    get_opencode_live_provider_ids_internal()
-}
-
-pub(crate) fn get_opencode_live_provider_ids_internal() -> Result<Vec<String>, String> {
-    crate::opencode_config::get_providers()
-        .map(|providers| providers.keys().cloned().collect())
-        .map_err(|e| e.to_string())
 }
 
 // ============================================================================

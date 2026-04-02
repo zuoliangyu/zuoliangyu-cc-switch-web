@@ -101,7 +101,7 @@
 - Skills ZIP 上传安装、配置导入后的后置同步告警计算等残余共享流程也已收口到命令层辅助函数，`web_server.rs` 的职责进一步收敛为 HTTP 协议适配
 - `commands/*.rs` 已整体去掉 `#[tauri::command]` 和 `tauri::State`，改为本地轻量 `command_state::State`
 - `src-tauri/Cargo.toml` 中的 `tauri` 依赖已移除，当前 `cc-switch-web` 可在无 Tauri crate 前提下通过 `cargo check`
-- `mcp`、`omo`、`openclaw`、`import_export`、`settings`、`webdav_sync`、`usage`、`skill`、`stream_check` 模块中仅供旧桌面命令层复用的 public wrapper 已删除，Web handler 统一直接走 `commands/*_internal`
+- `mcp`、`omo`、`openclaw`、`import_export`、`settings`、`webdav_sync`、`usage`、`skill`、`stream_check`、`provider` 模块中仅供旧桌面命令层复用的 public wrapper 已删除，Web handler 统一直接走 `commands/*_internal`
 
 ## 四、基于前端命令差集的剩余项
 

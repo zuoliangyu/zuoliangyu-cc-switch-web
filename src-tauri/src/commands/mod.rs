@@ -30,7 +30,7 @@ pub use misc::*;
 pub(crate) use omo::*;
 pub(crate) use openclaw::*;
 pub(crate) use prompt::*;
-pub use provider::*;
+pub(crate) use provider::*;
 pub use proxy::*;
 pub use session_manager::*;
 pub(crate) use settings::*;
