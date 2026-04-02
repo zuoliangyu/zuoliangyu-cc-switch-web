@@ -115,6 +115,7 @@
 - `services/mod.rs` 中无调用点的 Skills 根级 re-export 已删除，当前调用统一走 `crate::services::skill::*`
 - `services/mod.rs` 中无调用点的 `usage_stats` 根级 re-export 已删除，当前调用统一走 `crate::services::usage_stats::*`
 - `services/mod.rs` 中剩余的根级转发也已继续收窄；命令层、`web_server.rs`、`store.rs` 与 `lib.rs` 已改为显式依赖对应子模块路径
+- `services/skill.rs` 中无调用点的旧 `SkillStore` 仓库操作方法 `list_repos / add_repo / remove_repo` 已删除，仓库管理当前统一走数据库 DAO
 
 ## 四、基于前端命令差集的剩余项
 
