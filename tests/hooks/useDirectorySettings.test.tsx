@@ -8,7 +8,6 @@ const getAppConfigDirMock = vi.hoisted(() => vi.fn());
 const getDefaultAppConfigDirMock = vi.hoisted(() => vi.fn());
 const getConfigDirMock = vi.hoisted(() => vi.fn());
 const getDefaultConfigDirMock = vi.hoisted(() => vi.fn());
-const selectConfigDirectoryMock = vi.hoisted(() => vi.fn());
 const setAppConfigDirOverrideMock = vi.hoisted(() => vi.fn());
 const toastErrorMock = vi.hoisted(() => vi.fn());
 const toastInfoMock = vi.hoisted(() => vi.fn());
@@ -20,7 +19,6 @@ vi.mock("@/lib/api", () => ({
     getDefaultAppConfigDir: getDefaultAppConfigDirMock,
     getConfigDir: getConfigDirMock,
     getDefaultConfigDir: getDefaultConfigDirMock,
-    selectConfigDirectory: selectConfigDirectoryMock,
     setAppConfigDirOverride: setAppConfigDirOverrideMock,
   },
 }));
@@ -69,7 +67,6 @@ describe("useDirectorySettings", () => {
       if (app === "gemini") return "/default/gemini";
       return "/default/opencode";
     });
-    selectConfigDirectoryMock.mockReset();
   });
 
   it("initializes directories using overrides and remote defaults", async () => {
@@ -106,7 +103,6 @@ describe("useDirectorySettings", () => {
     });
 
     expect(toastInfoMock).toHaveBeenCalled();
-    expect(selectConfigDirectoryMock).not.toHaveBeenCalled();
     expect(onUpdateSettings).not.toHaveBeenCalled();
     expect(result.current.resolvedDirs.claude).toBe("/remote/claude");
   });
@@ -145,7 +141,6 @@ describe("useDirectorySettings", () => {
     expect(result.current.appConfigDir).toBeUndefined();
     expect(result.current.resolvedDirs.appConfig).toBe("/default/app");
     expect(toastInfoMock).toHaveBeenCalled();
-    expect(selectConfigDirectoryMock).not.toHaveBeenCalled();
   });
 
   it("resets directories to computed defaults", async () => {
