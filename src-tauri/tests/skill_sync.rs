@@ -1,12 +1,19 @@
 use std::fs;
+use std::sync::Arc;
 
 use cc_switch_lib::{
-    migrate_skills_to_ssot, AppType, ImportSkillSelection, InstalledSkill, SkillApps, SkillService,
+    migrate_skills_to_ssot, AppState, AppType, Database, ImportSkillSelection, InstalledSkill,
+    SkillApps, SkillService,
 };
 
 #[path = "support.rs"]
 mod support;
-use support::{create_test_state, ensure_test_home, reset_test_fs, test_mutex};
+use support::{ensure_test_home, reset_test_fs, test_mutex};
+
+fn create_test_state() -> Result<AppState, Box<dyn std::error::Error>> {
+    let db = Arc::new(Database::init()?);
+    Ok(AppState::new(db))
+}
 
 fn write_skill(dir: &std::path::Path, name: &str) {
     fs::create_dir_all(dir).expect("create skill dir");

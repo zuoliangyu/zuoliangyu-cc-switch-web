@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-use cc_switch_lib::{update_settings, AppSettings, AppState, Database};
+use cc_switch_lib::{update_settings, AppSettings};
 
 /// 为测试设置隔离的 HOME 目录，避免污染真实用户数据。
 pub fn ensure_test_home() -> &'static Path {
@@ -54,11 +54,4 @@ pub fn reset_test_fs() {
 pub fn test_mutex() -> &'static Mutex<()> {
     static MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
     MUTEX.get_or_init(|| Mutex::new(()))
-}
-
-/// 创建测试用的 AppState，包含一个空的数据库
-#[allow(dead_code)]
-pub fn create_test_state() -> Result<AppState, Box<dyn std::error::Error>> {
-    let db = std::sync::Arc::new(Database::init()?);
-    Ok(AppState::new(db))
 }

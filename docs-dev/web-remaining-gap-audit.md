@@ -161,6 +161,7 @@
 - `src-tauri/src/mcp/*` 中零调用的聚合同步链 `sync_enabled_to_claude/codex/gemini` 及其辅助提取函数已删除；当前 MCP 主链只保留前端实际使用的导入、单项同步与移除能力
 - `mcp/opencode.rs` 中仅供模块内部与同文件测试使用的格式转换函数已收回私有；`opencode_config.rs` 与 `openclaw_config.rs` 中零引用的 `get_opencode_env_path()`、`OpenClawAgents` 也已删除，继续缩小无实际使用的公开面
 - `provider_defaults.rs` 整个零引用默认图标模块已删除；同时 `codex_config.rs` 与 `config.rs` 中只服务旧供应商文件拆分方案的路径辅助函数也已移除，避免继续保留无入口的历史文件布局接口
+- `tests/support.rs` 中只供 `skill_sync` 使用的 `create_test_state()` 已下沉到对应测试文件；`gemini_config.rs` 中仅被单测使用的严格 `.env` 解析 helper 也已收回测试模块，避免在运行时代码中保留无入口辅助函数
 
 ## 四、基于前端命令差集的剩余项
 

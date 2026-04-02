@@ -53,79 +53,6 @@ pub fn parse_env_file(content: &str) -> HashMap<String, String> {
     map
 }
 
-/// 严格解析 .env 文件内容，返回详细的错误信息
-///
-/// 与 `parse_env_file` 不同，此函数在遇到无效行时会返回错误，
-/// 包含行号和详细的错误信息。
-///
-/// # 错误
-///
-/// 返回 `AppError` 如果遇到以下情况：
-/// - 行不包含 `=` 分隔符
-/// - Key 为空或包含无效字符
-/// - Key 不符合环境变量命名规范
-///
-/// # 使用场景
-///
-/// 此函数为未来的严格验证场景预留，当前运行时使用宽松的 `parse_env_file`。
-/// 可用于：
-/// - 配置导入验证
-/// - CLI 工具的严格模式
-/// - 配置文件错误诊断
-///
-/// 已有完整的测试覆盖，可直接使用。
-#[allow(dead_code)]
-pub fn parse_env_file_strict(content: &str) -> Result<HashMap<String, String>, AppError> {
-    let mut map = HashMap::new();
-
-    for (line_num, line) in content.lines().enumerate() {
-        let line = line.trim();
-        let line_number = line_num + 1; // 行号从 1 开始
-
-        // 跳过空行和注释
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-
-        // 检查是否包含 =
-        if !line.contains('=') {
-            return Err(AppError::localized(
-                "gemini.env.parse_error.no_equals",
-                format!("Gemini .env 文件格式错误（第 {line_number} 行）：缺少 '=' 分隔符\n行内容: {line}"),
-                format!("Invalid Gemini .env format (line {line_number}): missing '=' separator\nLine: {line}"),
-            ));
-        }
-
-        // 解析 KEY=VALUE
-        if let Some((key, value)) = line.split_once('=') {
-            let key = key.trim();
-            let value = value.trim();
-
-            // 验证 key 不为空
-            if key.is_empty() {
-                return Err(AppError::localized(
-                    "gemini.env.parse_error.empty_key",
-                    format!("Gemini .env 文件格式错误（第 {line_number} 行）：环境变量名不能为空\n行内容: {line}"),
-                    format!("Invalid Gemini .env format (line {line_number}): variable name cannot be empty\nLine: {line}"),
-                ));
-            }
-
-            // 验证 key 只包含字母、数字和下划线
-            if !key.chars().all(|c| c.is_alphanumeric() || c == '_') {
-                return Err(AppError::localized(
-                    "gemini.env.parse_error.invalid_key",
-                    format!("Gemini .env 文件格式错误（第 {line_number} 行）：环境变量名只能包含字母、数字和下划线\n变量名: {key}"),
-                    format!("Invalid Gemini .env format (line {line_number}): variable name can only contain letters, numbers, and underscores\nVariable: {key}"),
-                ));
-            }
-
-            map.insert(key.to_string(), value.to_string());
-        }
-    }
-
-    Ok(map)
-}
-
 /// 将键值对序列化为 .env 格式
 pub fn serialize_env_file(map: &HashMap<String, String>) -> String {
     let mut lines = Vec::new();
@@ -377,6 +304,64 @@ pub fn write_google_oauth_settings() -> Result<(), AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn parse_env_file_strict(content: &str) -> Result<HashMap<String, String>, AppError> {
+        let mut map = HashMap::new();
+
+        for (line_num, line) in content.lines().enumerate() {
+            let line = line.trim();
+            let line_number = line_num + 1;
+
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+
+            if !line.contains('=') {
+                return Err(AppError::localized(
+                    "gemini.env.parse_error.no_equals",
+                    format!(
+                        "Gemini .env 文件格式错误（第 {line_number} 行）：缺少 '=' 分隔符\n行内容: {line}"
+                    ),
+                    format!(
+                        "Invalid Gemini .env format (line {line_number}): missing '=' separator\nLine: {line}"
+                    ),
+                ));
+            }
+
+            if let Some((key, value)) = line.split_once('=') {
+                let key = key.trim();
+                let value = value.trim();
+
+                if key.is_empty() {
+                    return Err(AppError::localized(
+                        "gemini.env.parse_error.empty_key",
+                        format!(
+                            "Gemini .env 文件格式错误（第 {line_number} 行）：环境变量名不能为空\n行内容: {line}"
+                        ),
+                        format!(
+                            "Invalid Gemini .env format (line {line_number}): variable name cannot be empty\nLine: {line}"
+                        ),
+                    ));
+                }
+
+                if !key.chars().all(|c| c.is_alphanumeric() || c == '_') {
+                    return Err(AppError::localized(
+                        "gemini.env.parse_error.invalid_key",
+                        format!(
+                            "Gemini .env 文件格式错误（第 {line_number} 行）：环境变量名只能包含字母、数字和下划线\n变量名: {key}"
+                        ),
+                        format!(
+                            "Invalid Gemini .env format (line {line_number}): variable name can only contain letters, numbers, and underscores\nVariable: {key}"
+                        ),
+                    ));
+                }
+
+                map.insert(key.to_string(), value.to_string());
+            }
+        }
+
+        Ok(map)
+    }
 
     #[test]
     fn test_parse_env_file() {
