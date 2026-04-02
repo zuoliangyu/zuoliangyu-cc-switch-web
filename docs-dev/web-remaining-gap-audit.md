@@ -130,6 +130,7 @@
 - 前端运行时适配层中仅剩的 `@tauri-apps/api/core` 动态导入已删除，`package.json` 与 lockfile 也已移除 `@tauri-apps/api` 依赖；当前前端依赖面已不再包含桌面端 JS SDK
 - 前端运行时适配目录已从 `src/lib/runtime/tauri` 更名为 `src/lib/runtime/client`，测试 mock 也同步改为 `runtimeMocks`，避免继续以旧桌面运行时命名误导 Web-only 仓库结构
 - `docs-dev/web-local-service-migration-plan.md` 已标注为早期迁移阶段的历史计划归档；当前状态与剩余收尾项统一以本审计文档为准
+- 零调用的前端重复 hook `src/hooks/useProxyConfig.ts` 已删除，代理配置主路径继续统一收敛到 `src/lib/query/proxy.ts`
 
 ## 四、基于前端命令差集的剩余项
 
