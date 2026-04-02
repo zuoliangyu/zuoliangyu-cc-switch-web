@@ -233,8 +233,6 @@ export const handlers = [
   http.post(`${TAURI_ENDPOINT}/remove_from_failover_queue`, () =>
     success(true),
   ),
-  http.post(`${TAURI_ENDPOINT}/reorder_failover_queue`, () => success(true)),
-  http.post(`${TAURI_ENDPOINT}/set_failover_item_enabled`, () => success(true)),
 
   http.post(`${TAURI_ENDPOINT}/get_circuit_breaker_config`, () =>
     success({
@@ -261,5 +259,4 @@ export const handlers = [
     }),
   ),
   http.post(`${TAURI_ENDPOINT}/reset_circuit_breaker`, () => success(true)),
-  http.post(`${TAURI_ENDPOINT}/get_circuit_breaker_stats`, () => success(null)),
 ];
