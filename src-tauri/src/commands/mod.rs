@@ -32,7 +32,7 @@ pub(crate) use openclaw::*;
 pub(crate) use prompt::*;
 pub(crate) use provider::*;
 pub(crate) use proxy::*;
-pub use session_manager::*;
+pub(crate) use session_manager::*;
 pub(crate) use settings::*;
 pub(crate) use skill::*;
 pub(crate) use stream_check::*;

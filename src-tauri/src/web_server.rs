@@ -947,7 +947,7 @@ async fn get_openclaw_live_provider(
 }
 
 async fn list_sessions() -> Result<Json<Vec<crate::session_manager::SessionMeta>>, ApiError> {
-    let sessions = crate::list_sessions_internal()
+    let sessions = crate::commands::list_sessions_internal()
         .await
         .map_err(|e| ApiError::internal(format!("failed to list sessions: {e}")))?;
     Ok(Json(sessions))
@@ -956,7 +956,8 @@ async fn list_sessions() -> Result<Json<Vec<crate::session_manager::SessionMeta>
 async fn get_session_messages(
     Query(query): Query<SessionMessagesQuery>,
 ) -> Result<Json<Vec<crate::session_manager::SessionMessage>>, ApiError> {
-    let messages = crate::get_session_messages_internal(query.provider_id, query.source_path)
+    let messages =
+        crate::commands::get_session_messages_internal(query.provider_id, query.source_path)
         .await
         .map_err(|e| ApiError::internal(format!("failed to load session messages: {e}")))?;
     Ok(Json(messages))
@@ -965,7 +966,7 @@ async fn get_session_messages(
 async fn delete_session(
     Json(payload): Json<crate::session_manager::DeleteSessionRequest>,
 ) -> Result<Json<bool>, ApiError> {
-    let deleted = crate::delete_session_internal(
+    let deleted = crate::commands::delete_session_internal(
         payload.provider_id,
         payload.session_id,
         payload.source_path,
@@ -978,7 +979,7 @@ async fn delete_session(
 async fn delete_sessions(
     Json(items): Json<Vec<crate::session_manager::DeleteSessionRequest>>,
 ) -> Result<Json<Vec<crate::session_manager::DeleteSessionOutcome>>, ApiError> {
-    let results = crate::delete_sessions_internal(items)
+    let results = crate::commands::delete_sessions_internal(items)
         .await
         .map_err(|e| ApiError::internal(format!("failed to delete sessions: {e}")))?;
     Ok(Json(results))

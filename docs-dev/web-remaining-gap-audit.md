@@ -105,6 +105,7 @@
 - `command_state.rs` 已删除，命令层已不再保留仅用于过渡期的本地 `State` 包装类型
 - `misc` 与 `workspace` 也已从根级公开 re-export 收窄为 crate 内使用，`web_server.rs` 不再通过根模块直接调用这两组命令
 - 无 Web 路由入口的 `init_status.rs` 与对应初始化状态拉取命令已删除，避免继续保留未接入的启动阶段兼容状态通道
+- `session_manager` 也已收窄为 crate 内导出，Session API 统一经由 `commands::` 调用
 
 ## 四、基于前端命令差集的剩余项
 

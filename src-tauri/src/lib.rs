@@ -25,7 +25,7 @@ mod web_server;
 
 pub use app_config::{AppType, InstalledSkill, McpApps, McpServer, MultiAppConfig, SkillApps};
 pub use codex_config::{get_codex_auth_path, get_codex_config_path, write_codex_live_atomic};
-pub use commands::*;
+pub(crate) use commands::*;
 pub use config::{get_claude_mcp_path, get_claude_settings_path, read_json_file};
 pub use database::Database;
 pub use error::AppError;
