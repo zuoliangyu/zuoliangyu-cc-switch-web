@@ -44,6 +44,7 @@ If you are looking for the original CC Switch project or upstream release inform
 | Docker foreground development (`d`) | `pnpm dev -- d` |
 | Local release build (`w`) | `pnpm build` |
 | Docker image build (`d`) | `pnpm build -- d` |
+| Project check | `pnpm check` |
 
 ### Local Development
 
@@ -52,6 +53,8 @@ If you are looking for the original CC Switch project or upstream release inform
    ```bash
    pnpm install --frozen-lockfile
    ```
+
+   Rust `1.88+` is required for the backend build and check steps.
 
 2. Start development mode:
 
@@ -185,6 +188,8 @@ release/docker-linux/cc-switch-web-linux-x64/
 ```
 
 The package contains the single executable `cc-switch-web`. After extracting on Linux, run that binary directly.
+
+The exported Linux binary is built as `x86_64-unknown-linux-musl`, which reduces host-side runtime dependency issues.
 
 ### Linux systemd Example
 

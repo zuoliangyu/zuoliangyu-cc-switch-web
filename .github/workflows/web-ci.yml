@@ -74,6 +74,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.1
 
       - name: Install Linux system deps
         if: runner.os == 'Linux'
@@ -87,8 +89,7 @@ jobs:
             curl \
             wget \
             file \
-            patchelf \
-            libssl-dev
+            patchelf
 
       - name: Get pnpm store directory
         id: pnpm-store
@@ -117,11 +118,8 @@ jobs:
       - name: Install frontend deps
         run: pnpm install --frozen-lockfile
 
-      - name: TypeScript type check
-        run: pnpm exec tsc --noEmit -p tsconfig.json
-
-      - name: Rust check (cc-switch-web)
-        run: cargo check --locked --manifest-path backend/Cargo.toml --bin cc-switch-web
+      - name: Project check
+        run: pnpm check
 
   docker-smoke:
     name: Docker Smoke
