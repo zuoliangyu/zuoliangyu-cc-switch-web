@@ -129,10 +129,10 @@ export function useSwitchProxyProvider() {
   });
 }
 
-// ========== Legacy 代理配置 Hooks (兼容) ==========
+// ========== 聚合代理配置 Hooks ==========
 
 /**
- * 获取代理配置（旧版）
+ * 获取聚合后的代理配置
  */
 export function useProxyConfig() {
   const queryClient = useQueryClient();

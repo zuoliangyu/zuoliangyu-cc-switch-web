@@ -132,6 +132,7 @@
 - `docs-dev/web-local-service-migration-plan.md` 已标注为早期迁移阶段的历史计划归档；当前状态与剩余收尾项统一以本审计文档为准
 - 零调用的前端重复 hook `src/hooks/useProxyConfig.ts` 已删除，代理配置主路径继续统一收敛到 `src/lib/query/proxy.ts`
 - 零调用的前端废弃 wrapper `getClaudeCommonConfigSnippet / setClaudeCommonConfigSnippet` 以及运行时中的对应旧命令映射已删除，通用配置片段入口统一为 `getCommonConfigSnippet / setCommonConfigSnippet`
+- 前端代理查询层中仍在使用的 `getProxyConfig / updateProxyConfig / useProxyConfig` 已改为中性“聚合代理配置”表述，不再继续以 `Legacy` 命名误导当前主路径
 
 ## 四、基于前端命令差集的剩余项
 
