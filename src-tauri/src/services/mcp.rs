@@ -1,5 +1,4 @@
 use indexmap::IndexMap;
-use std::collections::HashMap;
 
 use crate::app_config::{AppType, McpServer};
 use crate::error::AppError;
@@ -176,54 +175,6 @@ impl McpService {
                 } else {
                     Self::remove_server_from_app(state, &server.id, &app)?;
                 }
-            }
-        }
-
-        Ok(())
-    }
-
-    // ========================================================================
-    // 兼容层：支持旧的 v3.6.x 命令（已废弃，将在 v4.0 移除）
-    // ========================================================================
-
-    /// [已废弃] 获取指定应用的 MCP 服务器（兼容旧 API）
-    #[deprecated(since = "3.7.0", note = "Use get_all_servers instead")]
-    pub fn get_servers(
-        state: &AppState,
-        app: AppType,
-    ) -> Result<HashMap<String, serde_json::Value>, AppError> {
-        let all_servers = Self::get_all_servers(state)?;
-        let mut result = HashMap::new();
-
-        for (id, server) in all_servers {
-            if server.apps.is_enabled_for(&app) {
-                result.insert(id, server.server);
-            }
-        }
-
-        Ok(result)
-    }
-
-    /// [已废弃] 设置 MCP 服务器在指定应用的启用状态（兼容旧 API）
-    #[deprecated(since = "3.7.0", note = "Use toggle_app instead")]
-    pub fn set_enabled(
-        state: &AppState,
-        app: AppType,
-        id: &str,
-        enabled: bool,
-    ) -> Result<bool, AppError> {
-        Self::toggle_app(state, id, app, enabled)?;
-        Ok(true)
-    }
-
-    /// [已废弃] 同步启用的 MCP 到指定应用（兼容旧 API）
-    #[deprecated(since = "3.7.0", note = "Use sync_all_enabled instead")]
-    pub fn sync_enabled(state: &AppState, app: AppType) -> Result<(), AppError> {
-        let servers = Self::get_all_servers(state)?;
-
-        for server in servers.values() {
-            if server.apps.is_enabled_for(&app) {
-                Self::sync_server_to_app(state, server, &app)?;
             }
         }
 

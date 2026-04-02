@@ -109,6 +109,7 @@
 - `ProxyService` 已不再直接依赖 DAO 中的 legacy 聚合配置接口；代理配置读取/写回已改为由 `GlobalProxyConfig + Claude AppProxyConfig + enabled 派生状态` 组合，`dao/proxy.rs` 中无调用点的 `get_proxy_config / update_proxy_config / set_live_takeover_active` 已删除
 - 旧的熔断器聚合兼容接口也已收口为显式使用 `claude` 的 `AppProxyConfig` 字段，`commands/proxy.rs` 与 `provider_router` 测试已不再依赖 `get_circuit_breaker_config / update_circuit_breaker_config`
 - `database/dao/settings.rs` 中仅用于旧 `settings.proxy_takeover_*` 存储模式的废弃读写函数已删除；当前接管状态只由 `proxy_config.enabled` 表达
+- `services/mcp.rs` 中无调用点的旧 MCP 兼容方法，以及 `services/skill.rs` 中无调用点的 `copy_to_app` 废弃别名已删除
 
 ## 四、基于前端命令差集的剩余项
 
