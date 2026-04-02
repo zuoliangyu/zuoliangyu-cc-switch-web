@@ -21,7 +21,7 @@ import {
   setAppConfigDirOverrideState,
 } from "./state";
 
-const TAURI_ENDPOINT = "http://runtime.local";
+const RUNTIME_ENDPOINT = "http://runtime.local";
 
 const withJson = async <T>(request: Request): Promise<T> => {
   try {
@@ -36,18 +36,18 @@ const withJson = async <T>(request: Request): Promise<T> => {
 const success = <T>(payload: T) => HttpResponse.json(payload as any);
 
 export const handlers = [
-  http.post(`${TAURI_ENDPOINT}/get_providers`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/get_providers`, async ({ request }) => {
     const { app } = await withJson<{ app: AppId }>(request);
     return success(getProviders(app));
   }),
 
-  http.post(`${TAURI_ENDPOINT}/get_current_provider`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/get_current_provider`, async ({ request }) => {
     const { app } = await withJson<{ app: AppId }>(request);
     return success(getCurrentProviderId(app));
   }),
 
   http.post(
-    `${TAURI_ENDPOINT}/update_providers_sort_order`,
+    `${RUNTIME_ENDPOINT}/update_providers_sort_order`,
     async ({ request }) => {
       const { updates = [], app } = await withJson<{
         updates: { id: string; sortIndex: number }[];
@@ -58,7 +58,7 @@ export const handlers = [
     },
   ),
 
-  http.post(`${TAURI_ENDPOINT}/switch_provider`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/switch_provider`, async ({ request }) => {
     const { id, app } = await withJson<{ id: string; app: AppId }>(request);
     const providers = listProviders(app);
     if (!providers[id]) {
@@ -68,7 +68,7 @@ export const handlers = [
     return success(true);
   }),
 
-  http.post(`${TAURI_ENDPOINT}/add_provider`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/add_provider`, async ({ request }) => {
     const { provider, app } = await withJson<{
       provider: Provider & { id?: string };
       app: AppId;
@@ -79,7 +79,7 @@ export const handlers = [
     return success(true);
   }),
 
-  http.post(`${TAURI_ENDPOINT}/update_provider`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/update_provider`, async ({ request }) => {
     const { provider, app } = await withJson<{
       provider: Provider;
       app: AppId;
@@ -88,22 +88,22 @@ export const handlers = [
     return success(true);
   }),
 
-  http.post(`${TAURI_ENDPOINT}/delete_provider`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/delete_provider`, async ({ request }) => {
     const { id, app } = await withJson<{ id: string; app: AppId }>(request);
     deleteProvider(app, id);
     return success(true);
   }),
 
-  http.post(`${TAURI_ENDPOINT}/import_default_config`, async () => {
+  http.post(`${RUNTIME_ENDPOINT}/import_default_config`, async () => {
     resetProviderState();
     return success(true);
   }),
 
-  http.post(`${TAURI_ENDPOINT}/open_external`, () => success(true)),
+  http.post(`${RUNTIME_ENDPOINT}/open_external`, () => success(true)),
 
-  http.post(`${TAURI_ENDPOINT}/list_sessions`, () => success(listSessions())),
+  http.post(`${RUNTIME_ENDPOINT}/list_sessions`, () => success(listSessions())),
 
-  http.post(`${TAURI_ENDPOINT}/get_session_messages`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/get_session_messages`, async ({ request }) => {
     const { providerId, sourcePath } = await withJson<{
       providerId: string;
       sourcePath: string;
@@ -111,7 +111,7 @@ export const handlers = [
     return success(getSessionMessages(providerId, sourcePath));
   }),
 
-  http.post(`${TAURI_ENDPOINT}/delete_session`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/delete_session`, async ({ request }) => {
     const { providerId, sessionId, sourcePath } = await withJson<{
       providerId: string;
       sessionId: string;
@@ -120,7 +120,7 @@ export const handlers = [
     return success(deleteSession(providerId, sessionId, sourcePath));
   }),
 
-  http.post(`${TAURI_ENDPOINT}/delete_sessions`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/delete_sessions`, async ({ request }) => {
     const { items = [] } = await withJson<{
       items?: {
         providerId: string;
@@ -143,16 +143,16 @@ export const handlers = [
     );
   }),
 
-  http.post(`${TAURI_ENDPOINT}/get_settings`, () => success(getSettings())),
+  http.post(`${RUNTIME_ENDPOINT}/get_settings`, () => success(getSettings())),
 
-  http.post(`${TAURI_ENDPOINT}/save_settings`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/save_settings`, async ({ request }) => {
     const { settings } = await withJson<{ settings: Settings }>(request);
     setSettings(settings);
     return success(true);
   }),
 
   http.post(
-    `${TAURI_ENDPOINT}/set_app_config_dir_override`,
+    `${RUNTIME_ENDPOINT}/set_app_config_dir_override`,
     async ({ request }) => {
       const { path } = await withJson<{ path: string | null }>(request);
       setAppConfigDirOverrideState(path ?? null);
@@ -160,19 +160,19 @@ export const handlers = [
     },
   ),
 
-  http.post(`${TAURI_ENDPOINT}/get_app_config_dir_override`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/get_app_config_dir_override`, () =>
     success(getAppConfigDirOverride()),
   ),
 
-  http.post(`${TAURI_ENDPOINT}/get_app_config_dir`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/get_app_config_dir`, () =>
     success(getResolvedAppConfigDir()),
   ),
 
-  http.post(`${TAURI_ENDPOINT}/get_default_app_config_dir`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/get_default_app_config_dir`, () =>
     success("/default/app"),
   ),
 
-  http.post(`${TAURI_ENDPOINT}/get_config_dir`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/get_config_dir`, async ({ request }) => {
     const { app } = await withJson<{ app: AppId }>(request);
     if (app === "claude") return success("/default/claude");
     if (app === "codex") return success("/default/codex");
@@ -180,7 +180,7 @@ export const handlers = [
     return success("/default/opencode");
   }),
 
-  http.post(`${TAURI_ENDPOINT}/get_default_config_dir`, async ({ request }) => {
+  http.post(`${RUNTIME_ENDPOINT}/get_default_config_dir`, async ({ request }) => {
     const { app } = await withJson<{ app: AppId }>(request);
     if (app === "claude") return success("/default/claude");
     if (app === "codex") return success("/default/codex");
@@ -189,12 +189,12 @@ export const handlers = [
   }),
 
   // Sync current providers live (no-op success)
-  http.post(`${TAURI_ENDPOINT}/sync_current_providers_live`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/sync_current_providers_live`, () =>
     success({ success: true }),
   ),
 
   // Proxy status (for SettingsPage / ProxyPanel hooks)
-  http.post(`${TAURI_ENDPOINT}/get_proxy_status`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/get_proxy_status`, () =>
     success({
       running: false,
       address: "127.0.0.1",
@@ -214,7 +214,7 @@ export const handlers = [
     }),
   ),
 
-  http.post(`${TAURI_ENDPOINT}/get_proxy_takeover_status`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/get_proxy_takeover_status`, () =>
     success({
       claude: false,
       codex: false,
@@ -222,19 +222,19 @@ export const handlers = [
     }),
   ),
 
-  http.post(`${TAURI_ENDPOINT}/is_live_takeover_active`, () => success(false)),
+  http.post(`${RUNTIME_ENDPOINT}/is_live_takeover_active`, () => success(false)),
 
   // Failover / circuit breaker defaults
-  http.post(`${TAURI_ENDPOINT}/get_failover_queue`, () => success([])),
-  http.post(`${TAURI_ENDPOINT}/get_available_providers_for_failover`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/get_failover_queue`, () => success([])),
+  http.post(`${RUNTIME_ENDPOINT}/get_available_providers_for_failover`, () =>
     success([]),
   ),
-  http.post(`${TAURI_ENDPOINT}/add_to_failover_queue`, () => success(true)),
-  http.post(`${TAURI_ENDPOINT}/remove_from_failover_queue`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/add_to_failover_queue`, () => success(true)),
+  http.post(`${RUNTIME_ENDPOINT}/remove_from_failover_queue`, () =>
     success(true),
   ),
 
-  http.post(`${TAURI_ENDPOINT}/get_circuit_breaker_config`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/get_circuit_breaker_config`, () =>
     success({
       failureThreshold: 3,
       successThreshold: 2,
@@ -243,10 +243,10 @@ export const handlers = [
       minRequests: 5,
     }),
   ),
-  http.post(`${TAURI_ENDPOINT}/update_circuit_breaker_config`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/update_circuit_breaker_config`, () =>
     success(true),
   ),
-  http.post(`${TAURI_ENDPOINT}/get_provider_health`, () =>
+  http.post(`${RUNTIME_ENDPOINT}/get_provider_health`, () =>
     success({
       provider_id: "mock-provider",
       app_type: "claude",
@@ -258,5 +258,5 @@ export const handlers = [
       updated_at: new Date().toISOString(),
     }),
   ),
-  http.post(`${TAURI_ENDPOINT}/reset_circuit_breaker`, () => success(true)),
+  http.post(`${RUNTIME_ENDPOINT}/reset_circuit_breaker`, () => success(true)),
 ];
