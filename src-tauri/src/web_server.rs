@@ -785,7 +785,7 @@ fn resolve_workspace_directory_path(subdir: &str) -> PathBuf {
 async fn get_workspace_file(
     Path(filename): Path<String>,
 ) -> Result<Json<Option<String>>, ApiError> {
-    let content = crate::read_workspace_file(filename)
+    let content = crate::commands::read_workspace_file(filename)
         .await
         .map_err(|e| ApiError::internal(format!("failed to read workspace file: {e}")))?;
     Ok(Json(content))
@@ -795,7 +795,7 @@ async fn save_workspace_file(
     Path(filename): Path<String>,
     Json(payload): Json<ContentRequest>,
 ) -> Result<StatusCode, ApiError> {
-    crate::write_workspace_file(filename, payload.content)
+    crate::commands::write_workspace_file(filename, payload.content)
         .await
         .map_err(|e| ApiError::internal(format!("failed to write workspace file: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
@@ -803,7 +803,7 @@ async fn save_workspace_file(
 
 async fn list_workspace_daily_memory_files(
 ) -> Result<Json<Vec<crate::DailyMemoryFileInfo>>, ApiError> {
-    let files = crate::list_daily_memory_files()
+    let files = crate::commands::list_daily_memory_files()
         .await
         .map_err(|e| ApiError::internal(format!("failed to list daily memory files: {e}")))?;
     Ok(Json(files))
@@ -812,7 +812,7 @@ async fn list_workspace_daily_memory_files(
 async fn search_workspace_daily_memory_files(
     Query(query): Query<DailyMemorySearchQuery>,
 ) -> Result<Json<Vec<crate::DailyMemorySearchResult>>, ApiError> {
-    let results = crate::search_daily_memory_files(query.query)
+    let results = crate::commands::search_daily_memory_files(query.query)
         .await
         .map_err(|e| ApiError::internal(format!("failed to search daily memory files: {e}")))?;
     Ok(Json(results))
@@ -821,7 +821,7 @@ async fn search_workspace_daily_memory_files(
 async fn get_workspace_daily_memory_file(
     Path(filename): Path<String>,
 ) -> Result<Json<Option<String>>, ApiError> {
-    let content = crate::read_daily_memory_file(filename)
+    let content = crate::commands::read_daily_memory_file(filename)
         .await
         .map_err(|e| ApiError::internal(format!("failed to read daily memory file: {e}")))?;
     Ok(Json(content))
@@ -831,7 +831,7 @@ async fn save_workspace_daily_memory_file(
     Path(filename): Path<String>,
     Json(payload): Json<ContentRequest>,
 ) -> Result<StatusCode, ApiError> {
-    crate::write_daily_memory_file(filename, payload.content)
+    crate::commands::write_daily_memory_file(filename, payload.content)
         .await
         .map_err(|e| ApiError::internal(format!("failed to write daily memory file: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
@@ -840,7 +840,7 @@ async fn save_workspace_daily_memory_file(
 async fn delete_workspace_daily_memory_file(
     Path(filename): Path<String>,
 ) -> Result<StatusCode, ApiError> {
-    crate::delete_daily_memory_file(filename)
+    crate::commands::delete_daily_memory_file(filename)
         .await
         .map_err(|e| ApiError::internal(format!("failed to delete daily memory file: {e}")))?;
     Ok(StatusCode::NO_CONTENT)

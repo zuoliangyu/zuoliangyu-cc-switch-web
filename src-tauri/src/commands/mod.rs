@@ -26,7 +26,7 @@ pub(crate) use config::*;
 pub(crate) use global_proxy::*;
 pub(crate) use import_export::*;
 pub(crate) use mcp::*;
-pub use misc::*;
+pub(crate) use misc::*;
 pub(crate) use omo::*;
 pub(crate) use openclaw::*;
 pub(crate) use prompt::*;
@@ -40,4 +40,4 @@ pub(crate) use sync_support::*;
 
 pub(crate) use usage::*;
 pub(crate) use webdav_sync::*;
-pub use workspace::*;
+pub(crate) use workspace::*;

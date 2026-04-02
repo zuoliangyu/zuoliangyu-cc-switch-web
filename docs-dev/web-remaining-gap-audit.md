@@ -103,6 +103,8 @@
 - `src-tauri/Cargo.toml` 中的 `tauri` 依赖已移除，当前 `cc-switch-web` 可在无 Tauri crate 前提下通过 `cargo check`
 - `mcp`、`omo`、`openclaw`、`import_export`、`settings`、`webdav_sync`、`usage`、`skill`、`stream_check`、`provider`、`global_proxy`、`config`、`proxy` 模块中仅供旧桌面命令层复用的 public wrapper 已删除，Web handler 统一直接走 `commands/*_internal`
 - `command_state.rs` 已删除，命令层已不再保留仅用于过渡期的本地 `State` 包装类型
+- `misc` 与 `workspace` 也已从根级公开 re-export 收窄为 crate 内使用，`web_server.rs` 不再通过根模块直接调用这两组命令
+- 无 Web 路由入口的 `init_status.rs` 与对应初始化状态拉取命令已删除，避免继续保留未接入的启动阶段兼容状态通道
 
 ## 四、基于前端命令差集的剩余项
 

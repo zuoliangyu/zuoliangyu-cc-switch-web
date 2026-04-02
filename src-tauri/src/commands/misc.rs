@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 
-use crate::init_status::{InitErrorPayload, SkillsMigrationPayload};
 #[cfg(any(test, not(target_os = "windows")))]
 use once_cell::sync::Lazy;
 #[cfg(any(test, not(target_os = "windows")))]
@@ -8,24 +7,6 @@ use regex::Regex;
 use std::collections::HashMap;
 #[cfg(any(test, not(target_os = "windows")))]
 use std::path::Path;
-
-/// 获取应用启动阶段的初始化错误（若有）。
-/// 用于前端在早期主动拉取，避免事件订阅竞态导致的提示缺失。
-pub async fn get_init_error() -> Result<Option<InitErrorPayload>, String> {
-    Ok(crate::init_status::get_init_error())
-}
-
-/// 获取 JSON→SQLite 迁移结果（若有）。
-/// 只返回一次 true，之后返回 false，用于前端显示一次性 Toast 通知。
-pub async fn get_migration_result() -> Result<bool, String> {
-    Ok(crate::init_status::take_migration_success())
-}
-
-/// 获取 Skills 自动导入（SSOT）迁移结果（若有）。
-/// 只返回一次 Some({count})，之后返回 None，用于前端显示一次性 Toast 通知。
-pub async fn get_skills_migration_result() -> Result<Option<SkillsMigrationPayload>, String> {
-    Ok(crate::init_status::take_skills_migration_result())
-}
 
 #[derive(serde::Serialize)]
 pub struct ToolVersion {
@@ -44,6 +25,7 @@ const VALID_TOOLS: [&str; 4] = ["claude", "codex", "gemini", "opencode"];
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(target_os = "windows", allow(dead_code))]
 pub struct WslShellPreferenceInput {
     #[serde(default)]
     pub wsl_shell: Option<String>,
