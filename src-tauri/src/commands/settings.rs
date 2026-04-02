@@ -26,11 +26,6 @@ pub fn get_settings_internal() -> crate::settings::AppSettings {
     crate::settings::get_settings_for_frontend()
 }
 
-/// 获取设置
-pub async fn get_settings() -> Result<crate::settings::AppSettings, String> {
-    Ok(get_settings_internal())
-}
-
 /// 保存设置
 pub fn save_settings_internal(settings: crate::settings::AppSettings) -> Result<bool, String> {
     let existing = crate::settings::get_settings();
@@ -39,28 +34,16 @@ pub fn save_settings_internal(settings: crate::settings::AppSettings) -> Result<
     Ok(true)
 }
 
-pub async fn save_settings(settings: crate::settings::AppSettings) -> Result<bool, String> {
-    save_settings_internal(settings)
-}
-
 /// 获取 app_config_dir 覆盖配置 (从 Store)
 pub fn get_app_config_dir_override_internal() -> Result<Option<String>, String> {
     Ok(crate::app_store::refresh_app_config_dir_override()
         .map(|p| p.to_string_lossy().to_string()))
 }
 
-pub async fn get_app_config_dir_override() -> Result<Option<String>, String> {
-    get_app_config_dir_override_internal()
-}
-
 /// 设置 app_config_dir 覆盖配置 (到 Store)
 pub fn set_app_config_dir_override_internal(path: Option<String>) -> Result<bool, String> {
     crate::app_store::set_app_config_dir_override(path.as_deref())?;
     Ok(true)
-}
-
-pub async fn set_app_config_dir_override(path: Option<String>) -> Result<bool, String> {
-    set_app_config_dir_override_internal(path)
 }
 
 #[cfg(test)]
@@ -182,13 +165,6 @@ pub fn get_rectifier_config_internal(
     state.db.get_rectifier_config().map_err(|e| e.to_string())
 }
 
-/// 设置整流器配置
-pub async fn get_rectifier_config(
-    state: crate::command_state::State<'_, crate::AppState>,
-) -> Result<crate::proxy::types::RectifierConfig, String> {
-    get_rectifier_config_internal(state.inner())
-}
-
 pub fn set_rectifier_config_internal(
     state: &crate::AppState,
     config: crate::proxy::types::RectifierConfig,
@@ -200,25 +176,11 @@ pub fn set_rectifier_config_internal(
     Ok(true)
 }
 
-pub async fn set_rectifier_config(
-    state: crate::command_state::State<'_, crate::AppState>,
-    config: crate::proxy::types::RectifierConfig,
-) -> Result<bool, String> {
-    set_rectifier_config_internal(state.inner(), config)
-}
-
 /// 获取优化器配置
 pub fn get_optimizer_config_internal(
     state: &crate::AppState,
 ) -> Result<crate::proxy::types::OptimizerConfig, String> {
     state.db.get_optimizer_config().map_err(|e| e.to_string())
-}
-
-/// 设置优化器配置
-pub async fn get_optimizer_config(
-    state: crate::command_state::State<'_, crate::AppState>,
-) -> Result<crate::proxy::types::OptimizerConfig, String> {
-    get_optimizer_config_internal(state.inner())
 }
 
 pub fn set_optimizer_config_internal(
@@ -241,25 +203,11 @@ pub fn set_optimizer_config_internal(
     Ok(true)
 }
 
-pub async fn set_optimizer_config(
-    state: crate::command_state::State<'_, crate::AppState>,
-    config: crate::proxy::types::OptimizerConfig,
-) -> Result<bool, String> {
-    set_optimizer_config_internal(state.inner(), config)
-}
-
 /// 获取日志配置
 pub fn get_log_config_internal(
     state: &crate::AppState,
 ) -> Result<crate::proxy::types::LogConfig, String> {
     state.db.get_log_config().map_err(|e| e.to_string())
-}
-
-/// 设置日志配置
-pub async fn get_log_config(
-    state: crate::command_state::State<'_, crate::AppState>,
-) -> Result<crate::proxy::types::LogConfig, String> {
-    get_log_config_internal(state.inner())
 }
 
 pub fn set_log_config_internal(
@@ -277,11 +225,4 @@ pub fn set_log_config_internal(
         config.level
     );
     Ok(true)
-}
-
-pub async fn set_log_config(
-    state: crate::command_state::State<'_, crate::AppState>,
-    config: crate::proxy::types::LogConfig,
-) -> Result<bool, String> {
-    set_log_config_internal(state.inner(), config)
 }

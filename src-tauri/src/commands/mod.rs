@@ -33,11 +33,11 @@ pub(crate) use prompt::*;
 pub use provider::*;
 pub use proxy::*;
 pub use session_manager::*;
-pub use settings::*;
+pub(crate) use settings::*;
 pub use skill::*;
 pub use stream_check::*;
 pub(crate) use sync_support::*;
 
-pub use usage::*;
-pub use webdav_sync::*;
+pub(crate) use usage::*;
+pub(crate) use webdav_sync::*;
 pub use workspace::*;

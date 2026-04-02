@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 
 use serde_json::{json, Value};
-use crate::command_state::State;
 use tokio::task::spawn_blocking;
 
 use crate::commands::sync_support::{
@@ -10,7 +9,6 @@ use crate::commands::sync_support::{
 use crate::error::AppError;
 use crate::services::webdav_sync as webdav_sync_service;
 use crate::settings::{self, WebDavSyncSettings};
-use crate::store::AppState;
 
 fn persist_sync_error(settings: &mut WebDavSyncSettings, error: &AppError, source: &str) {
     settings.status.last_error = Some(error.to_string());
@@ -101,13 +99,6 @@ pub async fn webdav_test_connection_internal(
     }))
 }
 
-pub async fn webdav_test_connection(
-    settings: WebDavSyncSettings,
-    #[allow(non_snake_case)] preserveEmptyPassword: Option<bool>,
-) -> Result<Value, String> {
-    webdav_test_connection_internal(settings, preserveEmptyPassword).await
-}
-
 pub async fn webdav_sync_upload_internal(db: std::sync::Arc<crate::database::Database>) -> Result<Value, String> {
     let mut settings = require_enabled_webdav_settings()?;
 
@@ -115,10 +106,6 @@ pub async fn webdav_sync_upload_internal(db: std::sync::Arc<crate::database::Dat
     map_sync_result(result, |error| {
         persist_sync_error(&mut settings, error, "manual")
     })
-}
-
-pub async fn webdav_sync_upload(state: State<'_, AppState>) -> Result<Value, String> {
-    webdav_sync_upload_internal(state.db.clone()).await
 }
 
 pub async fn webdav_sync_download_internal(
@@ -147,10 +134,6 @@ pub async fn webdav_sync_download_internal(
     Ok(result)
 }
 
-pub async fn webdav_sync_download(state: State<'_, AppState>) -> Result<Value, String> {
-    webdav_sync_download_internal(state.db.clone()).await
-}
-
 pub async fn webdav_sync_save_settings_internal(
     settings: WebDavSyncSettings,
     #[allow(non_snake_case)] passwordTouched: Option<bool>,
@@ -171,23 +154,12 @@ pub async fn webdav_sync_save_settings_internal(
     Ok(json!({ "success": true }))
 }
 
-pub async fn webdav_sync_save_settings(
-    settings: WebDavSyncSettings,
-    #[allow(non_snake_case)] passwordTouched: Option<bool>,
-) -> Result<Value, String> {
-    webdav_sync_save_settings_internal(settings, passwordTouched).await
-}
-
 pub async fn webdav_sync_fetch_remote_info_internal() -> Result<Value, String> {
     let settings = require_enabled_webdav_settings()?;
     let info = webdav_sync_service::fetch_remote_info(&settings)
         .await
         .map_err(|e| e.to_string())?;
     Ok(info.unwrap_or(json!({ "empty": true })))
-}
-
-pub async fn webdav_sync_fetch_remote_info() -> Result<Value, String> {
-    webdav_sync_fetch_remote_info_internal().await
 }
 
 #[cfg(test)]

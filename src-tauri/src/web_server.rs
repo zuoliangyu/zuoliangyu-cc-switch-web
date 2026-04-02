@@ -30,9 +30,8 @@ use crate::services::omo::OmoLocalFileData;
 use crate::services::skill::{
     DiscoverableSkill, ImportSkillSelection, SkillBackupEntry, SkillRepo, SkillUninstallResult,
 };
-use crate::services::webdav_sync as webdav_sync_service;
 use crate::services::SwitchResult;
-use crate::settings::{self, WebDavSyncSettings};
+use crate::settings::WebDavSyncSettings;
 use crate::store::AppState;
 use crate::Database;
 use tokio::sync::RwLock;
@@ -302,19 +301,6 @@ fn sanitize_export_sql_filename(filename: Option<String>) -> String {
     }
 
     sanitized
-}
-
-fn resolve_webdav_password_for_request(
-    mut incoming: WebDavSyncSettings,
-    existing: Option<WebDavSyncSettings>,
-    preserve_empty_password: bool,
-) -> WebDavSyncSettings {
-    if let Some(existing_settings) = existing {
-        if preserve_empty_password && incoming.password.is_empty() {
-            incoming.password = existing_settings.password;
-        }
-    }
-    incoming
 }
 
 async fn get_mcp_servers(
@@ -1003,7 +989,7 @@ async fn get_usage_summary(
     State(state): State<WebApiState>,
     Query(query): Query<UsageRangeQuery>,
 ) -> Result<Json<crate::services::usage_stats::UsageSummary>, ApiError> {
-    let summary = crate::get_usage_summary_internal(
+    let summary = crate::commands::get_usage_summary_internal(
         state.app_state.as_ref(),
         query.start_date,
         query.end_date,
@@ -1016,7 +1002,7 @@ async fn get_usage_trends(
     State(state): State<WebApiState>,
     Query(query): Query<UsageRangeQuery>,
 ) -> Result<Json<Vec<crate::services::usage_stats::DailyStats>>, ApiError> {
-    let trends = crate::get_usage_trends_internal(
+    let trends = crate::commands::get_usage_trends_internal(
         state.app_state.as_ref(),
         query.start_date,
         query.end_date,
@@ -1028,7 +1014,7 @@ async fn get_usage_trends(
 async fn get_usage_provider_stats(
     State(state): State<WebApiState>,
 ) -> Result<Json<Vec<crate::services::usage_stats::ProviderStats>>, ApiError> {
-    let stats = crate::get_provider_stats_internal(state.app_state.as_ref())
+    let stats = crate::commands::get_provider_stats_internal(state.app_state.as_ref())
         .map_err(|e| ApiError::internal(format!("failed to load provider stats: {e}")))?;
     Ok(Json(stats))
 }
@@ -1036,7 +1022,7 @@ async fn get_usage_provider_stats(
 async fn get_usage_model_stats(
     State(state): State<WebApiState>,
 ) -> Result<Json<Vec<crate::services::usage_stats::ModelStats>>, ApiError> {
-    let stats = crate::get_model_stats_internal(state.app_state.as_ref())
+    let stats = crate::commands::get_model_stats_internal(state.app_state.as_ref())
         .map_err(|e| ApiError::internal(format!("failed to load model stats: {e}")))?;
     Ok(Json(stats))
 }
@@ -1045,7 +1031,7 @@ async fn get_usage_request_logs(
     State(state): State<WebApiState>,
     Json(payload): Json<RequestLogsPayload>,
 ) -> Result<Json<crate::services::usage_stats::PaginatedLogs>, ApiError> {
-    let logs = crate::get_request_logs_internal(
+    let logs = crate::commands::get_request_logs_internal(
         state.app_state.as_ref(),
         payload.filters,
         payload.page.unwrap_or(0),
@@ -1059,7 +1045,7 @@ async fn get_usage_request_detail(
     State(state): State<WebApiState>,
     Path(request_id): Path<String>,
 ) -> Result<Json<Option<crate::services::usage_stats::RequestLogDetail>>, ApiError> {
-    let detail = crate::get_request_detail_internal(state.app_state.as_ref(), request_id)
+    let detail = crate::commands::get_request_detail_internal(state.app_state.as_ref(), request_id)
         .map_err(|e| ApiError::internal(format!("failed to load request detail: {e}")))?;
     Ok(Json(detail))
 }
@@ -1067,7 +1053,7 @@ async fn get_usage_request_detail(
 async fn get_usage_model_pricing(
     State(state): State<WebApiState>,
 ) -> Result<Json<Vec<UsageModelPricingInfo>>, ApiError> {
-    let pricing = crate::get_model_pricing_internal(state.app_state.as_ref())
+    let pricing = crate::commands::get_model_pricing_internal(state.app_state.as_ref())
         .map_err(|e| ApiError::internal(format!("failed to load model pricing: {e}")))?;
     Ok(Json(
         pricing
@@ -1089,7 +1075,7 @@ async fn update_usage_model_pricing(
     Path(model_id): Path<String>,
     Json(payload): Json<UpdateModelPricingPayload>,
 ) -> Result<StatusCode, ApiError> {
-    crate::update_model_pricing_internal(
+    crate::commands::update_model_pricing_internal(
         state.app_state.as_ref(),
         model_id,
         payload.display_name,
@@ -1106,7 +1092,7 @@ async fn delete_usage_model_pricing(
     State(state): State<WebApiState>,
     Path(model_id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
-    crate::delete_model_pricing_internal(state.app_state.as_ref(), model_id)
+    crate::commands::delete_model_pricing_internal(state.app_state.as_ref(), model_id)
         .map_err(|e| ApiError::internal(format!("failed to delete model pricing: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -1115,7 +1101,8 @@ async fn get_usage_provider_limits(
     State(state): State<WebApiState>,
     Path((app_type, provider_id)): Path<(String, String)>,
 ) -> Result<Json<crate::services::usage_stats::ProviderLimitStatus>, ApiError> {
-    let limits = crate::check_provider_limits_internal(state.app_state.as_ref(), provider_id, app_type)
+    let limits =
+        crate::commands::check_provider_limits_internal(state.app_state.as_ref(), provider_id, app_type)
         .map_err(|e| ApiError::internal(format!("failed to load provider limits: {e}")))?;
     Ok(Json(limits))
 }
@@ -1299,7 +1286,7 @@ async fn health() -> Json<HealthResponse> {
 }
 
 async fn get_settings() -> Json<crate::settings::AppSettings> {
-    Json(crate::get_settings_internal())
+    Json(crate::commands::get_settings_internal())
 }
 
 async fn export_config_download(
@@ -1402,30 +1389,24 @@ async fn import_config_upload(
 async fn webdav_test_connection(
     Json(payload): Json<WebdavTestRequest>,
 ) -> Result<Json<Value>, ApiError> {
-    let preserve_empty = payload.preserve_empty_password.unwrap_or(true);
-    let resolved = resolve_webdav_password_for_request(
+    crate::commands::webdav_test_connection_internal(
         payload.settings,
-        settings::get_webdav_sync_settings(),
-        preserve_empty,
-    );
-    webdav_sync_service::check_connection(&resolved)
+        payload.preserve_empty_password,
+    )
         .await
-        .map_err(|e| ApiError::bad_request(e.to_string()))?;
-    Ok(Json(json!({
-        "success": true,
-        "message": "WebDAV connection ok",
-    })))
+        .map(Json)
+        .map_err(|e| ApiError::bad_request(e.to_string()))
 }
 
 async fn webdav_sync_upload(State(state): State<WebApiState>) -> Result<Json<Value>, ApiError> {
-    crate::webdav_sync_upload_internal(state.app_state.db.clone())
+    crate::commands::webdav_sync_upload_internal(state.app_state.db.clone())
         .await
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to upload webdav snapshot: {e}")))
 }
 
 async fn webdav_sync_download(State(state): State<WebApiState>) -> Result<Json<Value>, ApiError> {
-    crate::webdav_sync_download_internal(state.app_state.db.clone())
+    crate::commands::webdav_sync_download_internal(state.app_state.db.clone())
         .await
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to download webdav snapshot: {e}")))
@@ -1434,14 +1415,14 @@ async fn webdav_sync_download(State(state): State<WebApiState>) -> Result<Json<V
 async fn webdav_sync_save_settings(
     Json(payload): Json<WebdavSaveSettingsRequest>,
 ) -> Result<Json<Value>, ApiError> {
-    crate::webdav_sync_save_settings_internal(payload.settings, payload.password_touched)
+    crate::commands::webdav_sync_save_settings_internal(payload.settings, payload.password_touched)
         .await
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to save webdav sync settings: {e}")))
 }
 
 async fn webdav_sync_fetch_remote_info() -> Result<Json<Value>, ApiError> {
-    crate::webdav_sync_fetch_remote_info_internal()
+    crate::commands::webdav_sync_fetch_remote_info_internal()
         .await
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to fetch webdav remote info: {e}")))
@@ -1450,19 +1431,19 @@ async fn webdav_sync_fetch_remote_info() -> Result<Json<Value>, ApiError> {
 async fn save_settings(
     Json(settings): Json<crate::settings::AppSettings>,
 ) -> Result<Json<bool>, ApiError> {
-    crate::save_settings_internal(settings)
+    crate::commands::save_settings_internal(settings)
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to save settings: {e}")))
 }
 
 async fn get_app_config_dir_override() -> Json<Option<String>> {
-    Json(crate::get_app_config_dir_override_internal().unwrap_or(None))
+    Json(crate::commands::get_app_config_dir_override_internal().unwrap_or(None))
 }
 
 async fn set_app_config_dir_override(
     Json(payload): Json<OptionalPathRequest>,
 ) -> Result<Json<bool>, ApiError> {
-    crate::set_app_config_dir_override_internal(payload.path)
+    crate::commands::set_app_config_dir_override_internal(payload.path)
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to save app config dir override: {e}")))
 }
@@ -1544,7 +1525,7 @@ async fn sync_current_providers_live(
 async fn get_rectifier_config(
     State(state): State<WebApiState>,
 ) -> Result<Json<RectifierConfig>, ApiError> {
-    crate::get_rectifier_config_internal(state.app_state.as_ref())
+    crate::commands::get_rectifier_config_internal(state.app_state.as_ref())
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to load rectifier config: {e}")))
 }
@@ -1553,7 +1534,7 @@ async fn set_rectifier_config(
     State(state): State<WebApiState>,
     Json(config): Json<RectifierConfig>,
 ) -> Result<Json<bool>, ApiError> {
-    crate::set_rectifier_config_internal(state.app_state.as_ref(), config)
+    crate::commands::set_rectifier_config_internal(state.app_state.as_ref(), config)
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to save rectifier config: {e}")))
 }
@@ -1561,7 +1542,7 @@ async fn set_rectifier_config(
 async fn get_optimizer_config(
     State(state): State<WebApiState>,
 ) -> Result<Json<OptimizerConfig>, ApiError> {
-    crate::get_optimizer_config_internal(state.app_state.as_ref())
+    crate::commands::get_optimizer_config_internal(state.app_state.as_ref())
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to load optimizer config: {e}")))
 }
@@ -1570,13 +1551,13 @@ async fn set_optimizer_config(
     State(state): State<WebApiState>,
     Json(config): Json<OptimizerConfig>,
 ) -> Result<Json<bool>, ApiError> {
-    crate::set_optimizer_config_internal(state.app_state.as_ref(), config)
+    crate::commands::set_optimizer_config_internal(state.app_state.as_ref(), config)
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to save optimizer config: {e}")))
 }
 
 async fn get_log_config(State(state): State<WebApiState>) -> Result<Json<LogConfig>, ApiError> {
-    crate::get_log_config_internal(state.app_state.as_ref())
+    crate::commands::get_log_config_internal(state.app_state.as_ref())
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to load log config: {e}")))
 }
@@ -1585,7 +1566,7 @@ async fn set_log_config(
     State(state): State<WebApiState>,
     Json(config): Json<LogConfig>,
 ) -> Result<Json<bool>, ApiError> {
-    crate::set_log_config_internal(state.app_state.as_ref(), config)
+    crate::commands::set_log_config_internal(state.app_state.as_ref(), config)
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to save log config: {e}")))
 }
