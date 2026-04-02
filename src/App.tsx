@@ -49,7 +49,6 @@ import UnifiedMcpPanel from "@/components/mcp/UnifiedMcpPanel";
 import PromptPanel from "@/components/prompts/PromptPanel";
 import { SkillsPage } from "@/components/skills/SkillsPage";
 import UnifiedSkillsPanel from "@/components/skills/UnifiedSkillsPanel";
-import { AgentsPanel } from "@/components/agents/AgentsPanel";
 import { UniversalProviderPanel } from "@/components/universal";
 import { McpIcon } from "@/components/BrandIcons";
 import { Button } from "@/components/ui/button";
@@ -71,7 +70,6 @@ type View =
   | "skills"
   | "skillsDiscovery"
   | "mcp"
-  | "agents"
   | "universal"
   | "sessions"
   | "workspace"
@@ -108,7 +106,6 @@ const VALID_VIEWS: View[] = [
   "skills",
   "skillsDiscovery",
   "mcp",
-  "agents",
   "universal",
   "sessions",
   "workspace",
@@ -497,10 +494,6 @@ function App() {
               onOpenChange={() => setCurrentView("providers")}
             />
           );
-        case "agents":
-          return (
-            <AgentsPanel onOpenChange={() => setCurrentView("providers")} />
-          );
         case "universal":
           return (
             <div className="px-6 pt-4">
@@ -640,7 +633,6 @@ function App() {
                   {currentView === "skills" && t("skills.title")}
                   {currentView === "skillsDiscovery" && t("skills.title")}
                   {currentView === "mcp" && t("mcp.unifiedPanel.title")}
-                  {currentView === "agents" && t("agents.title")}
                   {currentView === "universal" &&
                     t("universalProvider.title", {
                       defaultValue: "统一供应商",
