@@ -35,12 +35,8 @@ fn should_sync_opencode_mcp() -> bool {
 // Format Conversion: CC Switch → OpenCode
 // ============================================================================
 
-/// Convert CC Switch unified format to OpenCode format
-///
-/// Conversion rules:
-/// - `stdio` → `local`, command+args → command array, env → environment
-/// - `sse`/`http` → `remote`, url preserved
-pub fn convert_to_opencode_format(spec: &Value) -> Result<Value, AppError> {
+/// Convert CC Switch unified format to OpenCode format.
+fn convert_to_opencode_format(spec: &Value) -> Result<Value, AppError> {
     let obj = spec
         .as_object()
         .ok_or_else(|| AppError::McpValidation("MCP spec must be a JSON object".into()))?;
@@ -107,12 +103,8 @@ pub fn convert_to_opencode_format(spec: &Value) -> Result<Value, AppError> {
 // Format Conversion: OpenCode → CC Switch
 // ============================================================================
 
-/// Convert OpenCode format to CC Switch unified format
-///
-/// Conversion rules:
-/// - `local` → `stdio`, command array → command+args, environment → env
-/// - `remote` → `sse`, url preserved
-pub fn convert_from_opencode_format(spec: &Value) -> Result<Value, AppError> {
+/// Convert OpenCode format to CC Switch unified format.
+fn convert_from_opencode_format(spec: &Value) -> Result<Value, AppError> {
     let obj = spec
         .as_object()
         .ok_or_else(|| AppError::McpValidation("OpenCode MCP spec must be a JSON object".into()))?;

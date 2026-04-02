@@ -159,6 +159,7 @@
 - `src-tauri/src/lib.rs` 的公开导出面已收窄为当前 Web 二进制与保留测试真实需要的接口，避免继续把旧 MCP / Provider / Proxy 服务入口作为库级公共 API 暴露
 - `src-tauri/Cargo.toml` 与前端三语应用描述已同步改为 Web 分支定位，减少仓库说明、包元信息与界面文案之间的不一致
 - `src-tauri/src/mcp/*` 中零调用的聚合同步链 `sync_enabled_to_claude/codex/gemini` 及其辅助提取函数已删除；当前 MCP 主链只保留前端实际使用的导入、单项同步与移除能力
+- `mcp/opencode.rs` 中仅供模块内部与同文件测试使用的格式转换函数已收回私有；`opencode_config.rs` 与 `openclaw_config.rs` 中零引用的 `get_opencode_env_path()`、`OpenClawAgents` 也已删除，继续缩小无实际使用的公开面
 
 ## 四、基于前端命令差集的剩余项
 
