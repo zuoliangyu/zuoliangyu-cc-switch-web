@@ -8,7 +8,6 @@ use crate::services::stream_check::{
 use crate::store::AppState;
 use std::collections::HashSet;
 use std::sync::Arc;
-use crate::command_state::State;
 use tokio::sync::RwLock;
 
 /// 流式健康检查（单个供应商）
@@ -130,14 +129,14 @@ pub async fn stream_check_all_providers_internal(
     Ok(results)
 }
 
-/// 获取流式检查配置
-pub fn get_stream_check_config(state: State<'_, AppState>) -> Result<StreamCheckConfig, AppError> {
+pub(crate) fn get_stream_check_config_internal(
+    state: &AppState,
+) -> Result<StreamCheckConfig, AppError> {
     state.db.get_stream_check_config()
 }
 
-/// 保存流式检查配置
-pub fn save_stream_check_config(
-    state: State<'_, AppState>,
+pub(crate) fn save_stream_check_config_internal(
+    state: &AppState,
     config: StreamCheckConfig,
 ) -> Result<(), AppError> {
     state.db.save_stream_check_config(&config)

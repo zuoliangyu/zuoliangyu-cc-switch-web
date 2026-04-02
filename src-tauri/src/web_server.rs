@@ -1574,10 +1574,7 @@ async fn set_log_config(
 async fn get_stream_check_config(
     State(state): State<WebApiState>,
 ) -> Result<Json<crate::services::stream_check::StreamCheckConfig>, ApiError> {
-    let config = state
-        .app_state
-        .db
-        .get_stream_check_config()
+    let config = crate::commands::get_stream_check_config_internal(state.app_state.as_ref())
         .map_err(|e| ApiError::internal(format!("failed to load stream check config: {e}")))?;
     Ok(Json(config))
 }
@@ -1586,10 +1583,7 @@ async fn set_stream_check_config(
     State(state): State<WebApiState>,
     Json(config): Json<crate::services::stream_check::StreamCheckConfig>,
 ) -> Result<StatusCode, ApiError> {
-    state
-        .app_state
-        .db
-        .save_stream_check_config(&config)
+    crate::commands::save_stream_check_config_internal(state.app_state.as_ref(), config)
         .map_err(|e| ApiError::internal(format!("failed to save stream check config: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }

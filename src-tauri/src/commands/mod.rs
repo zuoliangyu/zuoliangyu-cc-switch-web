@@ -13,7 +13,7 @@ mod provider;
 mod proxy;
 mod session_manager;
 mod settings;
-pub mod skill;
+mod skill;
 mod stream_check;
 mod sync_support;
 
@@ -34,8 +34,8 @@ pub use provider::*;
 pub use proxy::*;
 pub use session_manager::*;
 pub(crate) use settings::*;
-pub use skill::*;
-pub use stream_check::*;
+pub(crate) use skill::*;
+pub(crate) use stream_check::*;
 pub(crate) use sync_support::*;
 
 pub(crate) use usage::*;
