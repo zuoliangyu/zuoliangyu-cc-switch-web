@@ -181,6 +181,7 @@
 - `clear_skills`、`LegacySkillMigrationRow`、`migrate_skills_to_ssot` 等当前只剩单测消费的旧迁移辅助逻辑，也已缩到测试编译域，避免继续进入 Web 正式产物
 - `MultiAppConfig::load/save` 及其 `config.json` 兼容迁移 helper、`get_app_config_path`、`copy_file` 等旧配置时代辅助函数，已明确限定到测试编译域；正式 Web 产物不再携带这层未接线兼容加载器
 - MCP 导入链已不再通过 `MultiAppConfig` 这个旧配置容器做中转，而是直接围绕统一 `McpServer` 集合导入和落库；同步接口也移除了无意义的 `_config` 形参，进一步切断运行时对旧配置结构的依赖
+- 历史目录名 `src-tauri/` 已重命名为 `backend/`，并同步修正 package scripts、Dockerfile、启动脚本与 GitHub Actions，仓库层面的 Tauri 命名残留已进一步减少
 
 ## 四、基于前端命令差集的剩余项
 

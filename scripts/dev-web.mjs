@@ -129,7 +129,7 @@ async function main() {
   startProcess("web-service", cargoCmd, [
     "run",
     "--manifest-path",
-    "src-tauri/Cargo.toml",
+    "backend/Cargo.toml",
     "--bin",
     "cc-switch-web",
   ]);

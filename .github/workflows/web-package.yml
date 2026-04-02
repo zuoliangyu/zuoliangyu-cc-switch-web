@@ -73,15 +73,15 @@ jobs:
 
       - name: Build Windows service
         if: runner.os == 'Windows'
-        run: cargo build --locked --release --manifest-path src-tauri/Cargo.toml --bin cc-switch-web
+        run: cargo build --locked --release --manifest-path backend/Cargo.toml --bin cc-switch-web
 
       - name: Build macOS x86_64 service
         if: runner.os == 'macOS'
-        run: cargo build --locked --release --target x86_64-apple-darwin --manifest-path src-tauri/Cargo.toml --bin cc-switch-web
+        run: cargo build --locked --release --target x86_64-apple-darwin --manifest-path backend/Cargo.toml --bin cc-switch-web
 
       - name: Build macOS aarch64 service
         if: runner.os == 'macOS'
-        run: cargo build --locked --release --target aarch64-apple-darwin --manifest-path src-tauri/Cargo.toml --bin cc-switch-web
+        run: cargo build --locked --release --target aarch64-apple-darwin --manifest-path backend/Cargo.toml --bin cc-switch-web
 
       - name: Package Windows archive
         if: runner.os == 'Windows'
@@ -90,7 +90,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $pkgDir = Join-Path $PWD '${{ matrix.artifact_name }}'
           New-Item -ItemType Directory -Force -Path $pkgDir | Out-Null
-          Copy-Item 'src-tauri/target/release/cc-switch-web.exe' (Join-Path $pkgDir 'cc-switch-web.exe')
+          Copy-Item 'backend/target/release/cc-switch-web.exe' (Join-Path $pkgDir 'cc-switch-web.exe')
           Copy-Item 'scripts/run-web-release.cmd' (Join-Path $pkgDir 'run-web.cmd')
           Copy-Item 'scripts/run-web-release.ps1' (Join-Path $pkgDir 'run-web.ps1')
           Copy-Item 'dist' (Join-Path $pkgDir 'dist') -Recurse
@@ -119,8 +119,8 @@ jobs:
           rm -rf "$pkg_dir"
           mkdir -p "$pkg_dir"
           lipo -create \
-            "src-tauri/target/x86_64-apple-darwin/release/cc-switch-web" \
-            "src-tauri/target/aarch64-apple-darwin/release/cc-switch-web" \
+            "backend/target/x86_64-apple-darwin/release/cc-switch-web" \
+            "backend/target/aarch64-apple-darwin/release/cc-switch-web" \
             -output "$pkg_dir/cc-switch-web"
           cp scripts/run-web-release.command "$pkg_dir/run-web.command"
           cp scripts/run-web-release.sh "$pkg_dir/run-web.sh"

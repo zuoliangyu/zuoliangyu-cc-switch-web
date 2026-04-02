@@ -10,7 +10,7 @@ $distDir = if ($env:CC_SWITCH_WEB_DIST_DIR) {
 } else {
   Join-Path $repoRoot "dist"
 }
-$binaryPath = Join-Path $repoRoot "src-tauri\target\release\cc-switch-web.exe"
+$binaryPath = Join-Path $repoRoot "backend\target\release\cc-switch-web.exe"
 
 if (-not (Test-Path $distDir)) {
   Write-Error "dist 目录不存在: $distDir"

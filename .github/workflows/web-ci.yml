@@ -18,7 +18,7 @@ on:
       - "Cargo.lock"
       - "Cargo.toml"
       - "src/**"
-      - "src-tauri/**"
+      - "backend/**"
       - "scripts/**"
       - "Dockerfile"
       - "docker-compose.yml"
@@ -31,7 +31,7 @@ on:
       - "Cargo.lock"
       - "Cargo.toml"
       - "src/**"
-      - "src-tauri/**"
+      - "backend/**"
       - "scripts/**"
       - "Dockerfile"
       - "docker-compose.yml"
@@ -110,7 +110,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            src-tauri/target/
+            backend/target/
           key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-${{ runner.arch }}-cargo-
 
@@ -121,7 +121,7 @@ jobs:
         run: pnpm exec tsc --noEmit -p tsconfig.json
 
       - name: Rust check (cc-switch-web)
-        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --bin cc-switch-web
+        run: cargo check --locked --manifest-path backend/Cargo.toml --bin cc-switch-web
 
   docker-smoke:
     name: Docker Smoke

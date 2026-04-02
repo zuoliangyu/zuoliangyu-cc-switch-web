@@ -10,7 +10,7 @@ if defined CC_SWITCH_WEB_DIST_DIR (
   set "DIST_DIR=%REPO_ROOT%\dist"
 )
 
-set "BINARY_PATH=%REPO_ROOT%\src-tauri\target\release\cc-switch-web.exe"
+set "BINARY_PATH=%REPO_ROOT%\backend\target\release\cc-switch-web.exe"
 
 if not exist "%DIST_DIR%" (
   echo dist 目录不存在: %DIST_DIR%

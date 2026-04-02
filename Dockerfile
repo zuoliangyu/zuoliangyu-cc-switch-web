@@ -25,14 +25,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY . .
 COPY --from=frontend-builder /app/dist ./dist
 
-RUN cargo build --release --manifest-path src-tauri/Cargo.toml --bin cc-switch-web
+RUN cargo build --release --manifest-path backend/Cargo.toml --bin cc-switch-web
 
 
 FROM debian:bookworm-slim AS package-linux-dir
 
 WORKDIR /out/cc-switch-web-linux-x64
 
-COPY --from=service-builder /app/target/release/cc-switch-web ./cc-switch-web
+COPY --from=service-builder /app/backend/target/release/cc-switch-web ./cc-switch-web
 COPY --from=frontend-builder /app/dist ./dist
 COPY scripts/run-web-release.sh ./run-web.sh
 
@@ -62,7 +62,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=service-builder /app/target/release/cc-switch-web /usr/local/bin/cc-switch-web
+COPY --from=service-builder /app/backend/target/release/cc-switch-web /usr/local/bin/cc-switch-web
 COPY --from=frontend-builder /app/dist ./dist
 
 VOLUME ["/data"]

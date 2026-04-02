@@ -21,7 +21,7 @@ console.log(`监听地址: ${host}:${port}`);
 console.log(`访问地址: http://${host}:${port}`);
 console.log(`前端目录: ${distDir}`);
 console.log(
-  "服务命令: cargo run --manifest-path src-tauri/Cargo.toml --bin cc-switch-web",
+  "服务命令: cargo run --manifest-path backend/Cargo.toml --bin cc-switch-web",
 );
 if (host === "0.0.0.0") {
   console.log("当前绑定到 0.0.0.0，请使用服务器 IP 或本机地址访问");
@@ -31,7 +31,7 @@ console.log("");
 
 const child = spawn(
   cargoCmd,
-  ["run", "--manifest-path", "src-tauri/Cargo.toml", "--bin", "cc-switch-web"],
+  ["run", "--manifest-path", "backend/Cargo.toml", "--bin", "cc-switch-web"],
   {
     cwd: process.cwd(),
     stdio: "inherit",

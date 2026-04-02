@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 DIST_DIR="${CC_SWITCH_WEB_DIST_DIR:-${REPO_ROOT}/dist}"
-BINARY_PATH="${REPO_ROOT}/src-tauri/target/release/cc-switch-web"
+BINARY_PATH="${REPO_ROOT}/backend/target/release/cc-switch-web"
 
 if [[ ! -d "${DIST_DIR}" ]]; then
   echo "dist 目录不存在: ${DIST_DIR}" >&2
