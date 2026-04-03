@@ -1,11 +1,14 @@
 node_modules
 dist
 target
+**/target
+backend/target
 .git
 .github
 .vscode
 .idea
 docs
 docs-dev
+release
 *.log
 pnpm-debug.log*

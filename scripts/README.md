@@ -68,10 +68,14 @@
 
 - `package-artifacts.ps1`
   - Windows 本地产物导出脚本
-  - 一次生成三类产物：
+  - 默认一次生成三类产物：
     - Windows 可执行文件
     - Linux 发布包
     - Docker 镜像包
+  - 也支持单独模式：
+    - `w`：仅 Windows
+    - `l`：仅 Linux
+    - `d`：仅 Docker
 
 ### 图标处理脚本
 
@@ -108,6 +112,15 @@
 
 - `.\scripts\package-artifacts.ps1`
   - Windows 下直接导出 Windows / Linux / Docker 三类产物
+
+- `.\scripts\package-artifacts.ps1 w`
+  - Windows 下仅导出 Windows 可执行文件
+
+- `.\scripts\package-artifacts.ps1 l`
+  - Windows 下仅导出 Linux 发布包
+
+- `.\scripts\package-artifacts.ps1 d`
+  - Windows 下仅导出 Docker 镜像包
 
 ## 建议理解方式
 
