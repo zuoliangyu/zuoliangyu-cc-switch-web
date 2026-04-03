@@ -107,7 +107,12 @@ jobs:
             --target package-linux-tar \
             --output "type=local,dest=$out_dir" \
             .
-          mv "$out_dir/${{ matrix.archive_name }}" "${{ matrix.archive_name }}"
+          archive_path="$out_dir/${{ matrix.archive_name }}"
+          if [ ! -f "$archive_path" ]; then
+            archive_path="$out_dir/out/${{ matrix.archive_name }}"
+          fi
+          test -f "$archive_path"
+          mv "$archive_path" "${{ matrix.archive_name }}"
 
       - name: Package macOS universal archive
         if: runner.os == 'macOS'
