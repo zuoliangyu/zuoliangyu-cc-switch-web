@@ -45,6 +45,7 @@ If you are looking for the original CC Switch project or upstream release inform
 | Local release build (`w`) | `pnpm build` |
 | Docker image build (`d`) | `pnpm build -- d` |
 | Project check | `pnpm check` |
+| Export Windows/Linux/Docker artifacts on Windows | `.\scripts\package-artifacts.ps1` |
 
 ### Local Development
 
@@ -190,6 +191,30 @@ release/docker-linux/cc-switch-web-linux-x64/
 The package contains the single executable `cc-switch-web`. After extracting on Linux, run that binary directly.
 
 The exported Linux binary is built as `x86_64-unknown-linux-musl`, which reduces host-side runtime dependency issues.
+
+### Export Artifacts On Windows
+
+If you are working on Windows and already have Rust plus Docker/Buildx installed locally, run:
+
+```powershell
+.\scripts\package-artifacts.ps1
+```
+
+The script generates all three local artifacts in one pass:
+
+- Windows executable: `release\local-artifacts\windows\cc-switch-web.exe`
+- Linux release package: `release\local-artifacts\linux\cc-switch-web-linux-x64.tar.gz`
+- Docker image archive: `release\local-artifacts\docker\cc-switch-web-docker-image.tar.gz`
+
+Details:
+
+- The Windows artifact comes from local `cargo build --locked --release`
+- The Linux artifact comes from Docker Buildx using the `package-linux-tar` stage
+- The Docker image archive can be imported with:
+
+```powershell
+docker load -i .\release\local-artifacts\docker\cc-switch-web-docker-image.tar.gz
+```
 
 ### Linux systemd Example
 

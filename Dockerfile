@@ -44,7 +44,7 @@ WORKDIR /work
 
 COPY --from=package-linux-dir /out/cc-switch-web-linux-x64 ./cc-switch-web-linux-x64
 
-RUN tar -czf /out/cc-switch-web-linux-x64.tar.gz cc-switch-web-linux-x64
+RUN mkdir -p /out && tar -czf /out/cc-switch-web-linux-x64.tar.gz cc-switch-web-linux-x64
 
 
 FROM alpine:3.20
