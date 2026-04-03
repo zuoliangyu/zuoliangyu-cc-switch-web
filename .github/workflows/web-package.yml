@@ -7,7 +7,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: web-package-${{ github.ref }}
@@ -166,3 +166,38 @@ jobs:
           name: cc-switch-web-docker-image
           path: ${{ runner.temp }}/docker-image/cc-switch-web-docker-image.tar.gz
           if-no-files-found: error
+
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs:
+      - package
+      - docker-image
+
+    steps:
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p release-upload
+          find release-assets -type f \( \
+            -name '*.zip' -o \
+            -name '*.tar.gz' \
+          \) -exec cp {} release-upload/ \;
+          ls -la release-upload
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: |
+            release-upload/*
