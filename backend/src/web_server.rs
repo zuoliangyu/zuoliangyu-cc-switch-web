@@ -3,10 +3,12 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Instant;
 
 use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Multipart, Path, Query, State};
 use axum::http::{header, HeaderValue, StatusCode, Uri};
+use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, get_service, post, put};
 use axum::{Json, Router};
@@ -149,6 +151,20 @@ struct ToggleMcpAppRequest {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ToggleSkillAppRequest {
+    enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SkillIdRequest {
+    id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ToggleSkillAppByBodyRequest {
+    id: String,
+    app: String,
     enabled: bool,
 }
 
@@ -304,6 +320,41 @@ fn sanitize_export_sql_filename(filename: Option<String>) -> String {
     }
 
     sanitized
+}
+
+fn is_api_debug_logging_enabled() -> bool {
+    std::env::var("CC_SWITCH_WEB_DEBUG_API")
+        .ok()
+        .map(|value| {
+            let normalized = value.trim().to_ascii_lowercase();
+            matches!(normalized.as_str(), "1" | "true" | "yes" | "on")
+        })
+        .unwrap_or(false)
+}
+
+async fn api_request_logger(request: axum::extract::Request, next: Next) -> Response {
+    let debug_enabled = is_api_debug_logging_enabled();
+    let method = request.method().clone();
+    let uri = request.uri().clone();
+    let start = Instant::now();
+
+    if debug_enabled {
+        log::info!("[web-api] --> {} {}", method, uri);
+    }
+
+    let response = next.run(request).await;
+
+    if debug_enabled {
+        log::info!(
+            "[web-api] <-- {} {} {} ({} ms)",
+            method,
+            uri,
+            response.status().as_u16(),
+            start.elapsed().as_millis()
+        );
+    }
+
+    response
 }
 
 async fn get_mcp_servers(
@@ -680,6 +731,16 @@ async fn uninstall_skill_unified(
     Ok(Json(result))
 }
 
+async fn uninstall_skill_unified_by_body(
+    State(state): State<WebApiState>,
+    Json(payload): Json<SkillIdRequest>,
+) -> Result<Json<SkillUninstallResult>, ApiError> {
+    let result =
+        crate::commands::uninstall_skill_unified_internal(state.app_state.as_ref(), payload.id)
+            .map_err(|e| ApiError::internal(format!("failed to uninstall skill: {e}")))?;
+    Ok(Json(result))
+}
+
 async fn toggle_skill_app(
     State(state): State<WebApiState>,
     Path((id, app)): Path<(String, String)>,
@@ -688,6 +749,20 @@ async fn toggle_skill_app(
     let result =
         crate::commands::toggle_skill_app_internal(state.app_state.as_ref(), id, app, payload.enabled)
             .map_err(|e| ApiError::internal(format!("failed to toggle skill app: {e}")))?;
+    Ok(Json(result))
+}
+
+async fn toggle_skill_app_by_body(
+    State(state): State<WebApiState>,
+    Json(payload): Json<ToggleSkillAppByBodyRequest>,
+) -> Result<Json<bool>, ApiError> {
+    let result = crate::commands::toggle_skill_app_internal(
+        state.app_state.as_ref(),
+        payload.id,
+        payload.app,
+        payload.enabled,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to toggle skill app: {e}")))?;
     Ok(Json(result))
 }
 
@@ -2406,6 +2481,18 @@ fn resolve_bind_addr() -> Result<SocketAddr, String> {
 }
 
 fn resolve_frontend_dist_dir() -> Option<PathBuf> {
+    let static_disabled = std::env::var("CC_SWITCH_WEB_DISABLE_STATIC")
+        .ok()
+        .map(|value| {
+            let normalized = value.trim().to_ascii_lowercase();
+            matches!(normalized.as_str(), "1" | "true" | "yes" | "on")
+        })
+        .unwrap_or(false);
+
+    if static_disabled {
+        return None;
+    }
+
     let configured = std::env::var("CC_SWITCH_WEB_DIST_DIR")
         .ok()
         .map(PathBuf::from);
@@ -2710,6 +2797,8 @@ pub async fn run_web_server() -> Result<(), String> {
         .route("/api/skills/discover", get(discover_available_skills))
         .route("/api/skills/install", post(install_skill_unified))
         .route("/api/skills/install-archives", post(install_skill_archives))
+        .route("/api/skills/uninstall", post(uninstall_skill_unified_by_body))
+        .route("/api/skills/apps/toggle", put(toggle_skill_app_by_body))
         .route(
             "/api/skills/backups/:backup_id",
             post(restore_skill_backup).delete(delete_skill_backup),
@@ -2888,6 +2977,7 @@ pub async fn run_web_server() -> Result<(), String> {
             "/api/failover/circuit-breaker-config",
             get(get_circuit_breaker_config).put(update_circuit_breaker_config),
         )
+        .layer(middleware::from_fn(api_request_logger))
         .layer(DefaultBodyLimit::max(128 * 1024 * 1024))
         .layer(CorsLayer::permissive())
         .with_state(state);

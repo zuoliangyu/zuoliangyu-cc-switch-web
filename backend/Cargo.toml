@@ -1,6 +1,6 @@
 [package]
 name = "cc-switch-web"
-version = "0.1.0"
+version = "0.1.1"
 description = "CC Switch Web branch local Rust service for browser UI"
 authors = ["左岚"]
 license = "MIT"
@@ -24,6 +24,7 @@ test-hooks = []
 serde_json = { version = "1.0", features = ["preserve_order"] }
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
+env_logger = "0.11"
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "5.0"
 toml = "0.8"

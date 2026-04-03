@@ -92,6 +92,96 @@ export const getWebApiBase = (): string => {
     : DEFAULT_WEB_API_BASE;
 };
 
+const isWebRuntimeDebugEnabled = (): boolean =>
+  import.meta.env.DEV ||
+  String(import.meta.env.VITE_RUNTIME_DEBUG_REQUESTS || "")
+    .trim()
+    .toLowerCase() === "1" ||
+  String(import.meta.env.VITE_RUNTIME_DEBUG_REQUESTS || "")
+    .trim()
+    .toLowerCase() === "true";
+
+function sanitizeDebugValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeDebugValue(item));
+  }
+
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).map(
+      ([key, item]) => {
+        const lowered = key.toLowerCase();
+        if (
+          lowered.includes("password") ||
+          lowered.includes("token") ||
+          lowered.includes("secret") ||
+          lowered.includes("apikey") ||
+          lowered.includes("api_key") ||
+          lowered.includes("authorization")
+        ) {
+          return [key, "[REDACTED]"];
+        }
+        return [key, sanitizeDebugValue(item)];
+      },
+    );
+    return Object.fromEntries(entries);
+  }
+
+  return value;
+}
+
+function formatDebugBody(body: unknown): unknown {
+  if (body === undefined) return undefined;
+  if (body instanceof FormData) {
+    return Array.from(body.entries()).map(([key, value]) => [
+      key,
+      value instanceof File
+        ? {
+            fileName: value.name,
+            size: value.size,
+            type: value.type,
+          }
+        : value,
+    ]);
+  }
+  return sanitizeDebugValue(body);
+}
+
+function logWebRequest(method: string, path: string, body?: unknown) {
+  if (!isWebRuntimeDebugEnabled()) return;
+
+  if (body === undefined) {
+    console.info(`[runtime:web] --> ${method} ${path}`);
+    return;
+  }
+
+  console.info(`[runtime:web] --> ${method} ${path}`, formatDebugBody(body));
+}
+
+async function logWebResponse(
+  method: string,
+  path: string,
+  response: Response,
+): Promise<void> {
+  if (!isWebRuntimeDebugEnabled()) return;
+
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    console.info(`[runtime:web] <-- ${method} ${path} ${response.status}`);
+    return;
+  }
+
+  try {
+    const cloned = response.clone();
+    const payload = await cloned.json();
+    console.info(
+      `[runtime:web] <-- ${method} ${path} ${response.status}`,
+      sanitizeDebugValue(payload),
+    );
+  } catch {
+    console.info(`[runtime:web] <-- ${method} ${path} ${response.status}`);
+  }
+}
+
 async function getErrorMessage(
   response: Response,
   fallback: string,
@@ -122,6 +212,7 @@ async function getErrorMessage(
 }
 
 async function requestJson<T>(path: string): Promise<T> {
+  logWebRequest("GET", path);
   const response = await fetch(`${getWebApiBase()}${path}`, {
     headers: {
       Accept: "application/json",
@@ -133,6 +224,7 @@ async function requestJson<T>(path: string): Promise<T> {
     throw new Error(await getErrorMessage(response, fallback));
   }
 
+  await logWebResponse("GET", path, response);
   return (await response.json()) as T;
 }
 
@@ -141,6 +233,7 @@ async function requestWithBody<T>(
   method: "POST" | "PUT" | "DELETE",
   body?: unknown,
 ): Promise<T> {
+  logWebRequest(method, path, body);
   const response = await fetch(`${getWebApiBase()}${path}`, {
     method,
     headers: {
@@ -156,13 +249,16 @@ async function requestWithBody<T>(
   }
 
   if (response.status === 204) {
+    await logWebResponse(method, path, response);
     return undefined as T;
   }
 
+  await logWebResponse(method, path, response);
   return (await response.json()) as T;
 }
 
 async function requestFormData<T>(path: string, formData: FormData): Promise<T> {
+  logWebRequest("POST", path, formData);
   const response = await fetch(`${getWebApiBase()}${path}`, {
     method: "POST",
     headers: {
@@ -176,6 +272,7 @@ async function requestFormData<T>(path: string, formData: FormData): Promise<T> 
     throw new Error(await getErrorMessage(response, fallback));
   }
 
+  await logWebResponse("POST", path, response);
   return (await response.json()) as T;
 }
 
@@ -1282,7 +1379,9 @@ export async function getWebSkillBackups(): Promise<SkillBackupEntry[]> {
 export async function uninstallWebSkillUnified(
   id: string,
 ): Promise<SkillUninstallResult> {
-  return requestWithBody<SkillUninstallResult>(`/api/skills/${id}`, "DELETE");
+  return requestWithBody<SkillUninstallResult>("/api/skills/uninstall", "POST", {
+    id,
+  });
 }
 
 export async function toggleWebSkillApp(
@@ -1290,7 +1389,9 @@ export async function toggleWebSkillApp(
   app: AppId,
   enabled: boolean,
 ): Promise<boolean> {
-  return requestWithBody<boolean>(`/api/skills/${id}/apps/${app}`, "PUT", {
+  return requestWithBody<boolean>("/api/skills/apps/toggle", "PUT", {
+    id,
+    app,
     enabled,
   });
 }

@@ -18,7 +18,7 @@ This direction targets Windows, macOS, Linux, and headless Linux server environm
 
 ## Version
 
-The current repository version is `0.1.0`.
+The current repository version is `0.1.1`.
 
 This repository now treats `0.1.0` as its initial Web release baseline. Previous inherited release history has been removed from this repository and should be considered part of the upstream project history.
 
@@ -76,6 +76,12 @@ If you are looking for the original CC Switch project or upstream release inform
    ```
 
 3. Open [http://localhost:3000](http://localhost:3000). The frontend connects to the local Rust service at `http://127.0.0.1:8788`.
+   In local development, open the frontend dev URL instead of `8788`. Port `8788` is primarily for the local API, and `pnpm dev` now disables backend static frontend hosting by default to avoid accidentally serving an old `dist` bundle.
+
+4. `pnpm dev` enables local request debug logs by default:
+   - Browser DevTools show frontend request/response logs
+   - The Rust service terminal shows Web API method/path/status/duration logs
+   - You can override this with `VITE_RUNTIME_DEBUG_REQUESTS=0|1` and `CC_SWITCH_WEB_DEBUG_API=0|1`
 
 ### Local Release Binary
 

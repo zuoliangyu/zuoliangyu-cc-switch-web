@@ -126,6 +126,11 @@ async function runLocalDevelopment() {
   console.log("[dev] mode=w -> local development mode");
   console.log(`[dev] backend: ${apiBase}`);
   console.log(`[dev] frontend: http://${defaultFrontendHost}:${frontendPort}`);
+  console.log("[dev] request debug logs: enabled");
+  console.log("[dev] backend static frontend: disabled");
+  console.log(
+    `[dev] open the app in browser at http://${defaultFrontendHost}:${frontendPort}, not ${apiBase}`,
+  );
 
   if (frontendPort !== defaultFrontendPort) {
     console.log(
@@ -139,7 +144,13 @@ async function runLocalDevelopment() {
     "backend/Cargo.toml",
     "--bin",
     "cc-switch-web",
-  ]);
+  ], {
+    CC_SWITCH_WEB_DEBUG_API:
+      process.env.CC_SWITCH_WEB_DEBUG_API || "1",
+    CC_SWITCH_WEB_DISABLE_STATIC:
+      process.env.CC_SWITCH_WEB_DISABLE_STATIC || "1",
+    RUST_LOG: process.env.RUST_LOG || "info",
+  });
 
   spawnCommand(
     "pnpm",
@@ -153,6 +164,8 @@ async function runLocalDevelopment() {
     ],
     {
       VITE_LOCAL_API_BASE: apiBase,
+      VITE_RUNTIME_DEBUG_REQUESTS:
+        process.env.VITE_RUNTIME_DEBUG_REQUESTS || "1",
     },
   );
 }
