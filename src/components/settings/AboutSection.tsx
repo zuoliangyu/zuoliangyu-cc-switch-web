@@ -241,6 +241,15 @@ export function AboutSection() {
     }
   }, [t]);
 
+  const handleCheckLatestRelease = useCallback(async () => {
+    try {
+      await settingsApi.openExternal(`${WEB_REPOSITORY_URL}/releases/latest`);
+    } catch (error) {
+      console.error("[AboutSection] Failed to open latest release", error);
+      toast.error(t("settings.checkUpdateFailed"));
+    }
+  }, [t]);
+
   const handleOpenAuthorContact = useCallback(async () => {
     try {
       await settingsApi.openExternal(AUTHOR_BILIBILI_URL);
@@ -305,6 +314,16 @@ export function AboutSection() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCheckLatestRelease}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              {t("settings.checkLatestRelease")}
+            </Button>
             <Button
               type="button"
               variant="outline"

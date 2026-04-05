@@ -89,6 +89,12 @@ struct ValueRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct BackupPathRequest {
+    backup_path: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct OptionalPathRequest {
     path: Option<String>,
 }
@@ -113,6 +119,12 @@ struct ProviderIdRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct EnvConflictListRequest {
+    conflicts: Vec<crate::services::env_checker::EnvConflict>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct TestUsageScriptRequest {
     script_code: String,
     timeout: Option<u64>,
@@ -128,6 +140,14 @@ struct TestUsageScriptRequest {
 struct EndpointTestRequest {
     urls: Vec<String>,
     timeout_secs: Option<u64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FetchModelsRequest {
+    base_url: String,
+    api_key: String,
+    is_full_url: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -665,6 +685,19 @@ async fn test_api_endpoints(
         .await
         .map_err(|e| ApiError::internal(format!("failed to test api endpoints: {e}")))?;
     Ok(Json(results))
+}
+
+async fn fetch_provider_models(
+    Json(payload): Json<FetchModelsRequest>,
+) -> Result<Json<Vec<crate::services::model_fetch::FetchedModel>>, ApiError> {
+    let models = crate::commands::fetch_models_for_config_internal(
+        payload.base_url,
+        payload.api_key,
+        payload.is_full_url,
+    )
+    .await
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(models))
 }
 
 async fn get_custom_endpoints(
@@ -1905,6 +1938,39 @@ async fn get_copilot_usage_for_account(
     Ok(Json(usage))
 }
 
+async fn get_subscription_quota(
+    Path(tool): Path<String>,
+) -> Result<Json<crate::services::subscription::SubscriptionQuota>, ApiError> {
+    let quota = crate::commands::get_subscription_quota_internal(tool)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load subscription quota: {e}")))?;
+    Ok(Json(quota))
+}
+
+async fn get_env_conflicts(
+    Path(app): Path<String>,
+) -> Result<Json<Vec<crate::services::env_checker::EnvConflict>>, ApiError> {
+    let conflicts = crate::commands::check_env_conflicts_internal(app)
+        .map_err(|e| ApiError::internal(format!("failed to check env conflicts: {e}")))?;
+    Ok(Json(conflicts))
+}
+
+async fn delete_env_conflicts(
+    Json(payload): Json<EnvConflictListRequest>,
+) -> Result<Json<crate::services::env_manager::BackupInfo>, ApiError> {
+    let backup = crate::commands::delete_env_vars_internal(payload.conflicts)
+        .map_err(|e| ApiError::internal(format!("failed to delete env vars: {e}")))?;
+    Ok(Json(backup))
+}
+
+async fn restore_env_conflicts(
+    Json(payload): Json<BackupPathRequest>,
+) -> Result<StatusCode, ApiError> {
+    crate::commands::restore_env_backup_internal(payload.backup_path)
+        .map_err(|e| ApiError::internal(format!("failed to restore env backup: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn create_db_backup(State(state): State<WebApiState>) -> Result<Json<String>, ApiError> {
     crate::commands::create_db_backup_internal(state.app_state.db.clone())
         .await
@@ -2808,6 +2874,10 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
             "/api/copilot/accounts/:account_id/usage",
             get(get_copilot_usage_for_account),
         )
+        .route("/api/subscription/:tool", get(get_subscription_quota))
+        .route("/api/env/conflicts/:app", get(get_env_conflicts))
+        .route("/api/env/delete", post(delete_env_conflicts))
+        .route("/api/env/restore", post(restore_env_conflicts))
         .route(
             "/api/backups/db",
             get(list_db_backups).post(create_db_backup),
@@ -2845,6 +2915,7 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
             "/api/providers/:app/:id/usage/test",
             post(test_usage_script),
         )
+        .route("/api/providers/models/fetch", post(fetch_provider_models))
         .route("/api/providers/endpoints/test", post(test_api_endpoints))
         .route(
             "/api/providers/:app/:id/custom-endpoints",

@@ -27,6 +27,7 @@ import {
   settingsApi,
   type AppId,
 } from "@/lib/api";
+import { checkAllEnvConflicts, checkEnvConflicts } from "@/lib/api/env";
 import { useProviderActions } from "@/hooks/useProviderActions";
 import { openclawKeys, useOpenClawHealth } from "@/hooks/useOpenClaw";
 import { useProxyStatus } from "@/hooks/useProxyStatus";
@@ -42,6 +43,8 @@ import { AddProviderDialog } from "@/components/providers/AddProviderDialog";
 import { EditProviderDialog } from "@/components/providers/EditProviderDialog";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SettingsPage } from "@/components/settings/SettingsPage";
+import { EnvWarningBanner } from "@/components/env/EnvWarningBanner";
+import { DeepLinkImportDialog } from "@/components/deeplink/DeepLinkImportDialog";
 import { ProxyToggle } from "@/components/proxy/ProxyToggle";
 import { FailoverToggle } from "@/components/proxy/FailoverToggle";
 import UsageScriptModal from "@/components/UsageScriptModal";
@@ -79,8 +82,6 @@ type View =
 
 const DRAG_BAR_HEIGHT = isWindows() || isLinux() ? 0 : 28; // px
 const HEADER_HEIGHT = 64; // px
-const CONTENT_TOP_OFFSET = DRAG_BAR_HEIGHT + HEADER_HEIGHT;
-
 const STORAGE_KEY = "cc-switch-last-app";
 const VALID_APPS: AppId[] = [
   "claude",
@@ -177,12 +178,77 @@ function App() {
     }
   }, [activeApp, currentView]);
 
+  useEffect(() => {
+    const checkEnvOnStartup = async () => {
+      try {
+        const allConflicts = await checkAllEnvConflicts();
+        const flatConflicts = Object.values(allConflicts).flat();
+
+        if (flatConflicts.length > 0) {
+          setEnvConflicts(flatConflicts);
+          if (!sessionStorage.getItem("env_banner_dismissed")) {
+            setShowEnvBanner(true);
+          }
+        }
+      } catch (error) {
+        console.error(
+          "[App] Failed to check environment conflicts on startup:",
+          error,
+        );
+      }
+    };
+
+    void checkEnvOnStartup();
+  }, []);
+
+  useEffect(() => {
+    if (!["claude", "codex", "gemini"].includes(activeApp)) {
+      return;
+    }
+
+    const checkEnvOnSwitch = async () => {
+      try {
+        const conflicts = await checkEnvConflicts(activeApp);
+        if (conflicts.length === 0) {
+          return;
+        }
+
+        setEnvConflicts((previous) => {
+          const existingKeys = new Set(
+            previous.map((conflict) => `${conflict.varName}:${conflict.sourcePath}`),
+          );
+          const nextConflicts = conflicts.filter(
+            (conflict) =>
+              !existingKeys.has(`${conflict.varName}:${conflict.sourcePath}`),
+          );
+          return [...previous, ...nextConflicts];
+        });
+
+        if (!sessionStorage.getItem("env_banner_dismissed")) {
+          setShowEnvBanner(true);
+        }
+      } catch (error) {
+        console.error(
+          "[App] Failed to check environment conflicts on app switch:",
+          error,
+        );
+      }
+    };
+
+    void checkEnvOnSwitch();
+  }, [activeApp]);
+
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [usageProvider, setUsageProvider] = useState<Provider | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     provider: Provider;
     action: "remove" | "delete";
   } | null>(null);
+  const [envConflicts, setEnvConflicts] = useState<
+    import("@/types/env").EnvConflict[]
+  >([]);
+  const [showEnvBanner, setShowEnvBanner] = useState(false);
+  const [envBannerHeight, setEnvBannerHeight] = useState(0);
 
   const effectiveEditingProvider = useLastValidValue(editingProvider);
   const effectiveUsageProvider = useLastValidValue(usageProvider);
@@ -276,6 +342,16 @@ function App() {
   };
 
   const currentViewRef = useRef(currentView);
+  const isEnvBannerVisible = showEnvBanner && envConflicts.length > 0;
+  const headerTopOffset =
+    DRAG_BAR_HEIGHT + (isEnvBannerVisible ? envBannerHeight : 0);
+  const contentTopOffset = headerTopOffset + HEADER_HEIGHT;
+
+  useEffect(() => {
+    if (!isEnvBannerVisible && envBannerHeight !== 0) {
+      setEnvBannerHeight(0);
+    }
+  }, [envBannerHeight, isEnvBannerVisible]);
 
   useEffect(() => {
     currentViewRef.current = currentView;
@@ -589,18 +665,45 @@ function App() {
   return (
     <div
       className="app-shell flex flex-col h-screen overflow-hidden bg-background text-foreground selection:bg-primary/30"
-      style={{ overflowX: "hidden", paddingTop: CONTENT_TOP_OFFSET }}
+      style={{ overflowX: "hidden", paddingTop: contentTopOffset }}
     >
       <div
         className="fixed top-0 left-0 right-0 z-[60]"
         style={{ height: DRAG_BAR_HEIGHT }}
       />
 
+      {isEnvBannerVisible && (
+        <EnvWarningBanner
+          conflicts={envConflicts}
+          topOffset={DRAG_BAR_HEIGHT}
+          onHeightChange={setEnvBannerHeight}
+          onDismiss={() => {
+            setShowEnvBanner(false);
+            sessionStorage.setItem("env_banner_dismissed", "true");
+          }}
+          onDeleted={async () => {
+            try {
+              const allConflicts = await checkAllEnvConflicts();
+              const flatConflicts = Object.values(allConflicts).flat();
+              setEnvConflicts(flatConflicts);
+              if (flatConflicts.length === 0) {
+                setShowEnvBanner(false);
+              }
+            } catch (error) {
+              console.error(
+                "[App] Failed to re-check conflicts after deletion:",
+                error,
+              );
+            }
+          }}
+        />
+      )}
+
       <header
         className="fixed z-50 w-full transition-all duration-300 bg-background/80 backdrop-blur-md"
         style={
           {
-            top: DRAG_BAR_HEIGHT,
+            top: headerTopOffset,
             height: HEADER_HEIGHT,
           }
         }
@@ -1021,6 +1124,7 @@ function App() {
         onConfirm={() => void handleConfirmAction()}
         onCancel={() => setConfirmAction(null)}
       />
+      <DeepLinkImportDialog />
     </div>
   );
 }

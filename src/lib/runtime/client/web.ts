@@ -542,6 +542,36 @@ export async function getWebCopilotUsageForAccount(
   );
 }
 
+export async function getWebSubscriptionQuota(
+  tool: string,
+): Promise<import("@/types/subscription").SubscriptionQuota> {
+  return requestJson<import("@/types/subscription").SubscriptionQuota>(
+    `/api/subscription/${encodeURIComponent(tool)}`,
+  );
+}
+
+export async function getWebEnvConflicts(
+  app: string,
+): Promise<import("@/types/env").EnvConflict[]> {
+  return requestJson<import("@/types/env").EnvConflict[]>(
+    `/api/env/conflicts/${encodeURIComponent(app)}`,
+  );
+}
+
+export async function deleteWebEnvVars(
+  conflicts: import("@/types/env").EnvConflict[],
+): Promise<import("@/types/env").BackupInfo> {
+  return requestWithBody<import("@/types/env").BackupInfo>(
+    "/api/env/delete",
+    "POST",
+    { conflicts },
+  );
+}
+
+export async function restoreWebEnvBackup(backupPath: string): Promise<void> {
+  return requestWithBody<void>("/api/env/restore", "POST", { backupPath });
+}
+
 export async function getWebLiveProviderIds(appId: AppId): Promise<string[]> {
   try {
     return await requestJson<string[]>(
@@ -601,6 +631,22 @@ export async function getWebProviderUsage(
 ): Promise<UsageResult> {
   return requestJson<UsageResult>(
     `/api/providers/${appId}/${encodeURIComponent(providerId)}/usage`,
+  );
+}
+
+export async function fetchWebProviderModels(
+  baseUrl: string,
+  apiKey: string,
+  isFullUrl?: boolean,
+): Promise<import("@/lib/api/model-fetch").FetchedModel[]> {
+  return requestWithBody<import("@/lib/api/model-fetch").FetchedModel[]>(
+    "/api/providers/models/fetch",
+    "POST",
+    {
+      baseUrl,
+      apiKey,
+      isFullUrl,
+    },
   );
 }
 

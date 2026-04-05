@@ -11,6 +11,8 @@ export { proxyApi } from "./proxy";
 export { openclawApi } from "./openclaw";
 export { sessionsApi } from "./sessions";
 export { workspaceApi } from "./workspace";
+export * as modelFetchApi from "./model-fetch";
+export { subscriptionApi } from "./subscription";
 export * as configApi from "./config";
 export * as authApi from "./auth";
 export * as copilotApi from "./copilot";

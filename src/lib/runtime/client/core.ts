@@ -9,10 +9,13 @@ import {
   getWebCopilotTokenForAccount,
   getWebCopilotUsage,
   getWebCopilotUsageForAccount,
+  getWebSubscriptionQuota,
   createWebDbBackup,
+  deleteWebEnvVars,
   downloadWebConfigExport,
   deleteWebProvider,
   deleteWebDbBackup,
+  getWebEnvConflicts,
   getWebCommonConfigSnippet,
   getWebLiveProviderIds,
   getWebAutoFailoverEnabled,
@@ -50,6 +53,7 @@ import {
   getWebMcpServers,
   getWebProviderHealth,
   getWebProviderUsage,
+  fetchWebProviderModels,
   getWebProxyConfig,
   getWebProxyConfigForApp,
   getWebProxyStatus,
@@ -77,6 +81,7 @@ import {
   removeWebManagedAuthAccount,
   resetWebCircuitBreaker,
   restoreWebDbBackup,
+  restoreWebEnvBackup,
   saveWebSettings,
   scanWebLocalProxies,
   getWebRectifierConfig,
@@ -263,6 +268,12 @@ export async function invoke<T>(
       return (await getWebProviderUsage(
         args?.app as AppId,
         args?.providerId as string,
+      )) as T;
+    case "fetch_models_for_config":
+      return (await fetchWebProviderModels(
+        args?.baseUrl as string,
+        args?.apiKey as string,
+        args?.isFullUrl as boolean | undefined,
       )) as T;
     case "testUsageScript":
       return (await testWebUsageScript(
@@ -462,6 +473,16 @@ export async function invoke<T>(
       return (await getWebCopilotUsageForAccount(
         args?.accountId as string,
       )) as T;
+    case "get_subscription_quota":
+      return (await getWebSubscriptionQuota(args?.tool as string)) as T;
+    case "check_env_conflicts":
+      return (await getWebEnvConflicts(args?.app as string)) as T;
+    case "delete_env_vars":
+      return (await deleteWebEnvVars(
+        (args?.conflicts as import("@/types/env").EnvConflict[]) ?? [],
+      )) as T;
+    case "restore_env_backup":
+      return (await restoreWebEnvBackup(args?.backupPath as string)) as T;
     case "get_mcp_servers":
       return (await getWebMcpServers()) as T;
     case "upsert_mcp_server":

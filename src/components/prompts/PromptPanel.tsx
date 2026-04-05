@@ -43,6 +43,19 @@ const PromptPanel = React.forwardRef<PromptPanelHandle, PromptPanelProps>(
       if (open) reload();
     }, [open, reload]);
 
+    useEffect(() => {
+      const handlePromptImported = (event: Event) => {
+        const detail = (event as CustomEvent<{ app?: AppId }>).detail;
+        if (detail?.app === appId && open) {
+          void reload();
+        }
+      };
+
+      window.addEventListener("prompt-imported", handlePromptImported);
+      return () =>
+        window.removeEventListener("prompt-imported", handlePromptImported);
+    }, [appId, open, reload]);
+
     const handleAdd = () => {
       setEditingId(null);
       setIsFormOpen(true);

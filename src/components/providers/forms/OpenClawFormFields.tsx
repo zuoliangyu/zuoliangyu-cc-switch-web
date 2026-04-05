@@ -16,9 +16,30 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Download,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ApiKeySection } from "./shared";
+import {
+  fetchModelsForConfig,
+  showFetchModelsError,
+  type FetchedModel,
+} from "@/lib/api/model-fetch";
 import { openclawApiProtocols } from "@/config/openclawProviderPresets";
 import type { ProviderCategory, OpenClawModel } from "@/types";
 
@@ -66,6 +87,8 @@ export function OpenClawFormFields({
   const [expandedModels, setExpandedModels] = useState<Record<number, boolean>>(
     {},
   );
+  const [fetchedModels, setFetchedModels] = useState<FetchedModel[]>([]);
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
 
   // Stable key tracking for models list
   const modelKeysRef = useRef<string[]>([]);
@@ -102,6 +125,34 @@ export function OpenClawFormFields({
       },
     ]);
   };
+
+  const handleFetchModels = useCallback(() => {
+    if (!baseUrl || !apiKey) {
+      showFetchModelsError(null, t, {
+        hasApiKey: !!apiKey,
+        hasBaseUrl: !!baseUrl,
+      });
+      return;
+    }
+
+    setIsFetchingModels(true);
+    fetchModelsForConfig(baseUrl, apiKey)
+      .then((models) => {
+        setFetchedModels(models);
+        if (models.length === 0) {
+          toast.info(t("providerForm.fetchModelsEmpty"));
+        } else {
+          toast.success(
+            t("providerForm.fetchModelsSuccess", { count: models.length }),
+          );
+        }
+      })
+      .catch((error) => {
+        console.warn("[ModelFetch] Failed:", error);
+        showFetchModelsError(error, t);
+      })
+      .finally(() => setIsFetchingModels(false));
+  }, [apiKey, baseUrl, t]);
 
   // Remove a model entry
   const handleRemoveModel = (index: number) => {
@@ -228,16 +279,33 @@ export function OpenClawFormFields({
           <FormLabel>
             {t("openclaw.models", { defaultValue: "模型列表" })}
           </FormLabel>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddModel}
-            className="h-7 gap-1"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t("openclaw.addModel", { defaultValue: "添加模型" })}
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleFetchModels}
+              disabled={isFetchingModels}
+              className="h-7 gap-1"
+            >
+              {isFetchingModels ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              {t("providerForm.fetchModels")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddModel}
+              className="h-7 gap-1"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t("openclaw.addModel", { defaultValue: "添加模型" })}
+            </Button>
+          </div>
         </div>
 
         {models.length === 0 ? (
@@ -277,15 +345,70 @@ export function OpenClawFormFields({
                     <label className="text-xs text-muted-foreground">
                       {t("openclaw.modelId", { defaultValue: "模型 ID" })}
                     </label>
-                    <Input
-                      value={model.id}
-                      onChange={(e) =>
-                        handleModelChange(index, "id", e.target.value)
-                      }
-                      placeholder={t("openclaw.modelIdPlaceholder", {
-                        defaultValue: "claude-3-sonnet",
-                      })}
-                    />
+                    <div className="flex gap-1">
+                      <Input
+                        value={model.id}
+                        onChange={(e) =>
+                          handleModelChange(index, "id", e.target.value)
+                        }
+                        placeholder={t("openclaw.modelIdPlaceholder", {
+                          defaultValue: "claude-3-sonnet",
+                        })}
+                        className="flex-1"
+                      />
+                      {fetchedModels.length > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="shrink-0"
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="z-[200] max-h-64 overflow-y-auto"
+                          >
+                            {Object.entries(
+                              fetchedModels.reduce(
+                                (grouped, item) => {
+                                  const vendor = item.ownedBy || "Other";
+                                  if (!grouped[vendor]) {
+                                    grouped[vendor] = [];
+                                  }
+                                  grouped[vendor].push(item);
+                                  return grouped;
+                                },
+                                {} as Record<string, FetchedModel[]>,
+                              ),
+                            )
+                              .sort(([left], [right]) => left.localeCompare(right))
+                              .map(([vendor, groupedModels], groupIndex) => (
+                                <div key={vendor}>
+                                  {groupIndex > 0 && <DropdownMenuSeparator />}
+                                  <DropdownMenuLabel>{vendor}</DropdownMenuLabel>
+                                  {groupedModels.map((fetchedModel) => (
+                                    <DropdownMenuItem
+                                      key={fetchedModel.id}
+                                      onSelect={() =>
+                                        handleModelChange(
+                                          index,
+                                          "id",
+                                          fetchedModel.id,
+                                        )
+                                      }
+                                    >
+                                      {fetchedModel.id}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </div>
+                              ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
                   <div className="flex-1 space-y-1">
                     <label className="text-xs text-muted-foreground">

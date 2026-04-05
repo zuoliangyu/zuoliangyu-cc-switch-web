@@ -2,10 +2,12 @@
 
 mod auth;
 mod config;
+mod env;
 mod global_proxy;
 mod import_export;
 mod mcp;
 mod misc;
+mod model_fetch;
 mod omo;
 mod openclaw;
 mod prompt;
@@ -15,6 +17,7 @@ mod session_manager;
 mod settings;
 mod skill;
 mod stream_check;
+mod subscription;
 mod sync_support;
 
 mod usage;
@@ -23,10 +26,12 @@ mod workspace;
 
 pub(crate) use auth::*;
 pub(crate) use config::*;
+pub(crate) use env::*;
 pub(crate) use global_proxy::*;
 pub(crate) use import_export::*;
 pub(crate) use mcp::*;
 pub(crate) use misc::*;
+pub(crate) use model_fetch::*;
 pub(crate) use omo::*;
 pub(crate) use openclaw::*;
 pub(crate) use prompt::*;
@@ -36,6 +41,7 @@ pub(crate) use session_manager::*;
 pub(crate) use settings::*;
 pub(crate) use skill::*;
 pub(crate) use stream_check::*;
+pub(crate) use subscription::*;
 pub(crate) use sync_support::*;
 
 pub(crate) use usage::*;

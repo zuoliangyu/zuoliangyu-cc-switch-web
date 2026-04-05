@@ -1,4 +1,7 @@
+pub(crate) mod env_checker;
+pub(crate) mod env_manager;
 pub(crate) mod mcp;
+pub(crate) mod model_fetch;
 pub(crate) mod omo;
 pub(crate) mod prompt;
 pub(crate) mod provider;
@@ -6,6 +9,7 @@ pub(crate) mod proxy;
 pub(crate) mod skill;
 pub(crate) mod speedtest;
 pub(crate) mod stream_check;
+pub(crate) mod subscription;
 pub(crate) mod usage_stats;
 pub(crate) mod webdav;
 pub(crate) mod webdav_auto_sync;

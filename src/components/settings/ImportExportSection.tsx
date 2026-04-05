@@ -3,6 +3,7 @@ import {
   AlertCircle,
   CheckCircle2,
   FolderOpen,
+  Link2,
   Loader2,
   Save,
   XCircle,
@@ -53,6 +54,12 @@ export function ImportExportSection({
       return;
     }
     void onSelectFile();
+  };
+
+  const handleOpenDeepLinkImport = () => {
+    window.dispatchEvent(
+      new CustomEvent("cc-switch-open-deeplink-import"),
+    );
   };
 
   return (
@@ -137,6 +144,16 @@ export function ImportExportSection({
             </Button>
           </div>
         </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-center"
+          onClick={handleOpenDeepLinkImport}
+        >
+          <Link2 className="mr-2 h-4 w-4" />
+          {t("deeplink.openImporter")}
+        </Button>
 
         <ImportStatusMessage
           status={status}
