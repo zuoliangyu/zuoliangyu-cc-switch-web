@@ -202,10 +202,21 @@ export function SessionManagerPage({ appId }: { appId: string }) {
   const handleResume = async () => {
     if (!selectedSession?.resumeCommand) return;
 
-    await handleCopy(
-      selectedSession.resumeCommand,
-      t("sessionManager.resumeCommandCopied"),
-    );
+    try {
+      await sessionsApi.launchTerminal({
+        command: selectedSession.resumeCommand,
+        cwd: selectedSession.projectDir ?? undefined,
+      });
+      toast.success(t("sessionManager.terminalLaunched"));
+    } catch (error) {
+      await handleCopy(
+        selectedSession.resumeCommand,
+        t("sessionManager.resumeFallbackCopied"),
+      );
+      toast.error(
+        extractErrorMessage(error) || t("sessionManager.openFailed"),
+      );
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -868,8 +879,8 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                               >
                                 <Play className="size-3.5" />
                                 <span className="hidden sm:inline">
-                                  {t("sessionManager.copyResumeCommand", {
-                                    defaultValue: "复制恢复命令",
+                                  {t("sessionManager.resume", {
+                                    defaultValue: "恢复会话",
                                   })}
                                 </span>
                               </Button>
@@ -877,7 +888,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                             <TooltipContent>
                               {selectedSession.resumeCommand
                                 ? t("sessionManager.resumeTooltip", {
-                                    defaultValue: "复制此会话的恢复命令",
+                                    defaultValue: "在终端中恢复此会话",
                                   })
                                 : t("sessionManager.noResumeCommand", {
                                     defaultValue: "此会话无法恢复",

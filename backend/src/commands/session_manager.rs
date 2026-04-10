@@ -21,6 +21,18 @@ pub async fn get_session_messages_internal(
     .map_err(|e| format!("Failed to load session messages: {e}"))?
 }
 
+pub async fn launch_session_terminal_internal(
+    command: String,
+    cwd: Option<String>,
+    customConfig: Option<String>,
+) -> Result<bool, String> {
+    spawn_blocking(move || {
+        crate::commands::launch_terminal_command_internal(command, cwd, customConfig)
+    })
+    .await
+    .map_err(|e| format!("Failed to launch session terminal: {e}"))?
+}
+
 pub async fn delete_session_internal(
     providerId: String,
     sessionId: String,

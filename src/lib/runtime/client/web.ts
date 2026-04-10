@@ -33,6 +33,7 @@ import type { OmoLocalFileData } from "@/types/omo";
 import type {
   DeleteSessionOptions,
   DeleteSessionResult,
+  LaunchSessionTerminalOptions,
 } from "@/lib/api/sessions";
 import type { ProviderSortUpdate } from "@/lib/api/providers";
 import type {
@@ -1932,6 +1933,16 @@ export async function getWebSessionMessages(
   return requestJson<SessionMessage[]>(
     `/api/sessions/messages?providerId=${encodeURIComponent(providerId)}&sourcePath=${encodeURIComponent(sourcePath)}`,
   );
+}
+
+export async function launchWebSessionTerminal(
+  options: LaunchSessionTerminalOptions,
+): Promise<boolean> {
+  return requestWithBody<boolean>("/api/sessions/launch-terminal", "POST", {
+    command: options.command,
+    cwd: options.cwd ?? undefined,
+    customConfig: options.customConfig ?? undefined,
+  });
 }
 
 export async function deleteWebSession(

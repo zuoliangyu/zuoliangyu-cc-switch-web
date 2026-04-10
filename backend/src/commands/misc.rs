@@ -633,6 +633,20 @@ pub(crate) fn open_provider_terminal_internal(
     Ok(true)
 }
 
+pub(crate) fn launch_terminal_command_internal(
+    command: String,
+    cwd: Option<String>,
+    custom_config: Option<String>,
+) -> Result<bool, String> {
+    let launch_command = sanitize_terminal_command(command)?;
+    let launch_cwd = resolve_launch_cwd(cwd)?;
+
+    launch_terminal_command(&launch_command, launch_cwd.as_deref(), custom_config.as_deref())
+        .map_err(|e| format!("启动终端失败: {e}"))?;
+
+    Ok(true)
+}
+
 fn extract_env_vars_from_config(
     config: &serde_json::Value,
     app_type: &AppType,
@@ -712,6 +726,46 @@ fn resolve_launch_cwd(cwd: Option<String>) -> Result<Option<PathBuf>, String> {
     Ok(Some(resolved))
 }
 
+fn sanitize_terminal_command(command: String) -> Result<String, String> {
+    let trimmed = command.trim();
+    if trimmed.is_empty() {
+        return Err("命令不能为空".to_string());
+    }
+
+    if trimmed.contains('\n') || trimmed.contains('\r') {
+        return Err("命令包含非法换行符".to_string());
+    }
+
+    Ok(trimmed.to_string())
+}
+
+fn launch_terminal_command(
+    command: &str,
+    cwd: Option<&Path>,
+    _custom_config: Option<&str>,
+) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        launch_macos_command_terminal(command, cwd)?;
+        return Ok(());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        launch_linux_command_terminal(command, cwd)?;
+        return Ok(());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        launch_windows_command_terminal(command, cwd)?;
+        return Ok(());
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    Err("不支持的操作系统".to_string())
+}
+
 fn launch_terminal_with_env(
     env_vars: Vec<(String, String)>,
     provider_id: &str,
@@ -762,6 +816,178 @@ fn write_claude_config(config_file: &Path, env_vars: &[(String, String)]) -> Res
         serde_json::to_string_pretty(&config_obj).map_err(|e| format!("序列化配置失败: {e}"))?;
 
     std::fs::write(config_file, config_json).map_err(|e| format!("写入配置文件失败: {e}"))
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn write_shell_launcher_script(
+    script_file: &Path,
+    command: &str,
+    cwd: Option<&Path>,
+) -> Result<(), String> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let cd_command = build_shell_cd_command(cwd);
+    let script_content = format!(
+        r#"#!/bin/bash
+trap 'rm -f "{script_file}"' EXIT
+{cd_command}
+{command}
+exec bash --norc --noprofile
+"#,
+        script_file = script_file.display(),
+        cd_command = cd_command,
+        command = command,
+    );
+
+    std::fs::write(script_file, &script_content).map_err(|e| format!("写入启动脚本失败: {e}"))?;
+    std::fs::set_permissions(script_file, std::fs::Permissions::from_mode(0o755))
+        .map_err(|e| format!("设置脚本权限失败: {e}"))?;
+
+    Ok(())
+}
+
+#[cfg(target_os = "macos")]
+fn launch_macos_command_terminal(command: &str, cwd: Option<&Path>) -> Result<(), String> {
+    let preferred = crate::settings::get_preferred_terminal();
+    let terminal = preferred.as_deref().unwrap_or("terminal");
+
+    let temp_dir = std::env::temp_dir();
+    let script_file =
+        temp_dir.join(format!("cc_switch_session_launcher_{}.sh", std::process::id()));
+    write_shell_launcher_script(&script_file, command, cwd)?;
+
+    let result = match terminal {
+        "iterm2" => launch_macos_iterm2(&script_file),
+        "alacritty" => launch_macos_open_app("Alacritty", &script_file, true),
+        "kitty" => launch_macos_open_app("kitty", &script_file, false),
+        "ghostty" => launch_macos_open_app("Ghostty", &script_file, true),
+        "wezterm" => launch_macos_open_app("WezTerm", &script_file, true),
+        "kaku" => launch_macos_open_app("Kaku", &script_file, true),
+        _ => launch_macos_terminal_app(&script_file),
+    };
+
+    if result.is_err() && terminal != "terminal" {
+        log::warn!(
+            "首选终端 {} 启动失败，回退到 Terminal.app: {:?}",
+            terminal,
+            result.as_ref().err()
+        );
+        return launch_macos_terminal_app(&script_file);
+    }
+
+    result
+}
+
+#[cfg(target_os = "linux")]
+fn launch_linux_command_terminal(command: &str, cwd: Option<&Path>) -> Result<(), String> {
+    use std::process::Command;
+
+    let preferred = crate::settings::get_preferred_terminal();
+    let default_terminals = [
+        ("gnome-terminal", vec!["--"]),
+        ("konsole", vec!["-e"]),
+        ("xfce4-terminal", vec!["-e"]),
+        ("mate-terminal", vec!["--"]),
+        ("lxterminal", vec!["-e"]),
+        ("alacritty", vec!["-e"]),
+        ("kitty", vec!["-e"]),
+        ("ghostty", vec!["-e"]),
+    ];
+
+    let temp_dir = std::env::temp_dir();
+    let script_file =
+        temp_dir.join(format!("cc_switch_session_launcher_{}.sh", std::process::id()));
+    write_shell_launcher_script(&script_file, command, cwd)?;
+
+    let terminals_to_try: Vec<(&str, Vec<&str>)> = if let Some(ref pref) = preferred {
+        let pref_args = default_terminals
+            .iter()
+            .find(|(name, _)| *name == pref.as_str())
+            .map(|(_, args)| args.to_vec())
+            .unwrap_or_else(|| vec!["-e"]);
+
+        let mut list = vec![(pref.as_str(), pref_args)];
+        for (name, args) in &default_terminals {
+            if *name != pref.as_str() {
+                list.push((*name, args.to_vec()));
+            }
+        }
+        list
+    } else {
+        default_terminals
+            .iter()
+            .map(|(name, args)| (*name, args.to_vec()))
+            .collect()
+    };
+
+    let mut last_error = String::from("未找到可用的终端");
+
+    for (terminal, args) in terminals_to_try {
+        let terminal_exists = Path::new(&format!("/usr/bin/{terminal}")).exists()
+            || Path::new(&format!("/bin/{terminal}")).exists()
+            || Path::new(&format!("/usr/local/bin/{terminal}")).exists()
+            || which_command(terminal);
+
+        if !terminal_exists {
+            continue;
+        }
+
+        match Command::new(terminal)
+            .args(args)
+            .arg("bash")
+            .arg(script_file.to_string_lossy().as_ref())
+            .spawn()
+        {
+            Ok(_) => return Ok(()),
+            Err(error) => {
+                last_error = format!("执行 {terminal} 失败: {error}");
+            }
+        }
+    }
+
+    let _ = std::fs::remove_file(&script_file);
+    Err(last_error)
+}
+
+#[cfg(target_os = "windows")]
+fn launch_windows_command_terminal(command: &str, cwd: Option<&Path>) -> Result<(), String> {
+    let preferred = crate::settings::get_preferred_terminal();
+    let terminal = preferred.as_deref().unwrap_or("cmd");
+
+    let temp_dir = std::env::temp_dir();
+    let bat_file =
+        temp_dir.join(format!("cc_switch_session_launcher_{}.bat", std::process::id()));
+    let cwd_command = build_windows_cwd_command(cwd);
+    let content = format!(
+        "@echo off\r\n{cwd_command}{command}\r\ndel \"%~f0\" >nul 2>&1\r\n",
+        cwd_command = cwd_command,
+        command = command,
+    );
+
+    std::fs::write(&bat_file, &content).map_err(|e| format!("写入批处理文件失败: {e}"))?;
+
+    let bat_path = bat_file.to_string_lossy();
+    let ps_cmd = format!("& '{}'", bat_path);
+
+    let result = match terminal {
+        "powershell" => run_windows_start_command(
+            &["powershell", "-NoExit", "-Command", &ps_cmd],
+            "PowerShell",
+        ),
+        "wt" => run_windows_start_command(&["wt", "cmd", "/K", &bat_path], "Windows Terminal"),
+        _ => run_windows_start_command(&["cmd", "/K", &bat_path], "cmd"),
+    };
+
+    if result.is_err() && terminal != "cmd" {
+        log::warn!(
+            "首选终端 {} 启动失败，回退到 cmd: {:?}",
+            terminal,
+            result.as_ref().err()
+        );
+        return run_windows_start_command(&["cmd", "/K", &bat_path], "cmd");
+    }
+
+    result
 }
 
 #[cfg(target_os = "macos")]
@@ -1294,6 +1520,31 @@ mod tests {
             .expect_err("missing directory should fail");
 
         assert!(error.contains("目录不存在"));
+    }
+
+    #[test]
+    fn sanitize_terminal_command_rejects_empty_command() {
+        let error = sanitize_terminal_command("   ".to_string()).expect_err("empty should fail");
+
+        assert!(error.contains("命令不能为空"));
+    }
+
+    #[test]
+    fn sanitize_terminal_command_rejects_newlines() {
+        let error =
+            sanitize_terminal_command("claude --resume abc\npwd".to_string()).expect_err(
+                "newlines should fail",
+            );
+
+        assert!(error.contains("非法换行符"));
+    }
+
+    #[test]
+    fn sanitize_terminal_command_trims_surrounding_whitespace() {
+        let command = sanitize_terminal_command("  claude --resume abc  ".to_string())
+            .expect("trimmed command should pass");
+
+        assert_eq!(command, "claude --resume abc");
     }
 
     #[test]

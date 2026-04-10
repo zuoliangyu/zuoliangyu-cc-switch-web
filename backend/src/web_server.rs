@@ -179,6 +179,14 @@ struct OpenProviderTerminalRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct LaunchSessionTerminalRequest {
+    command: String,
+    cwd: Option<String>,
+    custom_config: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct CredentialQueryRequest {
     base_url: String,
     api_key: String,
@@ -1225,6 +1233,19 @@ async fn get_session_messages(
             .await
             .map_err(|e| ApiError::internal(format!("failed to load session messages: {e}")))?;
     Ok(Json(messages))
+}
+
+async fn launch_session_terminal(
+    Json(payload): Json<LaunchSessionTerminalRequest>,
+) -> Result<Json<bool>, ApiError> {
+    let opened = crate::commands::launch_session_terminal_internal(
+        payload.command,
+        payload.cwd,
+        payload.custom_config,
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to launch session terminal: {e}")))?;
+    Ok(Json(opened))
 }
 
 async fn delete_session(
@@ -3265,6 +3286,7 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
         )
         .route("/api/sessions", get(list_sessions).delete(delete_session))
         .route("/api/sessions/messages", get(get_session_messages))
+        .route("/api/sessions/launch-terminal", post(launch_session_terminal))
         .route("/api/sessions/delete-batch", post(delete_sessions))
         .route("/api/usage/summary", get(get_usage_summary))
         .route("/api/usage/trends", get(get_usage_trends))

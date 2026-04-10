@@ -81,6 +81,10 @@
   - Web 设置页新增“本地服务”区块，可切换 CC Switch Web 本地 Rust 服务的开机自启
   - Web 后端补齐 `GET/PUT /api/settings/auto-launch`，复用跨平台 `auto-launch` 能力管理系统启动项
   - 设置持久化模型补齐 `launchOnStartup` 字段，并补齐三语文案与失败提示
+- 会话恢复终端
+  - Web 后端新增 `POST /api/sessions/launch-terminal`，支持把会话恢复命令直接交给本地 Rust 服务按首选终端拉起
+  - SessionManager 恢复按钮改回“恢复会话”，点击后优先直接打开终端执行 `resumeCommand`
+  - 若本地终端拉起失败，前端仍会自动回退为复制恢复命令，保持可恢复性与错误提示
 
 实现约束：
 

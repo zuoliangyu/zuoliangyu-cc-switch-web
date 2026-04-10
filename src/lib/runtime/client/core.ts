@@ -143,6 +143,7 @@ import {
   getWebDailyMemoryFile,
   getWebSessionMessages,
   getWebSessions,
+  launchWebSessionTerminal,
   getWebModelPricing,
   getWebModelStats,
   getWebProviderLimits,
@@ -660,6 +661,12 @@ export async function invoke<T>(
         args?.providerId as string,
         args?.sourcePath as string,
       )) as T;
+    case "launch_session_terminal":
+      return (await launchWebSessionTerminal({
+        command: args?.command as string,
+        cwd: args?.cwd as string | null | undefined,
+        customConfig: args?.customConfig as string | null | undefined,
+      })) as T;
     case "delete_session":
       return (await deleteWebSession({
         providerId: args?.providerId as string,
