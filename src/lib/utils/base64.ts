@@ -41,3 +41,15 @@ export function decodeBase64Utf8(str: string): string {
     }
   }
 }
+
+/**
+ * Encode UTF-8 string into Base64
+ */
+export function encodeBase64Utf8(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}

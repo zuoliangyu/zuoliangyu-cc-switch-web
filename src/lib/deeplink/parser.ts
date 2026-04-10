@@ -1,5 +1,8 @@
-import { extractCodexBaseUrl, extractCodexModelName } from "@/utils/providerConfigUtils";
-import { decodeBase64Utf8 } from "@/lib/utils/base64";
+import {
+  extractCodexBaseUrl,
+  extractCodexModelName,
+} from "@/utils/providerConfigUtils";
+import { decodeBase64Utf8, encodeBase64Utf8 } from "@/lib/utils/base64";
 import { parse as parseToml } from "smol-toml";
 import type { AppId } from "@/lib/api";
 import type { DeepLinkImportRequest, DeepLinkResource } from "./types";
@@ -18,6 +21,8 @@ const VALID_RESOURCES = new Set<DeepLinkResource>([
   "mcp",
   "skill",
 ]);
+
+type DeepLinkConfigFormat = "json" | "toml";
 
 const parseBoolean = (value: string | null): boolean | undefined => {
   if (value === null) return undefined;
@@ -68,6 +73,50 @@ const safeDecodeBase64Utf8 = (fieldName: string, value: string): string => {
       `${fieldName} Base64 解码失败：${error instanceof Error ? error.message : String(error)}`,
     );
   }
+};
+
+const normalizeConfigFormat = (
+  configFormat: string | undefined,
+): DeepLinkConfigFormat => {
+  const format = configFormat?.trim().toLowerCase() || "json";
+  if (format === "json" || format === "toml") {
+    return format;
+  }
+  throw new Error(`Web 端暂不支持 ${format} 格式的 deeplink 配置导入`);
+};
+
+const parseConfigObject = (
+  content: string,
+  format: DeepLinkConfigFormat,
+): Record<string, unknown> => {
+  let parsed: unknown;
+  try {
+    parsed = format === "json" ? JSON.parse(content) : parseToml(content);
+  } catch (error) {
+    throw new Error(
+      `deeplink ${format.toUpperCase()} 配置解析失败：${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(`deeplink ${format.toUpperCase()} 配置必须是对象`);
+  }
+
+  return parsed as Record<string, unknown>;
+};
+
+export const parseDeepLinkConfigObject = (
+  request: Pick<DeepLinkImportRequest, "config" | "configFormat">,
+): Record<string, unknown> | null => {
+  if (!request.config) {
+    return null;
+  }
+
+  const decoded = safeDecodeBase64Utf8("config", request.config);
+  const format = normalizeConfigFormat(request.configFormat);
+  return parseConfigObject(decoded, format);
 };
 
 const mergeClaudeConfig = (
@@ -165,28 +214,10 @@ const mergeAdditiveConfig = (
   }
 };
 
-const mergeProviderConfig = (
+const mergeProviderConfigFromObject = (
   request: DeepLinkImportRequest,
+  config: Record<string, unknown>,
 ): DeepLinkImportRequest => {
-  if (request.resource !== "provider" || (!request.config && !request.configUrl)) {
-    return request;
-  }
-  if (request.configUrl) {
-    throw new Error(
-      "Web 端暂不支持通过 configUrl 拉取远程配置，请改用内嵌 config 或手动导入",
-    );
-  }
-  const decoded = safeDecodeBase64Utf8("config", request.config ?? "");
-  const format = request.configFormat?.toLowerCase() ?? "json";
-  let config: Record<string, unknown>;
-  if (format === "json") {
-    config = JSON.parse(decoded) as Record<string, unknown>;
-  } else if (format === "toml") {
-    config = parseToml(decoded) as Record<string, unknown>;
-  } else {
-    throw new Error(`Web 端暂不支持 ${format} 格式的 deeplink 配置导入`);
-  }
-
   const merged = { ...request };
   switch (merged.app) {
     case "claude":
@@ -211,6 +242,68 @@ const mergeProviderConfig = (
   }
 
   return merged;
+};
+
+const fetchRemoteConfigText = async (
+  configUrl: string,
+  format: DeepLinkConfigFormat,
+): Promise<string> => {
+  ensureHttpUrl(configUrl, "configUrl");
+
+  let response: Response;
+  try {
+    response = await fetch(configUrl, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept:
+          format === "toml"
+            ? "application/toml,text/plain,*/*"
+            : "application/json,text/plain,*/*",
+      },
+    });
+  } catch (error) {
+    throw new Error(
+      `拉取远程配置失败：${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `拉取远程配置失败：HTTP ${response.status} ${response.statusText || ""}`.trim(),
+    );
+  }
+
+  const content = await response.text();
+  if (!content.trim()) {
+    throw new Error("拉取远程配置失败：返回内容为空");
+  }
+
+  return content;
+};
+
+export const mergeDeepLinkConfig = async (
+  request: DeepLinkImportRequest,
+): Promise<DeepLinkImportRequest> => {
+  if (
+    request.resource !== "provider" ||
+    (!request.config && !request.configUrl)
+  ) {
+    return request;
+  }
+
+  const format = normalizeConfigFormat(request.configFormat);
+  const configText = request.config
+    ? safeDecodeBase64Utf8("config", request.config)
+    : await fetchRemoteConfigText(request.configUrl ?? "", format);
+  const config = parseConfigObject(configText, format);
+  const merged = mergeProviderConfigFromObject(request, config);
+
+  return {
+    ...merged,
+    config: request.config ?? encodeBase64Utf8(configText),
+    configFormat: format,
+  };
 };
 
 export const parseDeepLinkUrl = (urlString: string): DeepLinkImportRequest => {
@@ -294,7 +387,8 @@ export const parseDeepLinkUrl = (urlString: string): DeepLinkImportRequest => {
     case "prompt":
       if (!request.app) throw new Error("prompt deeplink 缺少 app 参数");
       if (!request.name) throw new Error("prompt deeplink 缺少 name 参数");
-      if (!request.content) throw new Error("prompt deeplink 缺少 content 参数");
+      if (!request.content)
+        throw new Error("prompt deeplink 缺少 content 参数");
       break;
     case "mcp":
       if (!request.apps) throw new Error("mcp deeplink 缺少 apps 参数");
@@ -320,7 +414,7 @@ export const parseDeepLinkUrl = (urlString: string): DeepLinkImportRequest => {
       break;
   }
 
-  return mergeProviderConfig(request);
+  return request;
 };
 
 export const extractDeepLinkFromLocation = (

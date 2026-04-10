@@ -65,6 +65,10 @@
   - OpenClaw 支持按 `api` 协议分发到 OpenAI / Responses / Anthropic / Gemini 检查链路，并透传自定义 headers
   - OpenCode 支持按 `npm` SDK 包分发到对应检查链路，并补齐 `options.baseURL` / `options.apiKey` / headers 读取与默认端点回退
   - 对 AWS Bedrock、自定义认证头等当前仍无法无损构造请求的场景，返回明确错误提示
+- Deep Link 远程配置合并
+  - Web 端 Deep Link 导入改为“先解析 URL，再异步合并配置”，不再在解析阶段直接拒绝 `configUrl`
+  - Provider deeplink 现支持通过 `configUrl` 拉取远程 `json` / `toml` 配置，并按桌面版既有规则补全 `apiKey` / `endpoint` / `model` / `homepage`
+  - 远程配置拉取成功后会回填为本地 `config` 预览数据，导入确认弹窗可直接查看配置来源、URL 与合并后的配置内容
 
 实现约束：
 

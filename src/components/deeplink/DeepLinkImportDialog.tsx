@@ -17,6 +17,8 @@ import { extractErrorMessage } from "@/utils/errorUtils";
 import { decodeBase64Utf8 } from "@/lib/utils/base64";
 import {
   extractDeepLinkFromLocation,
+  mergeDeepLinkConfig,
+  parseDeepLinkConfigObject,
   parseDeepLinkUrl,
 } from "@/lib/deeplink/parser";
 import { importFromDeepLink } from "@/lib/deeplink/importer";
@@ -65,6 +67,7 @@ export function DeepLinkImportDialog() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [rawValue, setRawValue] = useState("");
   const [request, setRequest] = useState<DeepLinkImportRequest | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -74,19 +77,22 @@ export function DeepLinkImportDialog() {
     setRequest(null);
     setParseError(null);
     setIsImporting(false);
+    setIsParsing(false);
   };
 
-  const parseAndOpen = (value: string) => {
+  const parseAndOpen = async (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) {
       setOpen(true);
       return;
     }
 
+    setIsParsing(true);
     try {
       const parsed = parseDeepLinkUrl(trimmed);
+      const merged = await mergeDeepLinkConfig(parsed);
       setRawValue(trimmed);
-      setRequest(parsed);
+      setRequest(merged);
       setParseError(null);
       setOpen(true);
     } catch (error) {
@@ -94,6 +100,8 @@ export function DeepLinkImportDialog() {
       setRequest(null);
       setParseError(extractErrorMessage(error));
       setOpen(true);
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -103,7 +111,7 @@ export function DeepLinkImportDialog() {
       return;
     }
 
-    parseAndOpen(autoDeepLink);
+    void parseAndOpen(autoDeepLink);
 
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete("deeplink");
@@ -117,23 +125,24 @@ export function DeepLinkImportDialog() {
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ deeplink?: string }>).detail;
-      parseAndOpen(detail?.deeplink ?? "");
+      void parseAndOpen(detail?.deeplink ?? "");
     };
     window.addEventListener(OPEN_EVENT, handler as EventListener);
-    return () => window.removeEventListener(OPEN_EVENT, handler as EventListener);
+    return () =>
+      window.removeEventListener(OPEN_EVENT, handler as EventListener);
   }, []);
 
   const parsedConfig = useMemo(() => {
-    if (!request?.config) {
+    if (!request) {
       return null;
     }
 
     try {
-      return JSON.parse(decodeBase64Utf8(request.config)) as Record<string, unknown>;
+      return parseDeepLinkConfigObject(request);
     } catch {
       return null;
     }
-  }, [request?.config]);
+  }, [request]);
 
   const decodedPromptContent = useMemo(() => {
     if (!request?.content) {
@@ -147,7 +156,7 @@ export function DeepLinkImportDialog() {
   }, [request?.content]);
 
   const handleParse = () => {
-    parseAndOpen(rawValue);
+    void parseAndOpen(rawValue);
   };
 
   const handleImport = async () => {
@@ -255,7 +264,13 @@ export function DeepLinkImportDialog() {
               className="font-mono text-xs"
             />
             <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={handleParse}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleParse}
+                disabled={isParsing}
+              >
                 <Wand2 className="mr-2 h-4 w-4" />
                 {t("deeplink.parse")}
               </Button>
@@ -275,29 +290,83 @@ export function DeepLinkImportDialog() {
             <div className="max-h-[52vh] space-y-4 overflow-y-auto rounded-xl border border-border bg-muted/30 p-4">
               {request.resource === "provider" && (
                 <div className="space-y-3">
-                  <InfoRow label={t("deeplink.app")} value={request.app ?? "-"} />
-                  <InfoRow label={t("deeplink.providerName")} value={request.name ?? "-"} />
-                  <InfoRow label={t("deeplink.homepage")} value={request.homepage ?? "-"} mono />
-                  <InfoRow label={t("deeplink.endpoint")} value={request.endpoint ?? "-"} mono />
+                  <InfoRow
+                    label={t("deeplink.app")}
+                    value={request.app ?? "-"}
+                  />
+                  <InfoRow
+                    label={t("deeplink.providerName")}
+                    value={request.name ?? "-"}
+                  />
+                  <InfoRow
+                    label={t("deeplink.homepage")}
+                    value={request.homepage ?? "-"}
+                    mono
+                  />
+                  <InfoRow
+                    label={t("deeplink.endpoint")}
+                    value={request.endpoint ?? "-"}
+                    mono
+                  />
                   <InfoRow
                     label={t("deeplink.apiKey")}
-                    value={request.apiKey ? maskValue("apiKey", request.apiKey) : "****"}
+                    value={
+                      request.apiKey
+                        ? maskValue("apiKey", request.apiKey)
+                        : "****"
+                    }
                     mono
                   />
                   {request.model && (
-                    <InfoRow label={t("deeplink.model")} value={request.model} mono />
+                    <InfoRow
+                      label={t("deeplink.model")}
+                      value={request.model}
+                      mono
+                    />
                   )}
                   {request.haikuModel && (
-                    <InfoRow label={t("deeplink.haikuModel")} value={request.haikuModel} mono />
+                    <InfoRow
+                      label={t("deeplink.haikuModel")}
+                      value={request.haikuModel}
+                      mono
+                    />
                   )}
                   {request.sonnetModel && (
-                    <InfoRow label={t("deeplink.sonnetModel")} value={request.sonnetModel} mono />
+                    <InfoRow
+                      label={t("deeplink.sonnetModel")}
+                      value={request.sonnetModel}
+                      mono
+                    />
                   )}
                   {request.opusModel && (
-                    <InfoRow label={t("deeplink.opusModel")} value={request.opusModel} mono />
+                    <InfoRow
+                      label={t("deeplink.opusModel")}
+                      value={request.opusModel}
+                      mono
+                    />
                   )}
                   {request.notes && (
-                    <InfoRow label={t("deeplink.notes")} value={request.notes} />
+                    <InfoRow
+                      label={t("deeplink.notes")}
+                      value={request.notes}
+                    />
+                  )}
+                  {(request.config || request.configUrl) && (
+                    <InfoRow
+                      label={t("deeplink.configSource")}
+                      value={
+                        request.configUrl
+                          ? t("deeplink.configRemote")
+                          : t("deeplink.configEmbedded")
+                      }
+                    />
+                  )}
+                  {request.configUrl && (
+                    <InfoRow
+                      label={t("deeplink.configUrl")}
+                      value={request.configUrl}
+                      mono
+                    />
                   )}
                   {parsedConfig && (
                     <PreviewCard title={t("deeplink.configDetails")}>
@@ -311,8 +380,14 @@ export function DeepLinkImportDialog() {
 
               {request.resource === "prompt" && (
                 <div className="space-y-3">
-                  <InfoRow label={t("deeplink.prompt.app")} value={request.app ?? "-"} />
-                  <InfoRow label={t("deeplink.prompt.name")} value={request.name ?? "-"} />
+                  <InfoRow
+                    label={t("deeplink.prompt.app")}
+                    value={request.app ?? "-"}
+                  />
+                  <InfoRow
+                    label={t("deeplink.prompt.name")}
+                    value={request.name ?? "-"}
+                  />
                   {request.description && (
                     <InfoRow
                       label={t("deeplink.prompt.description")}
@@ -330,11 +405,16 @@ export function DeepLinkImportDialog() {
 
               {request.resource === "mcp" && (
                 <div className="space-y-3">
-                  <InfoRow label={t("deeplink.mcp.targetApps")} value={request.apps ?? "-"} />
+                  <InfoRow
+                    label={t("deeplink.mcp.targetApps")}
+                    value={request.apps ?? "-"}
+                  />
                   <PreviewCard title={t("deeplink.mcp.serverPreview")}>
                     <pre className="overflow-x-auto whitespace-pre-wrap text-xs">
                       {JSON.stringify(
-                        (parsedConfig?.mcpServers as Record<string, unknown> | undefined) ??
+                        (parsedConfig?.mcpServers as
+                          | Record<string, unknown>
+                          | undefined) ??
                           parsedConfig ??
                           {},
                         null,
@@ -347,7 +427,11 @@ export function DeepLinkImportDialog() {
 
               {request.resource === "skill" && (
                 <div className="space-y-3">
-                  <InfoRow label={t("deeplink.skill.repo")} value={request.repo ?? "-"} mono />
+                  <InfoRow
+                    label={t("deeplink.skill.repo")}
+                    value={request.repo ?? "-"}
+                    mono
+                  />
                   <InfoRow
                     label={t("deeplink.skill.directory")}
                     value={request.directory ?? "-"}
@@ -375,11 +459,14 @@ export function DeepLinkImportDialog() {
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
-            disabled={isImporting}
+            disabled={isImporting || isParsing}
           >
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleImport} disabled={!request || isImporting}>
+          <Button
+            onClick={handleImport}
+            disabled={!request || isImporting || isParsing}
+          >
             {isImporting ? (
               <>
                 <Download className="mr-2 h-4 w-4 animate-pulse" />
@@ -410,7 +497,9 @@ function InfoRow({
   return (
     <div className="grid gap-1 sm:grid-cols-[120px_1fr] sm:gap-3">
       <div className="text-sm font-medium text-muted-foreground">{label}</div>
-      <div className={mono ? "break-all font-mono text-sm" : "break-words text-sm"}>
+      <div
+        className={mono ? "break-all font-mono text-sm" : "break-words text-sm"}
+      >
         {value}
       </div>
     </div>
