@@ -38,6 +38,8 @@ import {
   getWebConfigDir,
   getWebToolVersions,
   getWebLatestReleaseInfo,
+  applyWebClaudeOnboardingSkip,
+  clearWebClaudeOnboardingSkip,
   getWebUniversalProvider,
   getWebUniversalProviders,
   getWebOpenClawAgentsDefaults,
@@ -436,7 +438,9 @@ export async function invoke<T>(
     case "scan_openclaw_config_health":
       return (await getWebOpenClawHealth()) as T;
     case "get_openclaw_live_provider":
-      return (await getWebOpenClawLiveProvider(args?.providerId as string)) as T;
+      return (await getWebOpenClawLiveProvider(
+        args?.providerId as string,
+      )) as T;
     case "get_tool_versions":
       return (await getWebToolVersions(
         args?.tools as string[] | undefined,
@@ -451,15 +455,23 @@ export async function invoke<T>(
       return (await getWebLatestReleaseInfo(
         args?.currentVersion as string | undefined,
       )) as T;
+    case "apply_claude_onboarding_skip":
+      return (await applyWebClaudeOnboardingSkip()) as T;
+    case "clear_claude_onboarding_skip":
+      return (await clearWebClaudeOnboardingSkip()) as T;
     case "auth_start_login":
-      return (await startWebManagedAuthLogin(args?.authProvider as string)) as T;
+      return (await startWebManagedAuthLogin(
+        args?.authProvider as string,
+      )) as T;
     case "auth_poll_for_account":
       return (await pollWebManagedAuthAccount(
         args?.authProvider as string,
         args?.deviceCode as string,
       )) as T;
     case "auth_list_accounts":
-      return (await listWebManagedAuthAccounts(args?.authProvider as string)) as T;
+      return (await listWebManagedAuthAccounts(
+        args?.authProvider as string,
+      )) as T;
     case "auth_get_status":
       return (await getWebManagedAuthStatus(args?.authProvider as string)) as T;
     case "auth_remove_account":

@@ -184,6 +184,9 @@ pub struct AppSettings {
     /// User has confirmed the common config first-run notice
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub common_config_confirmed: Option<bool>,
+    /// Skip Claude Code first-run confirmation
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skip_claude_onboarding: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
 
@@ -251,7 +254,6 @@ pub struct AppSettings {
     /// - Linux: "gnome-terminal" | "konsole" | "xfce4-terminal" | "alacritty" | "kitty" | "ghostty"
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preferred_terminal: Option<String>,
-
 }
 
 impl Default for AppSettings {
@@ -265,6 +267,7 @@ impl Default for AppSettings {
             failover_confirmed: None,
             first_run_notice_confirmed: None,
             common_config_confirmed: None,
+            skip_claude_onboarding: None,
             language: None,
             visible_apps: None,
             claude_config_dir: None,

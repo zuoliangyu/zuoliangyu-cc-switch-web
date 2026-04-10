@@ -79,6 +79,7 @@ export function useSettingsForm(): UseSettingsFormResult {
 
     const normalized: SettingsFormState = {
       ...data,
+      skipClaudeOnboarding: data.skipClaudeOnboarding ?? false,
       claudeConfigDir: sanitizeDir(data.claudeConfigDir),
       codexConfigDir: sanitizeDir(data.codexConfigDir),
       geminiConfigDir: sanitizeDir(data.geminiConfigDir),
@@ -97,6 +98,7 @@ export function useSettingsForm(): UseSettingsFormResult {
         const base =
           prev ??
           ({
+            skipClaudeOnboarding: false,
             language: readPersistedLanguage(),
           } as SettingsFormState);
 
@@ -127,6 +129,7 @@ export function useSettingsForm(): UseSettingsFormResult {
 
       const normalized: SettingsFormState = {
         ...serverData,
+        skipClaudeOnboarding: serverData.skipClaudeOnboarding ?? false,
         claudeConfigDir: sanitizeDir(serverData.claudeConfigDir),
         codexConfigDir: sanitizeDir(serverData.codexConfigDir),
         geminiConfigDir: sanitizeDir(serverData.geminiConfigDir),

@@ -36,8 +36,10 @@ pub fn save_settings_internal(settings: crate::settings::AppSettings) -> Result<
 
 /// 获取 app_config_dir 覆盖配置 (从 Store)
 pub fn get_app_config_dir_override_internal() -> Result<Option<String>, String> {
-    Ok(crate::app_store::refresh_app_config_dir_override()
-        .map(|p| p.to_string_lossy().to_string()))
+    Ok(
+        crate::app_store::refresh_app_config_dir_override()
+            .map(|p| p.to_string_lossy().to_string()),
+    )
 }
 
 /// 获取当前生效的 app_config_dir
@@ -58,6 +60,14 @@ pub fn get_default_app_config_dir_internal() -> Result<String, String> {
 pub fn set_app_config_dir_override_internal(path: Option<String>) -> Result<bool, String> {
     crate::app_store::set_app_config_dir_override(path.as_deref())?;
     Ok(true)
+}
+
+pub fn apply_claude_onboarding_skip_internal() -> Result<bool, String> {
+    crate::claude_mcp::set_has_completed_onboarding().map_err(|e| e.to_string())
+}
+
+pub fn clear_claude_onboarding_skip_internal() -> Result<bool, String> {
+    crate::claude_mcp::clear_has_completed_onboarding().map_err(|e| e.to_string())
 }
 
 #[cfg(test)]

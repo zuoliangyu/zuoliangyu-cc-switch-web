@@ -185,6 +185,8 @@
     "openLinkFailed": "Failed to open link",
     "terminalOpened": "Terminal opened",
     "terminalOpenFailed": "Failed to open terminal",
+    "skipClaudeOnboardingFailed": "Failed to skip Claude Code first-run confirmation",
+    "clearClaudeOnboardingSkipFailed": "Failed to restore Claude Code first-run confirmation",
     "openclawModelsRegistered": "Models have been registered to /model list",
     "openclawDefaultModelSet": "Set as default model",
     "openclawDefaultModelSetFailed": "Failed to set default model",
@@ -274,6 +276,10 @@
         }
       }
     },
+    "claudeCode": "Claude Code",
+    "claudeCodeHint": "Manage local first-run confirmation behavior for Claude Code",
+    "skipClaudeOnboarding": "Skip Claude Code first-run confirmation",
+    "skipClaudeOnboardingDescription": "When enabled, write hasCompletedOnboarding=true to ~/.claude.json",
     "advanced": {
       "configDir": {
         "title": "Configuration Directory",

@@ -25,6 +25,7 @@ export const getDefaultSettings = (): Settings => ({
   firstRunNoticeConfirmed: false,
   autoSyncConfirmed: false,
   commonConfigConfirmed: false,
+  skipClaudeOnboarding: false,
   language: "zh",
   visibleApps,
 });
@@ -74,7 +75,9 @@ export const getDefaultGlobalProxyConfig = (): GlobalProxyConfig => ({
   enableLogging: false,
 });
 
-export const getDefaultAppProxyConfig = (appType = "claude"): AppProxyConfig => ({
+export const getDefaultAppProxyConfig = (
+  appType = "claude",
+): AppProxyConfig => ({
   appType,
   enabled: false,
   autoFailoverEnabled: false,

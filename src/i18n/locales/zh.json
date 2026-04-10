@@ -185,6 +185,8 @@
     "openLinkFailed": "链接打开失败",
     "terminalOpened": "终端已打开",
     "terminalOpenFailed": "打开终端失败",
+    "skipClaudeOnboardingFailed": "跳过 Claude Code 初次安装确认失败",
+    "clearClaudeOnboardingSkipFailed": "恢复 Claude Code 初次安装确认失败",
     "openclawModelsRegistered": "模型已注册到 /model 列表",
     "openclawDefaultModelSet": "已设为默认模型",
     "openclawDefaultModelSetFailed": "设置默认模型失败",
@@ -274,6 +276,10 @@
         }
       }
     },
+    "claudeCode": "Claude Code",
+    "claudeCodeHint": "管理 Claude Code 本地首次安装确认相关行为",
+    "skipClaudeOnboarding": "跳过 Claude Code 初次安装确认",
+    "skipClaudeOnboardingDescription": "开启后会向 ~/.claude.json 写入 hasCompletedOnboarding=true",
     "advanced": {
       "configDir": {
         "title": "配置文件目录",

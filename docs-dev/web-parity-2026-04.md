@@ -69,6 +69,10 @@
   - Web 端 Deep Link 导入改为“先解析 URL，再异步合并配置”，不再在解析阶段直接拒绝 `configUrl`
   - Provider deeplink 现支持通过 `configUrl` 拉取远程 `json` / `toml` 配置，并按桌面版既有规则补全 `apiKey` / `endpoint` / `model` / `homepage`
   - 远程配置拉取成功后会回填为本地 `config` 预览数据，导入确认弹窗可直接查看配置来源、URL 与合并后的配置内容
+- Claude Code 初次安装确认跳过
+  - Web 设置页新增 Claude Code 区块，可即时切换“跳过 Claude Code 初次安装确认”
+  - Web 后端新增 `POST/DELETE /api/settings/claude-onboarding-skip`，负责写入或删除 `~/.claude.json` 中的 `hasCompletedOnboarding`
+  - 设置持久化模型补齐 `skipClaudeOnboarding` 字段，并同步三语提示文案与失败提示
 
 实现约束：
 

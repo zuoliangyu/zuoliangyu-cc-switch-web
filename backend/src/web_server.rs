@@ -19,6 +19,7 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
 use crate::app_config::{AppType, McpServer};
+use crate::database::Database;
 use crate::database::FailoverQueueItem;
 use crate::prompt::Prompt;
 use crate::provider::Provider;
@@ -38,7 +39,6 @@ use crate::services::skill::{
 use crate::services::speedtest::EndpointLatency;
 use crate::settings::WebDavSyncSettings;
 use crate::store::AppState;
-use crate::database::Database;
 use tokio::sync::RwLock;
 
 static EMBEDDED_FRONTEND_DIST: Dir<'static> = include_dir!("$CC_SWITCH_WEB_EMBED_DIST_DIR");
@@ -601,9 +601,9 @@ async fn import_providers_from_live(
         Ok(AppType::OpenCode) => {
             crate::commands::import_opencode_providers_from_live_internal(state.app_state.as_ref())
         }
-        Ok(AppType::OpenClaw) => crate::commands::import_openclaw_providers_from_live_internal(
-            state.app_state.as_ref(),
-        ),
+        Ok(AppType::OpenClaw) => {
+            crate::commands::import_openclaw_providers_from_live_internal(state.app_state.as_ref())
+        }
         Ok(app_type) => {
             return Err(ApiError::bad_request(format!(
                 "{} does not support importing providers from live config",
@@ -621,11 +621,12 @@ async fn remove_provider_from_live_config(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
 ) -> Result<Json<bool>, ApiError> {
-    let removed =
-        crate::commands::remove_provider_from_live_config_internal(state.app_state.as_ref(), app, id)
-            .map_err(|e| {
-                ApiError::internal(format!("failed to remove provider from live config: {e}"))
-            })?;
+    let removed = crate::commands::remove_provider_from_live_config_internal(
+        state.app_state.as_ref(),
+        app,
+        id,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to remove provider from live config: {e}")))?;
     Ok(Json(removed))
 }
 
@@ -748,7 +749,7 @@ async fn get_custom_endpoints(
 ) -> Result<Json<Vec<crate::settings::CustomEndpoint>>, ApiError> {
     let endpoints =
         crate::commands::get_custom_endpoints_internal(state.app_state.as_ref(), app, id)
-        .map_err(|e| ApiError::internal(format!("failed to load custom endpoints: {e}")))?;
+            .map_err(|e| ApiError::internal(format!("failed to load custom endpoints: {e}")))?;
     Ok(Json(endpoints))
 }
 
@@ -773,7 +774,7 @@ async fn remove_custom_endpoint(
         id,
         payload.url,
     )
-        .map_err(|e| ApiError::internal(format!("failed to remove custom endpoint: {e}")))?;
+    .map_err(|e| ApiError::internal(format!("failed to remove custom endpoint: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -782,8 +783,13 @@ async fn update_endpoint_last_used(
     Path((app, id)): Path<(String, String)>,
     Json(payload): Json<CustomEndpointUrlRequest>,
 ) -> Result<StatusCode, ApiError> {
-    crate::commands::update_endpoint_last_used_internal(state.app_state.as_ref(), app, id, payload.url)
-        .map_err(|e| ApiError::internal(format!("failed to update endpoint last used: {e}")))?;
+    crate::commands::update_endpoint_last_used_internal(
+        state.app_state.as_ref(),
+        app,
+        id,
+        payload.url,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to update endpoint last used: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -799,8 +805,9 @@ async fn get_universal_provider(
     State(state): State<WebApiState>,
     Path(id): Path<String>,
 ) -> Result<Json<Option<crate::provider::UniversalProvider>>, ApiError> {
-    let provider = crate::commands::get_universal_provider_internal(state.app_state.as_ref(), id)
-        .map_err(|e| ApiError::internal(format!("failed to load universal provider: {e}")))?;
+    let provider =
+        crate::commands::get_universal_provider_internal(state.app_state.as_ref(), id)
+            .map_err(|e| ApiError::internal(format!("failed to load universal provider: {e}")))?;
     Ok(Json(provider))
 }
 
@@ -808,8 +815,9 @@ async fn upsert_universal_provider(
     State(state): State<WebApiState>,
     Json(provider): Json<crate::provider::UniversalProvider>,
 ) -> Result<Json<bool>, ApiError> {
-    let result = crate::commands::upsert_universal_provider_internal(state.app_state.as_ref(), provider)
-        .map_err(|e| ApiError::internal(format!("failed to save universal provider: {e}")))?;
+    let result =
+        crate::commands::upsert_universal_provider_internal(state.app_state.as_ref(), provider)
+            .map_err(|e| ApiError::internal(format!("failed to save universal provider: {e}")))?;
     Ok(Json(result))
 }
 
@@ -869,9 +877,13 @@ async fn toggle_skill_app(
     Path((id, app)): Path<(String, String)>,
     Json(payload): Json<ToggleSkillAppRequest>,
 ) -> Result<Json<bool>, ApiError> {
-    let result =
-        crate::commands::toggle_skill_app_internal(state.app_state.as_ref(), id, app, payload.enabled)
-            .map_err(|e| ApiError::internal(format!("failed to toggle skill app: {e}")))?;
+    let result = crate::commands::toggle_skill_app_internal(
+        state.app_state.as_ref(),
+        id,
+        app,
+        payload.enabled,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to toggle skill app: {e}")))?;
     Ok(Json(result))
 }
 
@@ -901,8 +913,9 @@ async fn import_skills_from_apps(
     State(state): State<WebApiState>,
     Json(imports): Json<Vec<ImportSkillSelection>>,
 ) -> Result<Json<Vec<crate::app_config::InstalledSkill>>, ApiError> {
-    let skills = crate::commands::import_skills_from_apps_internal(state.app_state.as_ref(), imports)
-        .map_err(|e| ApiError::internal(format!("failed to import skills from apps: {e}")))?;
+    let skills =
+        crate::commands::import_skills_from_apps_internal(state.app_state.as_ref(), imports)
+            .map_err(|e| ApiError::internal(format!("failed to import skills from apps: {e}")))?;
     Ok(Json(skills))
 }
 
@@ -927,8 +940,9 @@ async fn remove_skill_repo(
     State(state): State<WebApiState>,
     Path((owner, name)): Path<(String, String)>,
 ) -> Result<Json<bool>, ApiError> {
-    let removed = crate::commands::remove_skill_repo_internal(state.app_state.as_ref(), owner, name)
-        .map_err(|e| ApiError::internal(format!("failed to remove skill repo: {e}")))?;
+    let removed =
+        crate::commands::remove_skill_repo_internal(state.app_state.as_ref(), owner, name)
+            .map_err(|e| ApiError::internal(format!("failed to remove skill repo: {e}")))?;
     Ok(Json(removed))
 }
 
@@ -959,8 +973,8 @@ async fn install_skill_unified(
         payload.skill,
         payload.current_app,
     )
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to install skill: {e}")))?;
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to install skill: {e}")))?;
     Ok(Json(installed))
 }
 
@@ -1202,8 +1216,8 @@ async fn get_session_messages(
 ) -> Result<Json<Vec<crate::session_manager::SessionMessage>>, ApiError> {
     let messages =
         crate::commands::get_session_messages_internal(query.provider_id, query.source_path)
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to load session messages: {e}")))?;
+            .await
+            .map_err(|e| ApiError::internal(format!("failed to load session messages: {e}")))?;
     Ok(Json(messages))
 }
 
@@ -1238,7 +1252,7 @@ async fn get_usage_summary(
         query.start_date,
         query.end_date,
     )
-        .map_err(|e| ApiError::internal(format!("failed to load usage summary: {e}")))?;
+    .map_err(|e| ApiError::internal(format!("failed to load usage summary: {e}")))?;
     Ok(Json(summary))
 }
 
@@ -1251,7 +1265,7 @@ async fn get_usage_trends(
         query.start_date,
         query.end_date,
     )
-        .map_err(|e| ApiError::internal(format!("failed to load usage trends: {e}")))?;
+    .map_err(|e| ApiError::internal(format!("failed to load usage trends: {e}")))?;
     Ok(Json(trends))
 }
 
@@ -1281,7 +1295,7 @@ async fn get_usage_request_logs(
         payload.page.unwrap_or(0),
         payload.page_size.unwrap_or(20),
     )
-        .map_err(|e| ApiError::internal(format!("failed to load request logs: {e}")))?;
+    .map_err(|e| ApiError::internal(format!("failed to load request logs: {e}")))?;
     Ok(Json(logs))
 }
 
@@ -1345,9 +1359,12 @@ async fn get_usage_provider_limits(
     State(state): State<WebApiState>,
     Path((app_type, provider_id)): Path<(String, String)>,
 ) -> Result<Json<crate::services::usage_stats::ProviderLimitStatus>, ApiError> {
-    let limits =
-        crate::commands::check_provider_limits_internal(state.app_state.as_ref(), provider_id, app_type)
-        .map_err(|e| ApiError::internal(format!("failed to load provider limits: {e}")))?;
+    let limits = crate::commands::check_provider_limits_internal(
+        state.app_state.as_ref(),
+        provider_id,
+        app_type,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to load provider limits: {e}")))?;
     Ok(Json(limits))
 }
 
@@ -1637,9 +1654,9 @@ async fn webdav_test_connection(
         payload.settings,
         payload.preserve_empty_password,
     )
-        .await
-        .map(Json)
-        .map_err(|e| ApiError::bad_request(e.to_string()))
+    .await
+    .map(Json)
+    .map_err(|e| ApiError::bad_request(e.to_string()))
 }
 
 async fn webdav_sync_upload(State(state): State<WebApiState>) -> Result<Json<Value>, ApiError> {
@@ -1678,6 +1695,18 @@ async fn save_settings(
     crate::commands::save_settings_internal(settings)
         .map(Json)
         .map_err(|e| ApiError::internal(format!("failed to save settings: {e}")))
+}
+
+async fn apply_claude_onboarding_skip() -> Result<Json<bool>, ApiError> {
+    crate::commands::apply_claude_onboarding_skip_internal()
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to apply claude onboarding skip: {e}")))
+}
+
+async fn clear_claude_onboarding_skip() -> Result<Json<bool>, ApiError> {
+    crate::commands::clear_claude_onboarding_skip_internal()
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to clear claude onboarding skip: {e}")))
 }
 
 async fn get_app_config_dir_override() -> Json<Option<String>> {
@@ -1744,18 +1773,18 @@ async fn extract_common_config_snippet(
 ) -> Result<Json<String>, ApiError> {
     let app_type = AppType::from_str(&app).map_err(|e| ApiError::bad_request(e.to_string()))?;
 
-    let settings = if let Some(settings_config) = payload
-        .settings_config
-        .as_deref()
-        .filter(|value| !value.trim().is_empty())
-    {
-        Some(
-            serde_json::from_str(settings_config)
-                .map_err(|e| ApiError::bad_request(crate::commands::invalid_json_format_error(e)))?,
-        )
-    } else {
-        None
-    };
+    let settings =
+        if let Some(settings_config) = payload
+            .settings_config
+            .as_deref()
+            .filter(|value| !value.trim().is_empty())
+        {
+            Some(serde_json::from_str(settings_config).map_err(|e| {
+                ApiError::bad_request(crate::commands::invalid_json_format_error(e))
+            })?)
+        } else {
+            None
+        };
 
     match crate::commands::extract_common_config_snippet_internal(
         state.app_state.as_ref(),
@@ -1766,9 +1795,9 @@ async fn extract_common_config_snippet(
         Err(crate::commands::ConfigCommandError::BadRequest(message)) => {
             Err(ApiError::bad_request(message))
         }
-        Err(crate::commands::ConfigCommandError::Internal(message)) => Err(
-            ApiError::internal(format!("failed to extract common config snippet: {message}")),
-        ),
+        Err(crate::commands::ConfigCommandError::Internal(message)) => Err(ApiError::internal(
+            format!("failed to extract common config snippet: {message}"),
+        )),
     }
 }
 
@@ -1898,14 +1927,13 @@ async fn auth_list_accounts(
     State(state): State<WebApiState>,
     Path(auth_provider): Path<String>,
 ) -> Result<Json<Vec<crate::commands::ManagedAuthAccount>>, ApiError> {
-    let accounts =
-        crate::commands::auth_list_accounts_internal(
-            &auth_provider,
-            &state.copilot_auth_state,
-            &state.codex_oauth_state,
-        )
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to list auth accounts: {e}")))?;
+    let accounts = crate::commands::auth_list_accounts_internal(
+        &auth_provider,
+        &state.copilot_auth_state,
+        &state.codex_oauth_state,
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to list auth accounts: {e}")))?;
     Ok(Json(accounts))
 }
 
@@ -1913,14 +1941,13 @@ async fn auth_get_status(
     State(state): State<WebApiState>,
     Path(auth_provider): Path<String>,
 ) -> Result<Json<crate::commands::ManagedAuthStatus>, ApiError> {
-    let status =
-        crate::commands::auth_get_status_internal(
-            &auth_provider,
-            &state.copilot_auth_state,
-            &state.codex_oauth_state,
-        )
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to load auth status: {e}")))?;
+    let status = crate::commands::auth_get_status_internal(
+        &auth_provider,
+        &state.copilot_auth_state,
+        &state.codex_oauth_state,
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to load auth status: {e}")))?;
     Ok(Json(status))
 }
 
@@ -2070,10 +2097,9 @@ async fn get_codex_oauth_quota(
 async fn get_coding_plan_quota(
     Json(payload): Json<CredentialQueryRequest>,
 ) -> Result<Json<crate::services::subscription::SubscriptionQuota>, ApiError> {
-    let quota =
-        crate::commands::get_coding_plan_quota_internal(payload.base_url, payload.api_key)
-            .await
-            .map_err(|e| ApiError::internal(format!("failed to load coding plan quota: {e}")))?;
+    let quota = crate::commands::get_coding_plan_quota_internal(payload.base_url, payload.api_key)
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load coding plan quota: {e}")))?;
     Ok(Json(quota))
 }
 
@@ -2136,8 +2162,9 @@ async fn restore_db_backup(
 async fn rename_db_backup(
     Json(payload): Json<RenameBackupRequest>,
 ) -> Result<Json<String>, ApiError> {
-    let filename = crate::database::Database::rename_backup(&payload.old_filename, &payload.new_name)
-        .map_err(|e| ApiError::internal(format!("failed to rename database backup: {e}")))?;
+    let filename =
+        crate::database::Database::rename_backup(&payload.old_filename, &payload.new_name)
+            .map_err(|e| ApiError::internal(format!("failed to rename database backup: {e}")))?;
     Ok(Json(filename))
 }
 
@@ -2196,9 +2223,10 @@ async fn get_omo_local_file() -> Result<Json<OmoLocalFileData>, ApiError> {
 async fn get_current_omo_provider_id(
     State(state): State<WebApiState>,
 ) -> Result<Json<String>, ApiError> {
-    let provider_id = crate::commands::get_current_omo_provider_id_internal(state.app_state.as_ref())
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to load current OMO provider: {e}")))?;
+    let provider_id =
+        crate::commands::get_current_omo_provider_id_internal(state.app_state.as_ref())
+            .await
+            .map_err(|e| ApiError::internal(format!("failed to load current OMO provider: {e}")))?;
     Ok(Json(provider_id))
 }
 
@@ -2219,11 +2247,12 @@ async fn get_omo_slim_local_file() -> Result<Json<OmoLocalFileData>, ApiError> {
 async fn get_current_omo_slim_provider_id(
     State(state): State<WebApiState>,
 ) -> Result<Json<String>, ApiError> {
-    let provider_id = crate::commands::get_current_omo_slim_provider_id_internal(
-        state.app_state.as_ref(),
-    )
-    .await
-    .map_err(|e| ApiError::internal(format!("failed to load current OMO Slim provider: {e}")))?;
+    let provider_id =
+        crate::commands::get_current_omo_slim_provider_id_internal(state.app_state.as_ref())
+            .await
+            .map_err(|e| {
+                ApiError::internal(format!("failed to load current OMO Slim provider: {e}"))
+            })?;
     Ok(Json(provider_id))
 }
 
@@ -2252,8 +2281,9 @@ async fn update_provider(
     Json(mut provider): Json<Provider>,
 ) -> Result<Json<bool>, ApiError> {
     provider.id = id;
-    let updated = crate::commands::update_provider_internal(state.app_state.as_ref(), app, provider)
-        .map_err(|e| ApiError::internal(format!("failed to update provider: {e}")))?;
+    let updated =
+        crate::commands::update_provider_internal(state.app_state.as_ref(), app, provider)
+            .map_err(|e| ApiError::internal(format!("failed to update provider: {e}")))?;
     Ok(Json(updated))
 }
 
@@ -2271,9 +2301,12 @@ async fn update_providers_sort_order(
     Path(app): Path<String>,
     Json(updates): Json<Vec<ProviderSortUpdate>>,
 ) -> Result<Json<bool>, ApiError> {
-    let updated =
-        crate::commands::update_providers_sort_order_internal(state.app_state.as_ref(), app, updates)
-            .map_err(|e| ApiError::internal(format!("failed to update provider sort order: {e}")))?;
+    let updated = crate::commands::update_providers_sort_order_internal(
+        state.app_state.as_ref(),
+        app,
+        updates,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to update provider sort order: {e}")))?;
     Ok(Json(updated))
 }
 
@@ -2281,8 +2314,9 @@ async fn switch_provider(
     State(state): State<WebApiState>,
     Path((app, id)): Path<(String, String)>,
 ) -> Result<Json<SwitchResult>, ApiError> {
-    let result = crate::commands::switch_provider_by_name_internal(state.app_state.as_ref(), app, id)
-        .map_err(|e| ApiError::internal(format!("failed to switch provider: {e}")))?;
+    let result =
+        crate::commands::switch_provider_by_name_internal(state.app_state.as_ref(), app, id)
+            .map_err(|e| ApiError::internal(format!("failed to switch provider: {e}")))?;
     Ok(Json(result))
 }
 
@@ -2344,7 +2378,11 @@ async fn get_proxy_config_for_app(
 }
 
 async fn is_proxy_running(State(state): State<WebApiState>) -> Json<bool> {
-    Json(crate::commands::is_proxy_running_internal(state.app_state.as_ref()).await.unwrap_or(false))
+    Json(
+        crate::commands::is_proxy_running_internal(state.app_state.as_ref())
+            .await
+            .unwrap_or(false),
+    )
 }
 
 async fn is_live_takeover_active(State(state): State<WebApiState>) -> Result<Json<bool>, ApiError> {
@@ -2447,8 +2485,8 @@ async fn set_proxy_takeover_for_app(
         app,
         payload.enabled,
     )
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to update proxy takeover: {e}")))?;
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to update proxy takeover: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -2471,8 +2509,8 @@ async fn get_default_cost_multiplier(
         state.app_state.as_ref(),
         app_type.as_str(),
     )
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to load default cost multiplier: {e}")))?;
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to load default cost multiplier: {e}")))?;
     Ok(Json(value))
 }
 
@@ -2487,10 +2525,8 @@ async fn set_default_cost_multiplier(
         app_type.as_str(),
         &payload.value,
     )
-        .await
-        .map_err(|e| {
-            ApiError::internal(format!("failed to update default cost multiplier: {e}"))
-        })?;
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to update default cost multiplier: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -2503,8 +2539,8 @@ async fn get_pricing_model_source(
         state.app_state.as_ref(),
         app_type.as_str(),
     )
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to load pricing model source: {e}")))?;
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to load pricing model source: {e}")))?;
     Ok(Json(value))
 }
 
@@ -2519,8 +2555,8 @@ async fn set_pricing_model_source(
         app_type.as_str(),
         &payload.value,
     )
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to update pricing model source: {e}")))?;
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to update pricing model source: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -2534,8 +2570,8 @@ async fn get_provider_health(
         provider_id,
         app_type.as_str().to_string(),
     )
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to load provider health: {e}")))?;
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to load provider health: {e}")))?;
     Ok(Json(value))
 }
 
@@ -2750,8 +2786,7 @@ fn resolve_bind_options(options: &WebServerOptions) -> Result<ResolvedBindOption
     let ip = if host.eq_ignore_ascii_case("localhost") {
         IpAddr::V4(Ipv4Addr::LOCALHOST)
     } else {
-        host
-            .parse::<IpAddr>()
+        host.parse::<IpAddr>()
             .map_err(|e| format!("invalid bind host '{host}': {e}"))?
     };
 
@@ -2785,7 +2820,8 @@ async fn bind_listener(
     }
 
     let end_port = options.preferred_port + (attempt_count.saturating_sub(1)) as u16;
-    let last_addr = last_addr.unwrap_or_else(|| SocketAddr::new(options.ip, options.preferred_port));
+    let last_addr =
+        last_addr.unwrap_or_else(|| SocketAddr::new(options.ip, options.preferred_port));
     let last_error = last_error.unwrap_or_else(|| "unknown bind error".to_string());
 
     Err(format!(
@@ -2871,10 +2907,9 @@ fn build_embedded_file_response(path: &str, contents: &'static [u8]) -> Response
     }
 
     if path.ends_with(".html") {
-        response.headers_mut().insert(
-            header::CACHE_CONTROL,
-            HeaderValue::from_static("no-cache"),
-        );
+        response
+            .headers_mut()
+            .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-cache"));
     }
 
     response
@@ -2941,6 +2976,10 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
         .route("/api/config/export", get(export_config_download))
         .route("/api/config/import", post(import_config_upload))
         .route("/api/settings", get(get_settings).put(save_settings))
+        .route(
+            "/api/settings/claude-onboarding-skip",
+            post(apply_claude_onboarding_skip).delete(clear_claude_onboarding_skip),
+        )
         .route("/api/settings/app-config-dir", get(get_app_config_dir))
         .route(
             "/api/settings/default-app-config-dir",
@@ -3129,7 +3168,10 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
         .route("/api/skills/skillssh/search", get(search_skills_sh))
         .route("/api/skills/update", post(update_skill))
         .route("/api/skills/storage/migrate", post(migrate_skill_storage))
-        .route("/api/skills/uninstall", post(uninstall_skill_unified_by_body))
+        .route(
+            "/api/skills/uninstall",
+            post(uninstall_skill_unified_by_body),
+        )
         .route("/api/skills/apps/toggle", put(toggle_skill_app_by_body))
         .route(
             "/api/skills/backups/:backup_id",

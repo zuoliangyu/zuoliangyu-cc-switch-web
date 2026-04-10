@@ -30,7 +30,10 @@ import type {
 } from "@/lib/api/settings";
 import type { StreamCheckConfig } from "@/lib/api/model-test";
 import type { OmoLocalFileData } from "@/types/omo";
-import type { DeleteSessionOptions, DeleteSessionResult } from "@/lib/api/sessions";
+import type {
+  DeleteSessionOptions,
+  DeleteSessionResult,
+} from "@/lib/api/sessions";
 import type { ProviderSortUpdate } from "@/lib/api/providers";
 import type {
   DiscoverableSkill,
@@ -260,7 +263,10 @@ async function requestWithBody<T>(
   return (await response.json()) as T;
 }
 
-async function requestFormData<T>(path: string, formData: FormData): Promise<T> {
+async function requestFormData<T>(
+  path: string,
+  formData: FormData,
+): Promise<T> {
   logWebRequest("POST", path, formData);
   const response = await fetch(`${getWebApiBase()}${path}`, {
     method: "POST",
@@ -396,9 +402,13 @@ export async function getWebDefaultAppConfigDir(): Promise<string> {
 export async function setWebAppConfigDirOverride(
   path: string | null,
 ): Promise<boolean> {
-  return requestWithBody<boolean>("/api/settings/app-config-dir-override", "PUT", {
-    path,
-  });
+  return requestWithBody<boolean>(
+    "/api/settings/app-config-dir-override",
+    "PUT",
+    {
+      path,
+    },
+  );
 }
 
 export async function getWebToolVersions(
@@ -433,6 +443,20 @@ export async function getWebLatestReleaseInfo(
   const query = params.toString();
   return requestJson<import("@/lib/api/settings").LatestReleaseInfo>(
     `/api/settings/latest-release${query ? `?${query}` : ""}`,
+  );
+}
+
+export async function applyWebClaudeOnboardingSkip(): Promise<boolean> {
+  return requestWithBody<boolean>(
+    "/api/settings/claude-onboarding-skip",
+    "POST",
+  );
+}
+
+export async function clearWebClaudeOnboardingSkip(): Promise<boolean> {
+  return requestWithBody<boolean>(
+    "/api/settings/claude-onboarding-skip",
+    "DELETE",
   );
 }
 
@@ -479,9 +503,7 @@ export async function pollWebManagedAuthAccount(
 export async function listWebManagedAuthAccounts(
   authProvider: string,
 ): Promise<import("@/lib/api/auth").ManagedAuthAccount[]> {
-  return requestJson(
-    `/api/auth/${encodeURIComponent(authProvider)}/accounts`,
-  );
+  return requestJson(`/api/auth/${encodeURIComponent(authProvider)}/accounts`);
 }
 
 export async function getWebManagedAuthStatus(
@@ -510,7 +532,9 @@ export async function setWebManagedAuthDefaultAccount(
   });
 }
 
-export async function logoutWebManagedAuth(authProvider: string): Promise<void> {
+export async function logoutWebManagedAuth(
+  authProvider: string,
+): Promise<void> {
   await requestWithBody("/api/auth/logout", "POST", { authProvider });
 }
 
@@ -637,14 +661,19 @@ export async function getWebLiveProviderIds(appId: AppId): Promise<string[]> {
   }
 }
 
-export async function importWebProvidersFromLive(appId: AppId): Promise<number> {
+export async function importWebProvidersFromLive(
+  appId: AppId,
+): Promise<number> {
   return requestWithBody<number>(`/api/providers/${appId}/import-live`, "POST");
 }
 
 export async function importWebDefaultProviderConfig(
   appId: AppId,
 ): Promise<boolean> {
-  return requestWithBody<boolean>(`/api/providers/${appId}/import-default`, "POST");
+  return requestWithBody<boolean>(
+    `/api/providers/${appId}/import-default`,
+    "POST",
+  );
 }
 
 export async function streamCheckWebProvider(
@@ -725,14 +754,12 @@ export async function testWebApiEndpoints(
   urls: string[],
   timeoutSecs?: number,
 ): Promise<import("@/lib/api/providerRuntime").EndpointLatencyResult[]> {
-  return requestWithBody<import("@/lib/api/providerRuntime").EndpointLatencyResult[]>(
-    "/api/providers/endpoints/test",
-    "POST",
-    {
-      urls,
-      timeoutSecs,
-    },
-  );
+  return requestWithBody<
+    import("@/lib/api/providerRuntime").EndpointLatencyResult[]
+  >("/api/providers/endpoints/test", "POST", {
+    urls,
+    timeoutSecs,
+  });
 }
 
 export async function getWebCustomEndpoints(
@@ -1190,14 +1217,20 @@ export async function testWebdavConnection(
   );
 }
 
-export async function uploadWebdavSync(): Promise<{ status: string; warning?: string }> {
+export async function uploadWebdavSync(): Promise<{
+  status: string;
+  warning?: string;
+}> {
   return requestWithBody<{ status: string; warning?: string }>(
     "/api/webdav/upload",
     "POST",
   );
 }
 
-export async function downloadWebdavSync(): Promise<{ status: string; warning?: string }> {
+export async function downloadWebdavSync(): Promise<{
+  status: string;
+  warning?: string;
+}> {
   return requestWithBody<{ status: string; warning?: string }>(
     "/api/webdav/download",
     "POST",
@@ -1291,7 +1324,11 @@ export async function getWebStreamCheckConfig(): Promise<StreamCheckConfig> {
 export async function setWebStreamCheckConfig(
   config: StreamCheckConfig,
 ): Promise<void> {
-  return requestWithBody<void>("/api/settings/stream-check-config", "PUT", config);
+  return requestWithBody<void>(
+    "/api/settings/stream-check-config",
+    "PUT",
+    config,
+  );
 }
 
 export async function createWebDbBackup(): Promise<string> {
@@ -1488,9 +1525,13 @@ export async function getWebSkillBackups(): Promise<SkillBackupEntry[]> {
 export async function uninstallWebSkillUnified(
   id: string,
 ): Promise<SkillUninstallResult> {
-  return requestWithBody<SkillUninstallResult>("/api/skills/uninstall", "POST", {
-    id,
-  });
+  return requestWithBody<SkillUninstallResult>(
+    "/api/skills/uninstall",
+    "POST",
+    {
+      id,
+    },
+  );
 }
 
 export async function toggleWebSkillApp(
@@ -1669,7 +1710,9 @@ export async function saveWebWorkspaceFile(
   );
 }
 
-export async function listWebDailyMemoryFiles(): Promise<DailyMemoryFileInfo[]> {
+export async function listWebDailyMemoryFiles(): Promise<
+  DailyMemoryFileInfo[]
+> {
   return requestJson<DailyMemoryFileInfo[]>("/api/workspace/daily-memory");
 }
 
@@ -1692,7 +1735,9 @@ export async function saveWebDailyMemoryFile(
   );
 }
 
-export async function deleteWebDailyMemoryFile(filename: string): Promise<void> {
+export async function deleteWebDailyMemoryFile(
+  filename: string,
+): Promise<void> {
   return requestWithBody<void>(
     `/api/workspace/daily-memory/${encodeURIComponent(filename)}`,
     "DELETE",
@@ -1805,11 +1850,7 @@ export async function getWebOpenClawEnv(): Promise<OpenClawEnvConfig> {
 export async function setWebOpenClawEnv(
   env: OpenClawEnvConfig,
 ): Promise<OpenClawWriteOutcome> {
-  return requestWithBody<OpenClawWriteOutcome>(
-    "/api/openclaw/env",
-    "PUT",
-    env,
-  );
+  return requestWithBody<OpenClawWriteOutcome>("/api/openclaw/env", "PUT", env);
 }
 
 export async function getWebOpenClawTools(): Promise<OpenClawToolsConfig> {

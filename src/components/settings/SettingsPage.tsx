@@ -33,6 +33,7 @@ import { AppVisibilitySettings } from "@/components/settings/AppVisibilitySettin
 import { SkillStorageLocationSettings } from "@/components/settings/SkillStorageLocationSettings";
 import { SkillSyncMethodSettings } from "@/components/settings/SkillSyncMethodSettings";
 import { TerminalSettings } from "@/components/settings/TerminalSettings";
+import { ClaudeCodeSettings } from "@/components/settings/ClaudeCodeSettings";
 import { DirectorySettings } from "@/components/settings/DirectorySettings";
 import { ImportExportSection } from "@/components/settings/ImportExportSection";
 import { BackupListSection } from "@/components/settings/BackupListSection";
@@ -187,9 +188,7 @@ export function SettingsPage({
           onValueChange={setActiveTab}
           className="flex flex-col h-full"
         >
-          <TabsList
-            className="grid w-full mb-6 glass rounded-lg grid-cols-6"
-          >
+          <TabsList className="grid w-full mb-6 glass rounded-lg grid-cols-6">
             <TabsTrigger value="general">
               {t("settings.tabGeneral")}
             </TabsTrigger>
@@ -240,6 +239,12 @@ export function SettingsPage({
                       value={settings.preferredTerminal}
                       onChange={(terminal) =>
                         handleAutoSave({ preferredTerminal: terminal })
+                      }
+                    />
+                    <ClaudeCodeSettings
+                      skipOnboarding={settings.skipClaudeOnboarding ?? false}
+                      onSkipOnboardingChange={(value) =>
+                        handleAutoSave({ skipClaudeOnboarding: value })
                       }
                     />
                   </motion.div>

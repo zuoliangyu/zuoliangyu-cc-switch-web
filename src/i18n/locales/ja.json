@@ -185,6 +185,8 @@
     "openLinkFailed": "リンクを開けませんでした",
     "terminalOpened": "ターミナルを開きました",
     "terminalOpenFailed": "ターミナルを開けませんでした",
+    "skipClaudeOnboardingFailed": "Claude Code の初回確認スキップに失敗しました",
+    "clearClaudeOnboardingSkipFailed": "Claude Code の初回確認の復元に失敗しました",
     "openclawModelsRegistered": "モデルが /model リストに登録されました",
     "openclawDefaultModelSet": "デフォルトモデルに設定しました",
     "openclawDefaultModelSetFailed": "デフォルトモデルの設定に失敗しました",
@@ -274,6 +276,10 @@
         }
       }
     },
+    "claudeCode": "Claude Code",
+    "claudeCodeHint": "Claude Code のローカル初回確認動作を管理します",
+    "skipClaudeOnboarding": "Claude Code の初回確認をスキップ",
+    "skipClaudeOnboardingDescription": "有効にすると ~/.claude.json に hasCompletedOnboarding=true を書き込みます",
     "advanced": {
       "configDir": {
         "title": "設定ディレクトリ",

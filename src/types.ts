@@ -252,6 +252,8 @@ export interface Settings {
   autoSyncConfirmed?: boolean;
   // User has confirmed the common config first-run notice
   commonConfigConfirmed?: boolean;
+  // Skip Claude Code first-run confirmation
+  skipClaudeOnboarding?: boolean;
   // 首选语言（可选，默认中文）
   language?: "en" | "zh" | "ja";
 
@@ -296,7 +298,6 @@ export interface Settings {
   // ===== 终端设置 =====
   // 首选终端应用
   preferredTerminal?: string;
-
 }
 
 export interface SessionMeta {

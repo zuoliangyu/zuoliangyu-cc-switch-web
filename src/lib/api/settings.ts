@@ -161,6 +161,14 @@ export const settingsApi = {
     return await invoke("get_latest_release_info", { currentVersion });
   },
 
+  async applyClaudeOnboardingSkip(): Promise<boolean> {
+    return await invoke("apply_claude_onboarding_skip");
+  },
+
+  async clearClaudeOnboardingSkip(): Promise<boolean> {
+    return await invoke("clear_claude_onboarding_skip");
+  },
+
   async getRectifierConfig(): Promise<RectifierConfig> {
     return await invoke("get_rectifier_config");
   },
@@ -231,4 +239,3 @@ export const backupsApi = {
     await invoke("delete_db_backup", { filename });
   },
 };
-
