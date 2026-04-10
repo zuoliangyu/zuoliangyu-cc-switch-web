@@ -194,6 +194,11 @@ impl StreamCheckService {
         claude_api_format_override: Option<String>,
     ) -> Result<StreamCheckResult, AppError> {
         let start = Instant::now();
+
+        if matches!(app_type, AppType::OpenCode | AppType::OpenClaw) {
+            return Self::check_once_without_adapter(app_type, provider, config, start).await;
+        }
+
         let adapter = get_adapter(app_type);
 
         let base_url = adapter
@@ -223,6 +228,7 @@ impl StreamCheckService {
                     request_timeout,
                     provider,
                     claude_api_format_override.as_deref(),
+                    None,
                 )
                 .await
             }
@@ -246,24 +252,12 @@ impl StreamCheckService {
                     &model_to_test,
                     test_prompt,
                     request_timeout,
+                    None,
                 )
                 .await
             }
-            AppType::OpenCode => {
-                // OpenCode doesn't support stream check yet
-                return Err(AppError::localized(
-                    "opencode_no_stream_check",
-                    "OpenCode 暂不支持健康检查",
-                    "OpenCode does not support health check yet",
-                ));
-            }
-            AppType::OpenClaw => {
-                // OpenClaw doesn't support stream check yet
-                return Err(AppError::localized(
-                    "openclaw_no_stream_check",
-                    "OpenClaw 暂不支持健康检查",
-                    "OpenClaw does not support health check yet",
-                ));
+            AppType::OpenCode | AppType::OpenClaw => {
+                unreachable!("OpenCode/OpenClaw 已通过 check_once_without_adapter 处理")
             }
         };
 
@@ -313,6 +307,7 @@ impl StreamCheckService {
         timeout: std::time::Duration,
         provider: &Provider,
         claude_api_format_override: Option<&str>,
+        extra_headers: Option<&serde_json::Map<String, serde_json::Value>>,
     ) -> Result<(u16, String), AppError> {
         let base = base_url.trim_end_matches('/');
         let is_github_copilot = auth.strategy == AuthStrategy::GitHubCopilot;
@@ -429,6 +424,14 @@ impl StreamCheckService {
                 // Other headers
                 .header("sec-fetch-mode", "cors")
                 .header("connection", "keep-alive");
+        }
+
+        if let Some(headers) = extra_headers {
+            for (key, value) in headers {
+                if let Some(v) = value.as_str() {
+                    request_builder = request_builder.header(key.as_str(), v);
+                }
+            }
         }
 
         let response = request_builder
@@ -551,6 +554,7 @@ impl StreamCheckService {
         model: &str,
         test_prompt: &str,
         timeout: std::time::Duration,
+        extra_headers: Option<&serde_json::Map<String, serde_json::Value>>,
     ) -> Result<(u16, String), AppError> {
         let base = base_url.trim_end_matches('/');
         // Gemini 原生 API: /v1beta/models/{model}:streamGenerateContent?alt=sse
@@ -570,11 +574,21 @@ impl StreamCheckService {
             }]
         });
 
-        let response = client
+        let mut request_builder = client
             .post(&url)
             .header("x-goog-api-key", &auth.api_key)
             .header("Content-Type", "application/json")
-            .header("Accept", "text/event-stream")
+            .header("Accept", "text/event-stream");
+
+        if let Some(headers) = extra_headers {
+            for (key, value) in headers {
+                if let Some(v) = value.as_str() {
+                    request_builder = request_builder.header(key.as_str(), v);
+                }
+            }
+        }
+
+        let response = request_builder
             .timeout(timeout)
             .json(&body)
             .send()
@@ -597,6 +611,396 @@ impl StreamCheckService {
         } else {
             Err(AppError::Message("No response data received".to_string()))
         }
+    }
+
+    async fn check_once_without_adapter(
+        app_type: &AppType,
+        provider: &Provider,
+        config: &StreamCheckConfig,
+        start: Instant,
+    ) -> Result<StreamCheckResult, AppError> {
+        let proxy_config = provider.meta.as_ref().and_then(|m| m.proxy_config.as_ref());
+        let client = crate::proxy::http_client::get_for_provider(proxy_config);
+        let request_timeout = std::time::Duration::from_secs(config.timeout_secs);
+        let model_to_test = Self::resolve_test_model(app_type, provider, config);
+        let test_prompt = &config.test_prompt;
+
+        let result = match app_type {
+            AppType::OpenClaw => {
+                Self::check_openclaw_stream(
+                    &client,
+                    provider,
+                    &model_to_test,
+                    test_prompt,
+                    request_timeout,
+                )
+                .await
+            }
+            AppType::OpenCode => {
+                Self::check_opencode_stream(
+                    &client,
+                    provider,
+                    &model_to_test,
+                    test_prompt,
+                    request_timeout,
+                )
+                .await
+            }
+            _ => unreachable!("check_once_without_adapter 只处理 OpenCode/OpenClaw"),
+        };
+
+        let response_time = start.elapsed().as_millis() as u64;
+        Ok(Self::build_stream_check_result(
+            result,
+            response_time,
+            config.degraded_threshold_ms,
+        ))
+    }
+
+    fn build_stream_check_result(
+        result: Result<(u16, String), AppError>,
+        response_time: u64,
+        degraded_threshold_ms: u64,
+    ) -> StreamCheckResult {
+        let tested_at = chrono::Utc::now().timestamp();
+        match result {
+            Ok((status_code, model)) => StreamCheckResult {
+                status: Self::determine_status(response_time, degraded_threshold_ms),
+                success: true,
+                message: "Check succeeded".to_string(),
+                response_time_ms: Some(response_time),
+                http_status: Some(status_code),
+                model_used: model,
+                tested_at,
+                retry_count: 0,
+            },
+            Err(e) => StreamCheckResult {
+                status: HealthStatus::Failed,
+                success: false,
+                message: e.to_string(),
+                response_time_ms: Some(response_time),
+                http_status: None,
+                model_used: String::new(),
+                tested_at,
+                retry_count: 0,
+            },
+        }
+    }
+
+    async fn check_openclaw_stream(
+        client: &Client,
+        provider: &Provider,
+        model: &str,
+        test_prompt: &str,
+        timeout: std::time::Duration,
+    ) -> Result<(u16, String), AppError> {
+        if Self::openclaw_uses_auth_header(provider) {
+            return Err(AppError::localized(
+                "openclaw_auth_header_not_supported",
+                "该供应商使用自定义认证头，暂不支持流式健康检查。建议直接通过 OpenClaw 测试。",
+                "This provider uses a custom auth header; stream health check is not supported. Please test it directly via OpenClaw.",
+            ));
+        }
+
+        let base_url = Self::extract_openclaw_base_url(provider)?;
+        let api_key = Self::extract_openclaw_api_key(provider)?;
+        let api = Self::extract_openclaw_protocol(provider);
+        let extra_headers = Self::extract_openclaw_headers(provider);
+
+        match api.as_deref() {
+            Some("openai-completions") => {
+                let auth = AuthInfo::new(api_key, AuthStrategy::Bearer);
+                Self::check_claude_stream(
+                    client,
+                    &base_url,
+                    &auth,
+                    model,
+                    test_prompt,
+                    timeout,
+                    provider,
+                    Some("openai_chat"),
+                    extra_headers,
+                )
+                .await
+            }
+            Some("openai-responses") => {
+                let auth = AuthInfo::new(api_key, AuthStrategy::Bearer);
+                Self::check_claude_stream(
+                    client,
+                    &base_url,
+                    &auth,
+                    model,
+                    test_prompt,
+                    timeout,
+                    provider,
+                    Some("openai_responses"),
+                    extra_headers,
+                )
+                .await
+            }
+            Some("anthropic-messages") => {
+                let auth = AuthInfo::new(api_key, AuthStrategy::ClaudeAuth);
+                Self::check_claude_stream(
+                    client,
+                    &base_url,
+                    &auth,
+                    model,
+                    test_prompt,
+                    timeout,
+                    provider,
+                    Some("anthropic"),
+                    extra_headers,
+                )
+                .await
+            }
+            Some("google-generative-ai") => {
+                let auth = AuthInfo::new(api_key, AuthStrategy::Google);
+                Self::check_gemini_stream(
+                    client,
+                    &base_url,
+                    &auth,
+                    model,
+                    test_prompt,
+                    timeout,
+                    extra_headers,
+                )
+                .await
+            }
+            Some("bedrock-converse-stream") => Err(AppError::localized(
+                "openclaw_bedrock_not_supported",
+                "AWS Bedrock 需要 SigV4 签名，当前不支持健康检查。请通过 AWS 控制台或 OpenClaw 验证连通性。",
+                "AWS Bedrock requires SigV4 signing and is not supported by stream health check. Please verify connectivity via AWS console or OpenClaw.",
+            )),
+            Some(other) => Err(AppError::localized(
+                "openclaw_protocol_not_yet_supported",
+                format!("OpenClaw 暂不支持协议: {other}"),
+                format!("OpenClaw protocol not yet supported: {other}"),
+            )),
+            None => Err(AppError::localized(
+                "openclaw_protocol_missing",
+                "OpenClaw 供应商缺少 api 字段",
+                "OpenClaw provider is missing the `api` field",
+            )),
+        }
+    }
+
+    fn openclaw_uses_auth_header(provider: &Provider) -> bool {
+        provider
+            .settings_config
+            .get("authHeader")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    }
+
+    fn extract_openclaw_headers(
+        provider: &Provider,
+    ) -> Option<&serde_json::Map<String, serde_json::Value>> {
+        provider
+            .settings_config
+            .get("headers")
+            .and_then(|v| v.as_object())
+            .filter(|m| !m.is_empty())
+    }
+
+    fn extract_openclaw_base_url(provider: &Provider) -> Result<String, AppError> {
+        provider
+            .settings_config
+            .get("baseUrl")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| {
+                AppError::localized(
+                    "openclaw_base_url_missing",
+                    "OpenClaw 供应商缺少 baseUrl",
+                    "OpenClaw provider is missing `baseUrl`",
+                )
+            })
+    }
+
+    fn extract_openclaw_api_key(provider: &Provider) -> Result<String, AppError> {
+        provider
+            .settings_config
+            .get("apiKey")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| {
+                AppError::localized(
+                    "openclaw_api_key_missing",
+                    "OpenClaw 供应商缺少 apiKey",
+                    "OpenClaw provider is missing `apiKey`",
+                )
+            })
+    }
+
+    fn extract_openclaw_protocol(provider: &Provider) -> Option<String> {
+        provider
+            .settings_config
+            .get("api")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    }
+
+    async fn check_opencode_stream(
+        client: &Client,
+        provider: &Provider,
+        model: &str,
+        test_prompt: &str,
+        timeout: std::time::Duration,
+    ) -> Result<(u16, String), AppError> {
+        let npm = Self::extract_opencode_npm(provider);
+        let base_url = Self::resolve_opencode_base_url(provider, npm.as_deref())?;
+        let api_key = Self::extract_opencode_api_key(provider)?;
+        let extra_headers = Self::extract_opencode_headers(provider);
+
+        match npm.as_deref() {
+            Some("@ai-sdk/openai-compatible") => {
+                let auth = AuthInfo::new(api_key, AuthStrategy::Bearer);
+                Self::check_claude_stream(
+                    client,
+                    &base_url,
+                    &auth,
+                    model,
+                    test_prompt,
+                    timeout,
+                    provider,
+                    Some("openai_chat"),
+                    extra_headers,
+                )
+                .await
+            }
+            Some("@ai-sdk/openai") => {
+                let auth = AuthInfo::new(api_key, AuthStrategy::Bearer);
+                Self::check_claude_stream(
+                    client,
+                    &base_url,
+                    &auth,
+                    model,
+                    test_prompt,
+                    timeout,
+                    provider,
+                    Some("openai_responses"),
+                    extra_headers,
+                )
+                .await
+            }
+            Some("@ai-sdk/anthropic") => {
+                let auth = AuthInfo::new(api_key, AuthStrategy::ClaudeAuth);
+                Self::check_claude_stream(
+                    client,
+                    &base_url,
+                    &auth,
+                    model,
+                    test_prompt,
+                    timeout,
+                    provider,
+                    Some("anthropic"),
+                    extra_headers,
+                )
+                .await
+            }
+            Some("@ai-sdk/google") => {
+                let auth = AuthInfo::new(api_key, AuthStrategy::Google);
+                Self::check_gemini_stream(
+                    client,
+                    &base_url,
+                    &auth,
+                    model,
+                    test_prompt,
+                    timeout,
+                    extra_headers,
+                )
+                .await
+            }
+            Some("@ai-sdk/amazon-bedrock") => Err(AppError::localized(
+                "opencode_bedrock_not_supported",
+                "AWS Bedrock 需要 SigV4 签名，当前不支持健康检查。请通过 AWS 控制台或 OpenCode 验证连通性。",
+                "AWS Bedrock requires SigV4 signing and is not supported by stream health check. Please verify connectivity via AWS console or OpenCode.",
+            )),
+            Some(other) => Err(AppError::localized(
+                "opencode_npm_not_yet_supported",
+                format!("OpenCode 暂不支持 SDK 包: {other}"),
+                format!("OpenCode SDK package not yet supported: {other}"),
+            )),
+            None => Err(AppError::localized(
+                "opencode_npm_missing",
+                "OpenCode 供应商缺少 npm 字段",
+                "OpenCode provider is missing the `npm` field",
+            )),
+        }
+    }
+
+    fn resolve_opencode_base_url(
+        provider: &Provider,
+        npm: Option<&str>,
+    ) -> Result<String, AppError> {
+        if let Some(explicit) = Self::extract_opencode_base_url(provider) {
+            return Ok(explicit);
+        }
+
+        let fallback = match npm {
+            Some("@ai-sdk/openai") => Some("https://api.openai.com/v1"),
+            Some("@ai-sdk/anthropic") => Some("https://api.anthropic.com"),
+            Some("@ai-sdk/google") => Some("https://generativelanguage.googleapis.com"),
+            _ => None,
+        };
+
+        fallback.map(|s| s.to_string()).ok_or_else(|| {
+            AppError::localized(
+                "opencode_base_url_missing",
+                "OpenCode 供应商缺少 options.baseURL，且当前 SDK 包没有默认端点",
+                "OpenCode provider is missing `options.baseURL` and the SDK package has no default endpoint",
+            )
+        })
+    }
+
+    fn extract_opencode_base_url(provider: &Provider) -> Option<String> {
+        provider
+            .settings_config
+            .get("options")
+            .and_then(|v| v.get("baseURL"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    }
+
+    fn extract_opencode_headers(
+        provider: &Provider,
+    ) -> Option<&serde_json::Map<String, serde_json::Value>> {
+        provider
+            .settings_config
+            .get("options")
+            .and_then(|v| v.get("headers"))
+            .and_then(|v| v.as_object())
+            .filter(|m| !m.is_empty())
+    }
+
+    fn extract_opencode_api_key(provider: &Provider) -> Result<String, AppError> {
+        provider
+            .settings_config
+            .get("options")
+            .and_then(|v| v.get("apiKey"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| {
+                AppError::localized(
+                    "opencode_api_key_missing",
+                    "OpenCode 供应商缺少 options.apiKey",
+                    "OpenCode provider is missing `options.apiKey`",
+                )
+            })
+    }
+
+    fn extract_opencode_npm(provider: &Provider) -> Option<String> {
+        provider
+            .settings_config
+            .get("npm")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
     }
 
     fn determine_status(latency_ms: u64, threshold: u64) -> HealthStatus {
@@ -795,6 +1199,79 @@ impl StreamCheckService {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn make_provider(settings_config: serde_json::Value) -> Provider {
+        Provider::with_id(
+            "test".to_string(),
+            "Test".to_string(),
+            settings_config,
+            None,
+        )
+    }
+
+    #[test]
+    fn test_openclaw_uses_auth_header_true() {
+        let provider = make_provider(serde_json::json!({
+            "baseUrl": "https://api.longcat.chat/v1",
+            "apiKey": "k",
+            "api": "openai-completions",
+            "authHeader": true,
+        }));
+        assert!(StreamCheckService::openclaw_uses_auth_header(&provider));
+    }
+
+    #[test]
+    fn test_openclaw_uses_auth_header_default_false() {
+        let provider = make_provider(serde_json::json!({
+            "baseUrl": "https://api.deepseek.com/v1",
+            "apiKey": "k",
+            "api": "openai-completions",
+        }));
+        assert!(!StreamCheckService::openclaw_uses_auth_header(&provider));
+    }
+
+    #[test]
+    fn test_resolve_opencode_base_url_explicit_wins() {
+        let provider = make_provider(serde_json::json!({
+            "npm": "@ai-sdk/openai",
+            "options": { "baseURL": "https://proxy.local/v1", "apiKey": "k" },
+            "models": {},
+        }));
+        let resolved =
+            StreamCheckService::resolve_opencode_base_url(&provider, Some("@ai-sdk/openai"))
+                .expect("base url should resolve");
+        assert_eq!(resolved, "https://proxy.local/v1");
+    }
+
+    #[test]
+    fn test_resolve_opencode_base_url_falls_back_for_known_npm() {
+        let provider = make_provider(serde_json::json!({
+            "npm": "@ai-sdk/openai",
+            "options": { "apiKey": "k" },
+            "models": {},
+        }));
+        let resolved =
+            StreamCheckService::resolve_opencode_base_url(&provider, Some("@ai-sdk/openai"))
+                .expect("openai fallback should resolve");
+        assert_eq!(resolved, "https://api.openai.com/v1");
+    }
+
+    #[test]
+    fn test_extract_openclaw_headers_preserves_map() {
+        let provider = make_provider(serde_json::json!({
+            "baseUrl": "https://example.com/v1",
+            "apiKey": "k",
+            "api": "openai-completions",
+            "headers": { "User-Agent": "MyBot/1.0", "X-Trace": "abc" },
+        }));
+        let headers = StreamCheckService::extract_openclaw_headers(&provider)
+            .expect("headers should exist");
+        assert_eq!(
+            headers.get("User-Agent").and_then(|v| v.as_str()),
+            Some("MyBot/1.0")
+        );
+        assert_eq!(headers.get("X-Trace").and_then(|v| v.as_str()), Some("abc"));
+    }
 
     #[test]
     fn test_determine_status() {

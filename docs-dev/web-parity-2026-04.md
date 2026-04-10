@@ -60,6 +60,11 @@
   - Web 设置页补齐“首选终端”入口，支持按当前平台选择终端应用并即时保存
   - Web 后端设置模型补齐 `preferred_terminal`，并在按供应商打开终端时优先使用该设置
   - 若首选终端不可用，仍按各平台既有默认终端逻辑自动回退
+- OpenCode / OpenClaw 健康检查
+  - Web 后端补齐 OpenCode / OpenClaw 的流式健康检查分发逻辑，不再直接返回“暂不支持”
+  - OpenClaw 支持按 `api` 协议分发到 OpenAI / Responses / Anthropic / Gemini 检查链路，并透传自定义 headers
+  - OpenCode 支持按 `npm` SDK 包分发到对应检查链路，并补齐 `options.baseURL` / `options.apiKey` / headers 读取与默认端点回退
+  - 对 AWS Bedrock、自定义认证头等当前仍无法无损构造请求的场景，返回明确错误提示
 
 实现约束：
 
