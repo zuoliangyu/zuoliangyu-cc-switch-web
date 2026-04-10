@@ -40,6 +40,7 @@ The current Web branch has aligned the following desktop-side capabilities:
 
 - Provider form model fetching for Claude, Codex, Gemini, and OpenClaw
 - Official subscription quota display for Claude, Codex, and Gemini
+- Managed ChatGPT (Codex OAuth) account center, Claude preset, and quota display
 - Environment variable conflict detection and cleanup entry points
 - Deep link import via `?deeplink=...` or manual `ccswitch://...` input
 - About page entry to open the latest GitHub release page

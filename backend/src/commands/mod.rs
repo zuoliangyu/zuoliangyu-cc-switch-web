@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 
 mod auth;
+mod codex_oauth;
 mod config;
 mod env;
 mod global_proxy;
@@ -25,6 +26,7 @@ mod webdav_sync;
 mod workspace;
 
 pub(crate) use auth::*;
+pub(crate) use codex_oauth::*;
 pub(crate) use config::*;
 pub(crate) use env::*;
 pub(crate) use global_proxy::*;

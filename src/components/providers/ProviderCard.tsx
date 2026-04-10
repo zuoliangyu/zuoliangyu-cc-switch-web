@@ -11,9 +11,11 @@ import { cn } from "@/lib/utils";
 import { ProviderActions } from "@/components/providers/ProviderActions";
 import { ProviderIcon } from "@/components/ProviderIcon";
 import UsageFooter from "@/components/UsageFooter";
+import CodexOauthQuotaFooter from "@/components/CodexOauthQuotaFooter";
 import SubscriptionQuotaFooter from "@/components/SubscriptionQuotaFooter";
 import { ProviderHealthBadge } from "@/components/providers/ProviderHealthBadge";
 import { FailoverPriorityBadge } from "@/components/providers/FailoverPriorityBadge";
+import { PROVIDER_TYPES } from "@/config/constants";
 import { extractCodexBaseUrl } from "@/utils/providerConfigUtils";
 import { useProviderHealth } from "@/lib/query/failover";
 import { useUsageQuery } from "@/lib/query/queries";
@@ -170,6 +172,8 @@ export function ProviderCard({
 
   const usageEnabled = provider.meta?.usage_script?.enabled ?? false;
   const isOfficial = isOfficialProvider(provider, appId);
+  const isCodexOauth =
+    provider.meta?.providerType === PROVIDER_TYPES.CODEX_OAUTH;
 
   // 获取用量数据以判断是否有多套餐
   // 累加模式应用（OpenCode/OpenClaw）：使用 isInConfig 代替 isCurrent
@@ -348,8 +352,18 @@ export function ProviderCard({
         >
           <div className="ml-auto">
             <div className="flex items-center gap-1 transition-transform duration-200 group-hover:-translate-x-[var(--actions-width)] group-focus-within:-translate-x-[var(--actions-width)]">
-              {isOfficial ? (
-                <SubscriptionQuotaFooter appId={appId} inline={true} />
+              {isCodexOauth ? (
+                <CodexOauthQuotaFooter
+                  meta={provider.meta}
+                  inline={true}
+                  isCurrent={isCurrent}
+                />
+              ) : isOfficial ? (
+                <SubscriptionQuotaFooter
+                  appId={appId}
+                  inline={true}
+                  isCurrent={isCurrent}
+                />
               ) : hasMultiplePlans ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="font-medium">

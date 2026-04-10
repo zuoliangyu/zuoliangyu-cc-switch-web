@@ -3,10 +3,19 @@ import { RefreshCw, AlertCircle, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AppId } from "@/lib/api";
 import { useSubscriptionQuota } from "@/lib/query/subscription";
-import type { QuotaTier } from "@/types/subscription";
+import type { QuotaTier, SubscriptionQuota } from "@/types/subscription";
 
 interface SubscriptionQuotaFooterProps {
   appId: AppId;
+  inline?: boolean;
+  isCurrent?: boolean;
+}
+
+interface SubscriptionQuotaViewProps {
+  quota: SubscriptionQuota | undefined;
+  loading: boolean;
+  refetch: () => void;
+  appIdForExpiredHint: string;
   inline?: boolean;
 }
 
@@ -19,6 +28,7 @@ export const TIER_I18N_KEYS: Record<string, string> = {
   gemini_flash: "subscription.geminiFlash",
   gemini_flash_lite: "subscription.geminiFlashLite",
   weekly_limit: "subscription.weeklyLimit",
+  premium: "subscription.copilotPremium",
 };
 
 export function utilizationColor(utilization: number): string {
@@ -45,7 +55,7 @@ export function countdownStr(resetsAt: string | null): string | null {
 
 function formatResetTime(
   resetsAt: string | null,
-  t: (key: string, options?: Record<string, unknown>) => string,
+  t: (key: string, options?: Record<string, string>) => string,
 ): string | null {
   const time = countdownStr(resetsAt);
   if (!time) return null;
@@ -70,18 +80,16 @@ function formatRelativeTime(
   return t("usage.daysAgo", { count: Math.floor(diff / 86400) });
 }
 
-const SubscriptionQuotaFooter: React.FC<SubscriptionQuotaFooterProps> = ({
-  appId,
+export const SubscriptionQuotaView: React.FC<SubscriptionQuotaViewProps> = ({
+  quota,
+  loading,
+  refetch,
+  appIdForExpiredHint,
   inline = false,
 }) => {
   const { t } = useTranslation();
-  const {
-    data: quota,
-    isFetching: loading,
-    refetch,
-  } = useSubscriptionQuota(appId, true);
-
   const [now, setNow] = React.useState(Date.now());
+
   React.useEffect(() => {
     if (!quota?.queriedAt) return;
     const interval = setInterval(() => setNow(Date.now()), 30000);
@@ -119,7 +127,7 @@ const SubscriptionQuotaFooter: React.FC<SubscriptionQuotaFooterProps> = ({
             <div>
               <span className="font-medium">{t("subscription.expired")}</span>
               <span className="ml-2 text-amber-500/70 dark:text-amber-400/70">
-                {t("subscription.expiredHint", { tool: appId })}
+                {t("subscription.expiredHint", { tool: appIdForExpiredHint })}
               </span>
             </div>
           </div>
@@ -142,7 +150,7 @@ const SubscriptionQuotaFooter: React.FC<SubscriptionQuotaFooterProps> = ({
         <div className="inline-flex items-center gap-2 rounded-lg border border-border-default bg-card px-3 py-2 text-xs shadow-sm">
           <div className="flex items-center gap-1.5 text-red-500 dark:text-red-400">
             <AlertCircle size={12} />
-            <span>{t("subscription.queryFailed")}</span>
+            <span>{quota.error || t("subscription.queryFailed")}</span>
           </div>
           <button
             onClick={() => refetch()}
@@ -337,6 +345,27 @@ const TierBar: React.FC<{
         )}
       </div>
     </div>
+  );
+};
+
+const SubscriptionQuotaFooter: React.FC<SubscriptionQuotaFooterProps> = ({
+  appId,
+  inline = false,
+  isCurrent = false,
+}) => {
+  const { data: quota, isFetching: loading, refetch } = useSubscriptionQuota(
+    appId,
+    true,
+  );
+
+  return (
+    <SubscriptionQuotaView
+      quota={quota}
+      loading={loading}
+      refetch={refetch}
+      appIdForExpiredHint={appId}
+      inline={inline}
+    />
   );
 };
 

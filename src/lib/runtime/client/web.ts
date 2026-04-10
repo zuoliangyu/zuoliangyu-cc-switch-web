@@ -550,6 +550,19 @@ export async function getWebSubscriptionQuota(
   );
 }
 
+export async function getWebCodexOauthQuota(
+  accountId: string | null,
+): Promise<import("@/types/subscription").SubscriptionQuota> {
+  const params = new URLSearchParams();
+  if (accountId) {
+    params.set("accountId", accountId);
+  }
+  const query = params.toString();
+  return requestJson<import("@/types/subscription").SubscriptionQuota>(
+    `/api/subscription/codex-oauth${query ? `?${query}` : ""}`,
+  );
+}
+
 export async function getWebEnvConflicts(
   app: string,
 ): Promise<import("@/types/env").EnvConflict[]> {

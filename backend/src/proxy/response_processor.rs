@@ -728,6 +728,11 @@ mod tests {
                     crate::config::get_app_config_dir(),
                 ),
             )),
+            codex_oauth_state: Arc::new(RwLock::new(
+                crate::proxy::providers::codex_oauth_auth::CodexOAuthManager::new(
+                    crate::config::get_app_config_dir(),
+                ),
+            )),
             failover_manager: Arc::new(FailoverSwitchManager::new(db)),
         }
     }

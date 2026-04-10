@@ -13,6 +13,7 @@ use super::{
     provider_router::ProviderRouter, types::*, ProxyError,
 };
 use crate::database::Database;
+use crate::proxy::providers::codex_oauth_auth::CodexOAuthManager;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use axum::{
     extract::DefaultBodyLimit,
@@ -39,6 +40,8 @@ pub struct ProxyState {
     pub provider_router: Arc<ProviderRouter>,
     /// Copilot 鉴权状态（显式注入，避免服务层依赖旧运行时容器状态）
     pub copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+    /// Codex OAuth 鉴权状态
+    pub codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
     /// 故障转移切换管理器
     pub failover_manager: Arc<FailoverSwitchManager>,
 }
@@ -57,6 +60,7 @@ impl ProxyServer {
         config: ProxyConfig,
         db: Arc<Database>,
         copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+        codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
     ) -> Self {
         // 创建共享的 ProviderRouter（熔断器状态将跨所有请求保持）
         let provider_router = Arc::new(ProviderRouter::new(db.clone()));
@@ -71,6 +75,7 @@ impl ProxyServer {
             current_providers: Arc::new(RwLock::new(std::collections::HashMap::new())),
             provider_router,
             copilot_auth_state,
+            codex_oauth_state,
             failover_manager,
         };
 

@@ -1,6 +1,6 @@
 import { invoke } from "@/lib/runtime/client/core";
 
-export type ManagedAuthProvider = "github_copilot";
+export type ManagedAuthProvider = "github_copilot" | "codex_oauth";
 
 export interface ManagedAuthAccount {
   id: string;

@@ -45,7 +45,7 @@ pub struct SubscriptionQuota {
 }
 
 impl SubscriptionQuota {
-    fn not_found(tool: &str) -> Self {
+    pub fn not_found(tool: &str) -> Self {
         Self {
             tool: tool.to_string(),
             credential_status: CredentialStatus::NotFound,
@@ -58,7 +58,7 @@ impl SubscriptionQuota {
         }
     }
 
-    fn error(tool: &str, status: CredentialStatus, message: impl Into<String>) -> Self {
+    pub fn error(tool: &str, status: CredentialStatus, message: impl Into<String>) -> Self {
         let message = message.into();
         Self {
             tool: tool.to_string(),
@@ -540,7 +540,12 @@ fn unix_ts_to_iso(timestamp: i64) -> Option<String> {
     chrono::DateTime::from_timestamp(timestamp, 0).map(|datetime| datetime.to_rfc3339())
 }
 
-async fn query_codex_quota(access_token: &str, account_id: Option<&str>) -> SubscriptionQuota {
+pub async fn query_codex_quota(
+    access_token: &str,
+    account_id: Option<&str>,
+    tool: &str,
+    expired_hint: &str,
+) -> SubscriptionQuota {
     let client = crate::proxy::http_client::get();
     let mut request = client
         .get("https://chatgpt.com/backend-api/wham/usage")
@@ -556,7 +561,7 @@ async fn query_codex_quota(access_token: &str, account_id: Option<&str>) -> Subs
         Ok(response) => response,
         Err(error) => {
             return SubscriptionQuota::error(
-                "codex",
+                tool,
                 CredentialStatus::Valid,
                 format!("Network error: {error}"),
             );
@@ -566,15 +571,15 @@ async fn query_codex_quota(access_token: &str, account_id: Option<&str>) -> Subs
     let status = response.status();
     if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
         return SubscriptionQuota::error(
-            "codex",
+            tool,
             CredentialStatus::Expired,
-            format!("Authentication failed (HTTP {status}). Please re-login with Codex CLI."),
+            format!("Authentication failed (HTTP {status}). {expired_hint}"),
         );
     }
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
         return SubscriptionQuota::error(
-            "codex",
+            tool,
             CredentialStatus::Valid,
             format!("API error (HTTP {status}): {body}"),
         );
@@ -584,7 +589,7 @@ async fn query_codex_quota(access_token: &str, account_id: Option<&str>) -> Subs
         Ok(body) => body,
         Err(error) => {
             return SubscriptionQuota::error(
-                "codex",
+                tool,
                 CredentialStatus::Valid,
                 format!("Failed to parse API response: {error}"),
             );
@@ -611,7 +616,7 @@ async fn query_codex_quota(access_token: &str, account_id: Option<&str>) -> Subs
     }
 
     SubscriptionQuota {
-        tool: "codex".to_string(),
+        tool: tool.to_string(),
         credential_status: CredentialStatus::Valid,
         credential_message: None,
         success: true,
@@ -872,7 +877,13 @@ pub async fn get_subscription_quota(tool: &str) -> Result<SubscriptionQuota, Str
                 )),
                 CredentialStatus::Expired => {
                     if let Some(token) = token {
-                        let result = query_codex_quota(&token, account_id.as_deref()).await;
+                        let result = query_codex_quota(
+                            &token,
+                            account_id.as_deref(),
+                            "codex",
+                            "Please re-login with Codex CLI.",
+                        )
+                        .await;
                         if result.success {
                             return Ok(result);
                         }
@@ -885,7 +896,13 @@ pub async fn get_subscription_quota(tool: &str) -> Result<SubscriptionQuota, Str
                 }
                 CredentialStatus::Valid => {
                     let token = token.expect("token must be Some when status is Valid");
-                    Ok(query_codex_quota(&token, account_id.as_deref()).await)
+                    Ok(query_codex_quota(
+                        &token,
+                        account_id.as_deref(),
+                        "codex",
+                        "Please re-login with Codex CLI.",
+                    )
+                    .await)
                 }
             }
         }

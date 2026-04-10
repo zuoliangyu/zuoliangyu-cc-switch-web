@@ -212,6 +212,7 @@ impl RequestContext {
             state.current_providers.clone(),
             state.failover_manager.clone(),
             state.copilot_auth_state.clone(),
+            state.codex_oauth_state.clone(),
             self.current_provider_id.clone(),
             first_byte_timeout,
             idle_timeout,

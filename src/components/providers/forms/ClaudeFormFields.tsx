@@ -28,6 +28,7 @@ import { ChevronDown, ChevronRight, Download, Loader2 } from "lucide-react";
 import EndpointSpeedTest from "./EndpointSpeedTest";
 import { ApiKeySection, EndpointField, ModelInputWithFetch } from "./shared";
 import { CopilotAuthSection } from "./CopilotAuthSection";
+import { CodexOAuthSection } from "./CodexOAuthSection";
 import {
   copilotGetModels,
   copilotGetModelsForAccount,
@@ -67,6 +68,12 @@ interface ClaudeFormFieldsProps {
   selectedGitHubAccountId?: string | null;
   /** GitHub 账号选择回调（多账号支持） */
   onGitHubAccountSelect?: (accountId: string | null) => void;
+
+  // Codex OAuth
+  isCodexOauthPreset?: boolean;
+  isCodexOauthAuthenticated?: boolean;
+  selectedCodexAccountId?: string | null;
+  onCodexAccountSelect?: (accountId: string | null) => void;
 
   // Template Values
   templateValueEntries: Array<[string, TemplateValueConfig]>;
@@ -130,6 +137,10 @@ export function ClaudeFormFields({
   isCopilotAuthenticated,
   selectedGitHubAccountId,
   onGitHubAccountSelect,
+  isCodexOauthPreset,
+  isCodexOauthAuthenticated,
+  selectedCodexAccountId,
+  onCodexAccountSelect,
   templateValueEntries,
   templateValues,
   templatePresetName,
@@ -348,6 +359,13 @@ export function ClaudeFormFields({
         <CopilotAuthSection
           selectedAccountId={selectedGitHubAccountId}
           onAccountSelect={onGitHubAccountSelect}
+        />
+      )}
+
+      {isCodexOauthPreset && (
+        <CodexOAuthSection
+          selectedAccountId={selectedCodexAccountId}
+          onAccountSelect={onCodexAccountSelect}
         />
       )}
 

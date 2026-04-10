@@ -15,6 +15,7 @@ mod adapter;
 mod auth;
 mod claude;
 mod codex;
+pub mod codex_oauth_auth;
 pub mod copilot_auth;
 mod gemini;
 pub mod models;
@@ -58,15 +59,46 @@ pub enum ProviderType {
     OpenRouter,
     /// GitHub Copilot (OAuth + Copilot Token，需要 Anthropic ↔ OpenAI 转换)
     GitHubCopilot,
+    /// OpenAI Codex (ChatGPT Plus/Pro OAuth，需要 Anthropic ↔ Responses API 转换)
+    CodexOAuth,
 }
 
 impl ProviderType {
+    #[allow(dead_code)]
+    pub fn needs_transform(&self) -> bool {
+        match self {
+            ProviderType::GitHubCopilot | ProviderType::CodexOAuth => true,
+            ProviderType::OpenRouter => false,
+            _ => false,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn default_endpoint(&self) -> &'static str {
+        match self {
+            ProviderType::Claude | ProviderType::ClaudeAuth => "https://api.anthropic.com",
+            ProviderType::Codex => "https://api.openai.com",
+            ProviderType::Gemini | ProviderType::GeminiCli => {
+                "https://generativelanguage.googleapis.com"
+            }
+            ProviderType::OpenRouter => "https://openrouter.ai/api",
+            ProviderType::GitHubCopilot => "https://api.githubcopilot.com",
+            ProviderType::CodexOAuth => "https://chatgpt.com/backend-api/codex",
+        }
+    }
+
     /// 从 AppType 和 Provider 配置推断供应商类型
     ///
     /// 根据配置中的 base_url、auth_mode、api_key 格式等信息推断具体的供应商类型
     pub fn from_app_type_and_config(app_type: &AppType, provider: &Provider) -> Self {
         match app_type {
             AppType::Claude => {
+                if let Some(meta) = provider.meta.as_ref() {
+                    if meta.provider_type.as_deref() == Some("codex_oauth") {
+                        return ProviderType::CodexOAuth;
+                    }
+                }
+
                 // 检测是否为 GitHub Copilot
                 if let Some(meta) = provider.meta.as_ref() {
                     if meta.provider_type.as_deref() == Some("github_copilot") {
@@ -146,6 +178,7 @@ impl ProviderType {
             ProviderType::GeminiCli => "gemini_cli",
             ProviderType::OpenRouter => "openrouter",
             ProviderType::GitHubCopilot => "github_copilot",
+            ProviderType::CodexOAuth => "codex_oauth",
         }
     }
 }
@@ -170,6 +203,7 @@ impl std::str::FromStr for ProviderType {
             "github_copilot" | "github-copilot" | "githubcopilot" => {
                 Ok(ProviderType::GitHubCopilot)
             }
+            "codex_oauth" | "codex-oauth" | "codexoauth" => Ok(ProviderType::CodexOAuth),
             _ => Err(format!("Invalid provider type: {s}")),
         }
     }

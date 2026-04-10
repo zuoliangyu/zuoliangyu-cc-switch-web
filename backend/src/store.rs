@@ -1,4 +1,5 @@
 use crate::database::Database;
+use crate::proxy::providers::codex_oauth_auth::CodexOAuthManager;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::services::proxy::ProxyService;
 use std::sync::Arc;
@@ -8,6 +9,7 @@ use tokio::sync::RwLock;
 pub struct AppState {
     pub db: Arc<Database>,
     pub copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+    pub codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
     pub proxy_service: ProxyService,
 }
 
@@ -17,11 +19,19 @@ impl AppState {
         let copilot_auth_state = Arc::new(RwLock::new(CopilotAuthManager::new(
             crate::config::get_app_config_dir(),
         )));
-        let proxy_service = ProxyService::new_with_auth(db.clone(), copilot_auth_state.clone());
+        let codex_oauth_state = Arc::new(RwLock::new(CodexOAuthManager::new(
+            crate::config::get_app_config_dir(),
+        )));
+        let proxy_service = ProxyService::new_with_auth(
+            db.clone(),
+            copilot_auth_state.clone(),
+            codex_oauth_state.clone(),
+        );
 
         Self {
             db,
             copilot_auth_state,
+            codex_oauth_state,
             proxy_service,
         }
     }

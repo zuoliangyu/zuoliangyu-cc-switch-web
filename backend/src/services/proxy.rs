@@ -7,6 +7,7 @@ use crate::config::{get_claude_settings_path, read_json_file, write_json_file};
 use crate::database::Database;
 use crate::provider::Provider;
 use crate::proxy::circuit_breaker::CircuitBreakerConfig;
+use crate::proxy::providers::codex_oauth_auth::CodexOAuthManager;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::proxy::server::ProxyServer;
 use crate::proxy::types::*;
@@ -40,6 +41,7 @@ const CLAUDE_MODEL_OVERRIDE_ENV_KEYS: [&str; 6] = [
 pub struct ProxyService {
     db: Arc<Database>,
     copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+    codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
     server: Arc<RwLock<Option<ProxyServer>>>,
 }
 
@@ -49,16 +51,21 @@ impl ProxyService {
         let copilot_auth_state = Arc::new(RwLock::new(CopilotAuthManager::new(
             crate::config::get_app_config_dir(),
         )));
-        Self::new_with_auth(db, copilot_auth_state)
+        let codex_oauth_state = Arc::new(RwLock::new(CodexOAuthManager::new(
+            crate::config::get_app_config_dir(),
+        )));
+        Self::new_with_auth(db, copilot_auth_state, codex_oauth_state)
     }
 
     pub fn new_with_auth(
         db: Arc<Database>,
         copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+        codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
     ) -> Self {
         Self {
             db,
             copilot_auth_state,
+            codex_oauth_state,
             server: Arc::new(RwLock::new(None)),
         }
     }
@@ -208,6 +215,7 @@ impl ProxyService {
             config.clone(),
             self.db.clone(),
             self.copilot_auth_state.clone(),
+            self.codex_oauth_state.clone(),
         );
         let info = server
             .start()
@@ -1580,7 +1588,12 @@ impl ProxyService {
             }
 
             let new_server =
-                ProxyServer::new(new_config, self.db.clone(), self.copilot_auth_state.clone());
+                ProxyServer::new(
+                    new_config,
+                    self.db.clone(),
+                    self.copilot_auth_state.clone(),
+                    self.codex_oauth_state.clone(),
+                );
             new_server
                 .start()
                 .await

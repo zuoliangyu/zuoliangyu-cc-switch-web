@@ -82,7 +82,30 @@ pub fn transform_claude_request_for_api_format(
 
     match api_format {
         "openai_responses" => {
-            super::transform_responses::anthropic_to_responses(body, Some(cache_key))
+            let is_codex_oauth = provider
+                .meta
+                .as_ref()
+                .and_then(|m| m.provider_type.as_deref())
+                == Some("codex_oauth");
+            let mut result =
+                super::transform_responses::anthropic_to_responses(body, Some(cache_key))?;
+            if is_codex_oauth {
+                result["store"] = serde_json::json!(false);
+                const REASONING_MARKER: &str = "reasoning.encrypted_content";
+                let mut includes: Vec<serde_json::Value> = result
+                    .get("include")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                if !includes
+                    .iter()
+                    .any(|value| value.as_str() == Some(REASONING_MARKER))
+                {
+                    includes.push(serde_json::json!(REASONING_MARKER));
+                }
+                result["include"] = serde_json::json!(includes);
+            }
+            Ok(result)
         }
         "openai_chat" => super::transform::anthropic_to_openai(body, Some(cache_key)),
         _ => Ok(body),
@@ -100,11 +123,16 @@ impl ClaudeAdapter {
     /// 获取供应商类型
     ///
     /// 根据 base_url 和 auth_mode 检测具体的供应商类型：
+    /// - CodexOAuth: meta.provider_type 为 codex_oauth
     /// - GitHubCopilot: meta.provider_type 为 github_copilot 或 base_url 包含 githubcopilot.com
     /// - OpenRouter: base_url 包含 openrouter.ai
     /// - ClaudeAuth: auth_mode 为 bearer_only
     /// - Claude: 默认 Anthropic 官方
     pub fn provider_type(&self, provider: &Provider) -> ProviderType {
+        if self.is_codex_oauth(provider) {
+            return ProviderType::CodexOAuth;
+        }
+
         // 检测 GitHub Copilot
         if self.is_github_copilot(provider) {
             return ProviderType::GitHubCopilot;
@@ -121,6 +149,15 @@ impl ClaudeAdapter {
         }
 
         ProviderType::Claude
+    }
+
+    fn is_codex_oauth(&self, provider: &Provider) -> bool {
+        if let Some(meta) = provider.meta.as_ref() {
+            if meta.provider_type.as_deref() == Some("codex_oauth") {
+                return true;
+            }
+        }
+        false
     }
 
     /// 检测是否为 GitHub Copilot 供应商
@@ -254,6 +291,10 @@ impl ProviderAdapter for ClaudeAdapter {
     }
 
     fn extract_base_url(&self, provider: &Provider) -> Result<String, ProxyError> {
+        if self.is_codex_oauth(provider) {
+            return Ok("https://chatgpt.com/backend-api/codex".to_string());
+        }
+
         // 1. 从 env 中获取
         if let Some(env) = provider.settings_config.get("env") {
             if let Some(url) = env.get("ANTHROPIC_BASE_URL").and_then(|v| v.as_str()) {
@@ -304,6 +345,13 @@ impl ProviderAdapter for ClaudeAdapter {
             ));
         }
 
+        if provider_type == ProviderType::CodexOAuth {
+            return Some(AuthInfo::new(
+                "codex_oauth_placeholder".to_string(),
+                AuthStrategy::CodexOAuth,
+            ));
+        }
+
         let strategy = match provider_type {
             ProviderType::OpenRouter => AuthStrategy::Bearer,
             ProviderType::ClaudeAuth => AuthStrategy::ClaudeAuth,
@@ -315,6 +363,11 @@ impl ProviderAdapter for ClaudeAdapter {
     }
 
     fn build_url(&self, base_url: &str, endpoint: &str) -> String {
+        if base_url == "https://chatgpt.com/backend-api/codex" {
+            let _ = endpoint;
+            return "https://chatgpt.com/backend-api/codex/responses".to_string();
+        }
+
         // NOTE:
         // 过去 OpenRouter 只有 OpenAI Chat Completions 兼容接口，需要把 Claude 的 `/v1/messages`
         // 映射到 `/v1/chat/completions`，并做 Anthropic ↔ OpenAI 的格式转换。
@@ -346,6 +399,18 @@ impl ProviderAdapter for ClaudeAdapter {
                     HeaderName::from_static("authorization"),
                     HeaderValue::from_str(&bearer).unwrap(),
                 )]
+            }
+            AuthStrategy::CodexOAuth => {
+                vec![
+                    (
+                        HeaderName::from_static("authorization"),
+                        HeaderValue::from_str(&bearer).unwrap(),
+                    ),
+                    (
+                        HeaderName::from_static("originator"),
+                        HeaderValue::from_static("cc-switch"),
+                    ),
+                ]
             }
             AuthStrategy::GitHubCopilot => {
                 vec![
@@ -384,6 +449,10 @@ impl ProviderAdapter for ClaudeAdapter {
     }
 
     fn needs_transform(&self, provider: &Provider) -> bool {
+        if self.is_codex_oauth(provider) {
+            return true;
+        }
+
         // GitHub Copilot 总是需要格式转换 (Anthropic → OpenAI)
         if self.is_github_copilot(provider) {
             return true;

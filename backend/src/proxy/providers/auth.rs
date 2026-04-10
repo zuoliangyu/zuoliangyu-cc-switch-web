@@ -76,6 +76,13 @@ pub enum AuthStrategy {
     ///
     /// 使用动态获取的 Copilot Token（通过 GitHub OAuth 设备码流程获取）
     GitHubCopilot,
+
+    /// Codex OAuth 认证方式
+    ///
+    /// - Header: `Authorization: Bearer <access_token>`
+    ///
+    /// 使用动态获取的 ChatGPT access token。
+    CodexOAuth,
 }
 
 #[cfg(test)]
@@ -216,6 +223,7 @@ mod tests {
             AuthStrategy::Google,
             AuthStrategy::GoogleOAuth,
             AuthStrategy::GitHubCopilot,
+            AuthStrategy::CodexOAuth,
         ];
 
         for (i, s1) in strategies.iter().enumerate() {

@@ -23,6 +23,7 @@ use crate::database::FailoverQueueItem;
 use crate::prompt::Prompt;
 use crate::provider::Provider;
 use crate::proxy::circuit_breaker::CircuitBreakerConfig;
+use crate::proxy::providers::codex_oauth_auth::CodexOAuthManager;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::proxy::types::{
     AppProxyConfig, GlobalProxyConfig, LogConfig, OptimizerConfig, ProviderHealth, ProxyConfig,
@@ -45,6 +46,7 @@ static EMBEDDED_FRONTEND_DIST: Dir<'static> = include_dir!("$CC_SWITCH_WEB_EMBED
 struct WebApiState {
     app_state: Arc<AppState>,
     copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+    codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -335,6 +337,12 @@ struct AuthPollForAccountRequest {
 struct AuthAccountRequest {
     auth_provider: String,
     account_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CodexOauthQuotaQuery {
+    account_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1779,6 +1787,7 @@ async fn auth_start_login(
     let response = crate::commands::auth_start_login_internal(
         &payload.auth_provider,
         &state.copilot_auth_state,
+        &state.codex_oauth_state,
     )
     .await
     .map_err(|e| ApiError::internal(format!("failed to start auth login: {e}")))?;
@@ -1793,6 +1802,7 @@ async fn auth_poll_for_account(
         &payload.auth_provider,
         &payload.device_code,
         &state.copilot_auth_state,
+        &state.codex_oauth_state,
     )
     .await
     .map_err(|e| ApiError::internal(format!("failed to poll auth account: {e}")))?;
@@ -1804,9 +1814,13 @@ async fn auth_list_accounts(
     Path(auth_provider): Path<String>,
 ) -> Result<Json<Vec<crate::commands::ManagedAuthAccount>>, ApiError> {
     let accounts =
-        crate::commands::auth_list_accounts_internal(&auth_provider, &state.copilot_auth_state)
-            .await
-            .map_err(|e| ApiError::internal(format!("failed to list auth accounts: {e}")))?;
+        crate::commands::auth_list_accounts_internal(
+            &auth_provider,
+            &state.copilot_auth_state,
+            &state.codex_oauth_state,
+        )
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to list auth accounts: {e}")))?;
     Ok(Json(accounts))
 }
 
@@ -1815,9 +1829,13 @@ async fn auth_get_status(
     Path(auth_provider): Path<String>,
 ) -> Result<Json<crate::commands::ManagedAuthStatus>, ApiError> {
     let status =
-        crate::commands::auth_get_status_internal(&auth_provider, &state.copilot_auth_state)
-            .await
-            .map_err(|e| ApiError::internal(format!("failed to load auth status: {e}")))?;
+        crate::commands::auth_get_status_internal(
+            &auth_provider,
+            &state.copilot_auth_state,
+            &state.codex_oauth_state,
+        )
+        .await
+        .map_err(|e| ApiError::internal(format!("failed to load auth status: {e}")))?;
     Ok(Json(status))
 }
 
@@ -1829,6 +1847,7 @@ async fn auth_remove_account(
         &payload.auth_provider,
         &payload.account_id,
         &state.copilot_auth_state,
+        &state.codex_oauth_state,
     )
     .await
     .map_err(|e| ApiError::internal(format!("failed to remove auth account: {e}")))?;
@@ -1843,6 +1862,7 @@ async fn auth_set_default_account(
         &payload.auth_provider,
         &payload.account_id,
         &state.copilot_auth_state,
+        &state.codex_oauth_state,
     )
     .await
     .map_err(|e| ApiError::internal(format!("failed to set default auth account: {e}")))?;
@@ -1853,9 +1873,13 @@ async fn auth_logout(
     State(state): State<WebApiState>,
     Json(payload): Json<AuthStartLoginRequest>,
 ) -> Result<StatusCode, ApiError> {
-    crate::commands::auth_logout_internal(&payload.auth_provider, &state.copilot_auth_state)
-        .await
-        .map_err(|e| ApiError::internal(format!("failed to logout auth provider: {e}")))?;
+    crate::commands::auth_logout_internal(
+        &payload.auth_provider,
+        &state.copilot_auth_state,
+        &state.codex_oauth_state,
+    )
+    .await
+    .map_err(|e| ApiError::internal(format!("failed to logout auth provider: {e}")))?;
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -1944,6 +1968,17 @@ async fn get_subscription_quota(
     let quota = crate::commands::get_subscription_quota_internal(tool)
         .await
         .map_err(|e| ApiError::internal(format!("failed to load subscription quota: {e}")))?;
+    Ok(Json(quota))
+}
+
+async fn get_codex_oauth_quota(
+    State(state): State<WebApiState>,
+    Query(query): Query<CodexOauthQuotaQuery>,
+) -> Result<Json<crate::services::subscription::SubscriptionQuota>, ApiError> {
+    let quota =
+        crate::commands::get_codex_oauth_quota_internal(query.account_id, &state.codex_oauth_state)
+            .await
+            .map_err(|e| ApiError::internal(format!("failed to load codex oauth quota: {e}")))?;
     Ok(Json(quota))
 }
 
@@ -2776,6 +2811,7 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
     crate::services::webdav_auto_sync::start_worker(app_state.db.clone());
     let state = WebApiState {
         copilot_auth_state: app_state.copilot_auth_state.clone(),
+        codex_oauth_state: app_state.codex_oauth_state.clone(),
         app_state,
     };
     let bind_options = resolve_bind_options(&options)?;
@@ -2874,6 +2910,7 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
             "/api/copilot/accounts/:account_id/usage",
             get(get_copilot_usage_for_account),
         )
+        .route("/api/subscription/codex-oauth", get(get_codex_oauth_quota))
         .route("/api/subscription/:tool", get(get_subscription_quota))
         .route("/api/env/conflicts/:app", get(get_env_conflicts))
         .route("/api/env/delete", post(delete_env_conflicts))

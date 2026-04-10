@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { subscriptionApi } from "@/lib/api/subscription";
 import type { AppId } from "@/lib/api/types";
+import type { ProviderMeta } from "@/types";
+import { resolveManagedAccountId } from "@/lib/authBinding";
+import { PROVIDER_TYPES } from "@/config/constants";
 
 const REFETCH_INTERVAL = 5 * 60 * 1000;
 
@@ -11,6 +14,28 @@ export function useSubscriptionQuota(appId: AppId, enabled: boolean) {
     enabled: enabled && ["claude", "codex", "gemini"].includes(appId),
     refetchInterval: REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
+    staleTime: REFETCH_INTERVAL,
+    retry: 1,
+  });
+}
+
+export function useCodexOauthQuota(
+  meta: ProviderMeta | undefined,
+  options: {
+    enabled?: boolean;
+    autoQuery?: boolean;
+  } = {},
+) {
+  const { enabled = true, autoQuery = false } = options;
+  const accountId = resolveManagedAccountId(meta, PROVIDER_TYPES.CODEX_OAUTH);
+
+  return useQuery({
+    queryKey: ["codex_oauth", "quota", accountId ?? "default"],
+    queryFn: () => subscriptionApi.getCodexOauthQuota(accountId),
+    enabled,
+    refetchInterval: autoQuery ? REFETCH_INTERVAL : false,
+    refetchIntervalInBackground: autoQuery,
+    refetchOnWindowFocus: autoQuery,
     staleTime: REFETCH_INTERVAL,
     retry: 1,
   });

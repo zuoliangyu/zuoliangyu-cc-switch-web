@@ -18,6 +18,12 @@
 - About 更新入口
   - Web 端不做自动下载与安装
   - 改为直接打开 GitHub Releases latest
+- Codex OAuth 托管认证闭环
+  - Web 后端新增 `codex_oauth` 多账号 Device Code 登录与 token 刷新管理
+  - 认证中心新增 ChatGPT (Codex OAuth) 账号管理区块
+  - Claude 供应商预设补齐 `Codex` OAuth 预设，并支持保存 `authBinding`
+  - Claude 代理链路支持 `codex_oauth` 动态注入 access token 与 `ChatGPT-Account-Id`
+  - Provider 卡片新增 Codex OAuth 账号绑定额度展示
 
 实现约束：
 

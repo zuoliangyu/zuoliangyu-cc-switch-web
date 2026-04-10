@@ -343,10 +343,17 @@ export function ProviderForm({
   const { isAuthenticated: isCopilotAuthenticated } =
     useManagedAuth("github_copilot");
 
+  const { isAuthenticated: isCodexOauthAuthenticated } =
+    useManagedAuth("codex_oauth");
+
   // 选中的 GitHub 账号 ID（多账号支持）
   const [selectedGitHubAccountId, setSelectedGitHubAccountId] = useState<
     string | null
   >(() => resolveManagedAccountId(initialData?.meta, "github_copilot"));
+
+  const [selectedCodexAccountId, setSelectedCodexAccountId] = useState<
+    string | null
+  >(() => resolveManagedAccountId(initialData?.meta, "codex_oauth"));
 
   const {
     codexAuth,
@@ -682,6 +689,9 @@ export function ProviderForm({
       templatePreset?.providerType === "github_copilot" ||
       initialData?.meta?.providerType === "github_copilot" ||
       baseUrl.includes("githubcopilot.com");
+    const isCodexOauthProvider =
+      templatePreset?.providerType === "codex_oauth" ||
+      initialData?.meta?.providerType === "codex_oauth";
     // GitHub Copilot 必须先登录才能添加
     if (isCopilotProvider && !isCopilotAuthenticated) {
       toast.error(
@@ -691,10 +701,18 @@ export function ProviderForm({
       );
       return;
     }
+    if (isCodexOauthProvider && !isCodexOauthAuthenticated) {
+      toast.error(
+        t("codexOauth.loginRequired", {
+          defaultValue: "请先登录 ChatGPT 账号",
+        }),
+      );
+      return;
+    }
 
     if (category !== "official" && category !== "cloud_provider") {
       if (appId === "claude") {
-        if (!baseUrl.trim()) {
+        if (!isCodexOauthProvider && !baseUrl.trim()) {
           toast.error(
             t("providerForm.endpointRequired", {
               defaultValue: "非官方供应商请填写 API 端点",
@@ -702,7 +720,7 @@ export function ProviderForm({
           );
           return;
         }
-        if (!isCopilotProvider && !apiKey.trim()) {
+        if (!isCopilotProvider && !isCodexOauthProvider && !apiKey.trim()) {
           toast.error(
             t("providerForm.apiKeyRequired", {
               defaultValue: "非官方供应商请填写 API Key",
@@ -906,6 +924,12 @@ export function ProviderForm({
             authProvider: "github_copilot",
             accountId: selectedGitHubAccountId ?? undefined,
           }
+        : isCodexOauthProvider
+          ? {
+              source: "managed_account",
+              authProvider: "codex_oauth",
+              accountId: selectedCodexAccountId ?? undefined,
+            }
         : undefined,
       // GitHub Copilot 多账号：保存关联的账号 ID
       githubAccountId:
@@ -1346,15 +1370,24 @@ export function ProviderForm({
               initialData?.meta?.providerType === "github_copilot" ||
               baseUrl.includes("githubcopilot.com")
             }
+            isCodexOauthPreset={
+              templatePreset?.providerType === "codex_oauth" ||
+              initialData?.meta?.providerType === "codex_oauth"
+            }
             usesOAuth={
               templatePreset?.requiresOAuth === true ||
               templatePreset?.providerType === "github_copilot" ||
+              templatePreset?.providerType === "codex_oauth" ||
               initialData?.meta?.providerType === "github_copilot" ||
+              initialData?.meta?.providerType === "codex_oauth" ||
               baseUrl.includes("githubcopilot.com")
             }
             isCopilotAuthenticated={isCopilotAuthenticated}
+            isCodexOauthAuthenticated={isCodexOauthAuthenticated}
             selectedGitHubAccountId={selectedGitHubAccountId}
             onGitHubAccountSelect={setSelectedGitHubAccountId}
+            selectedCodexAccountId={selectedCodexAccountId}
+            onCodexAccountSelect={setSelectedCodexAccountId}
             templateValueEntries={templateValueEntries}
             templateValues={templateValues}
             templatePresetName={templatePreset?.name || ""}

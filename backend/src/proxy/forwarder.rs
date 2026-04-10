@@ -17,6 +17,7 @@ use super::{
     types::{OptimizerConfig, ProxyStatus, RectifierConfig},
     ProxyError,
 };
+use crate::proxy::providers::codex_oauth_auth::CodexOAuthManager;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::{app_config::AppType, provider::Provider};
 use http::Extensions;
@@ -44,6 +45,8 @@ pub struct RequestForwarder {
     failover_manager: Arc<FailoverSwitchManager>,
     /// Copilot 鉴权状态（显式注入，避免依赖旧运行时容器状态）
     copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+    /// Codex OAuth 鉴权状态
+    codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
     /// 请求开始时的"当前供应商 ID"（用于判断是否需要同步前端状态）
     current_provider_id_at_start: String,
     /// 整流器配置
@@ -63,6 +66,7 @@ impl RequestForwarder {
         current_providers: Arc<RwLock<std::collections::HashMap<String, (String, String)>>>,
         failover_manager: Arc<FailoverSwitchManager>,
         copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
+        codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
         current_provider_id_at_start: String,
         _streaming_first_byte_timeout: u64,
         _streaming_idle_timeout: u64,
@@ -75,6 +79,7 @@ impl RequestForwarder {
             current_providers,
             failover_manager,
             copilot_auth_state,
+            codex_oauth_state,
             current_provider_id_at_start,
             rectifier_config,
             optimizer_config,
@@ -818,6 +823,8 @@ impl RequestForwarder {
         let force_identity_encoding = needs_transform
             || should_force_identity_encoding(&effective_endpoint, &filtered_body, headers);
 
+        let mut codex_oauth_account_id: Option<String> = None;
+
         // 获取认证头（提前准备，用于内联替换）
         let auth_headers = if let Some(mut auth) = adapter.extract_auth(provider) {
             // GitHub Copilot 特殊处理：从 CopilotAuthManager 获取真实 token
@@ -862,10 +869,52 @@ impl RequestForwarder {
                     }
                 }
             }
+
+            if auth.strategy == AuthStrategy::CodexOAuth {
+                let codex_auth = self.codex_oauth_state.read().await;
+
+                let account_id = provider
+                    .meta
+                    .as_ref()
+                    .and_then(|m| m.managed_account_id_for("codex_oauth"));
+
+                let token_result = match &account_id {
+                    Some(id) => {
+                        log::debug!("[CodexOAuth] 使用指定账号 {id} 获取 token");
+                        codex_auth.get_valid_token_for_account(id).await
+                    }
+                    None => {
+                        log::debug!("[CodexOAuth] 使用默认账号获取 token");
+                        codex_auth.get_valid_token().await
+                    }
+                };
+
+                match token_result {
+                    Ok(token) => {
+                        auth = AuthInfo::new(token, AuthStrategy::CodexOAuth);
+                        codex_oauth_account_id = match account_id {
+                            Some(id) => Some(id),
+                            None => codex_auth.default_account_id().await,
+                        };
+                    }
+                    Err(e) => {
+                        return Err(ProxyError::AuthError(format!(
+                            "Codex OAuth 认证失败: {e}"
+                        )));
+                    }
+                }
+            }
             adapter.get_auth_headers(&auth)
         } else {
             Vec::new()
         };
+
+        let mut auth_headers = auth_headers;
+        if let Some(ref account_id) = codex_oauth_account_id {
+            if let Ok(hv) = http::HeaderValue::from_str(account_id) {
+                auth_headers.push((http::HeaderName::from_static("chatgpt-account-id"), hv));
+            }
+        }
 
         // Copilot 指纹头名（由 get_auth_headers 注入，需在原始头中去重）
         let copilot_fingerprint_headers: &[&str] = if is_copilot {
