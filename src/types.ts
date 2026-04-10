@@ -254,6 +254,8 @@ export interface Settings {
   commonConfigConfirmed?: boolean;
   // Sync Claude Code plugin config when switching providers
   enableClaudePluginIntegration?: boolean;
+  // Launch CC Switch Web local service on system startup
+  launchOnStartup?: boolean;
   // Skip Claude Code first-run confirmation
   skipClaudeOnboarding?: boolean;
   // 首选语言（可选，默认中文）

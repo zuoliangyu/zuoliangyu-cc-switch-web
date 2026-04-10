@@ -1703,6 +1703,18 @@ async fn save_settings(
         .map_err(|e| ApiError::internal(format!("failed to save settings: {e}")))
 }
 
+async fn get_auto_launch_status() -> Result<Json<bool>, ApiError> {
+    crate::commands::get_auto_launch_status_internal()
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to get auto launch status: {e}")))
+}
+
+async fn set_auto_launch(Json(payload): Json<EnabledRequest>) -> Result<Json<bool>, ApiError> {
+    crate::commands::set_auto_launch_internal(payload.enabled)
+        .map(Json)
+        .map_err(|e| ApiError::internal(format!("failed to set auto launch: {e}")))
+}
+
 async fn apply_claude_plugin_config(
     Json(payload): Json<OfficialRequest>,
 ) -> Result<Json<bool>, ApiError> {
@@ -2990,6 +3002,10 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
         .route("/api/config/export", get(export_config_download))
         .route("/api/config/import", post(import_config_upload))
         .route("/api/settings", get(get_settings).put(save_settings))
+        .route(
+            "/api/settings/auto-launch",
+            get(get_auto_launch_status).put(set_auto_launch),
+        )
         .route(
             "/api/settings/claude-plugin",
             post(apply_claude_plugin_config),

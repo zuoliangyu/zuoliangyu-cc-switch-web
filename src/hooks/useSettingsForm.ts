@@ -81,6 +81,7 @@ export function useSettingsForm(): UseSettingsFormResult {
       ...data,
       enableClaudePluginIntegration:
         data.enableClaudePluginIntegration ?? false,
+      launchOnStartup: data.launchOnStartup ?? false,
       skipClaudeOnboarding: data.skipClaudeOnboarding ?? false,
       claudeConfigDir: sanitizeDir(data.claudeConfigDir),
       codexConfigDir: sanitizeDir(data.codexConfigDir),
@@ -101,6 +102,7 @@ export function useSettingsForm(): UseSettingsFormResult {
           prev ??
           ({
             enableClaudePluginIntegration: false,
+            launchOnStartup: false,
             skipClaudeOnboarding: false,
             language: readPersistedLanguage(),
           } as SettingsFormState);
@@ -134,6 +136,7 @@ export function useSettingsForm(): UseSettingsFormResult {
         ...serverData,
         enableClaudePluginIntegration:
           serverData.enableClaudePluginIntegration ?? false,
+        launchOnStartup: serverData.launchOnStartup ?? false,
         skipClaudeOnboarding: serverData.skipClaudeOnboarding ?? false,
         claudeConfigDir: sanitizeDir(serverData.claudeConfigDir),
         codexConfigDir: sanitizeDir(serverData.codexConfigDir),

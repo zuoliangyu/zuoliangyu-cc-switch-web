@@ -147,6 +147,23 @@ export function useSettings(): UseSettingsResult {
         // 保存到配置文件
         await saveMutation.mutateAsync(payload);
 
+        const nextLaunchOnStartup = updates.launchOnStartup;
+        if (
+          nextLaunchOnStartup !== undefined &&
+          nextLaunchOnStartup !== (data?.launchOnStartup ?? false)
+        ) {
+          try {
+            await settingsApi.setAutoLaunch(nextLaunchOnStartup);
+          } catch (error) {
+            console.warn("[useSettings] Failed to update auto-launch", error);
+            toast.error(
+              t("settings.autoLaunchFailed", {
+                defaultValue: "设置开机自启失败",
+              }),
+            );
+          }
+        }
+
         const nextEnableClaudePluginIntegration =
           updates.enableClaudePluginIntegration;
         if (
@@ -263,6 +280,21 @@ export function useSettings(): UseSettingsResult {
         await saveMutation.mutateAsync(payload);
 
         await settingsApi.setAppConfigDirOverride(sanitizedAppDir ?? null);
+
+        const prevLaunchOnStartup = data?.launchOnStartup ?? false;
+        const nextLaunchOnStartup = payload.launchOnStartup ?? false;
+        if (nextLaunchOnStartup !== prevLaunchOnStartup) {
+          try {
+            await settingsApi.setAutoLaunch(nextLaunchOnStartup);
+          } catch (error) {
+            console.warn("[useSettings] Failed to update auto-launch", error);
+            toast.error(
+              t("settings.autoLaunchFailed", {
+                defaultValue: "设置开机自启失败",
+              }),
+            );
+          }
+        }
 
         const prevEnableClaudePluginIntegration =
           data?.enableClaudePluginIntegration ?? false;

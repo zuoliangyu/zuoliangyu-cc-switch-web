@@ -277,6 +277,11 @@
         }
       }
     },
+    "localService": "本地服务",
+    "localServiceHint": "管理 CC Switch Web 本地 Rust 服务的启动行为",
+    "launchOnStartup": "开机自启",
+    "launchOnStartupDescription": "随系统启动自动运行 CC Switch Web 本地服务",
+    "autoLaunchFailed": "设置开机自启失败",
     "claudeCode": "Claude Code",
     "claudeCodeHint": "管理 Claude Code 插件同步与首次安装确认相关行为",
     "enableClaudePluginIntegration": "应用到 Claude Code 插件",

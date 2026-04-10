@@ -446,6 +446,16 @@ export async function getWebLatestReleaseInfo(
   );
 }
 
+export async function getWebAutoLaunchStatus(): Promise<boolean> {
+  return requestJson<boolean>("/api/settings/auto-launch");
+}
+
+export async function setWebAutoLaunch(enabled: boolean): Promise<boolean> {
+  return requestWithBody<boolean>("/api/settings/auto-launch", "PUT", {
+    enabled,
+  });
+}
+
 export async function applyWebClaudePluginConfig(
   official: boolean,
 ): Promise<boolean> {

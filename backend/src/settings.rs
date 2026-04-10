@@ -187,6 +187,9 @@ pub struct AppSettings {
     /// Sync Claude Code plugin config when switching providers
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enable_claude_plugin_integration: Option<bool>,
+    /// Launch CC Switch Web local service on system startup
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launch_on_startup: Option<bool>,
     /// Skip Claude Code first-run confirmation
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skip_claude_onboarding: Option<bool>,
@@ -271,6 +274,7 @@ impl Default for AppSettings {
             first_run_notice_confirmed: None,
             common_config_confirmed: None,
             enable_claude_plugin_integration: None,
+            launch_on_startup: None,
             skip_claude_onboarding: None,
             language: None,
             visible_apps: None,

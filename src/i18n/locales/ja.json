@@ -277,6 +277,11 @@
         }
       }
     },
+    "localService": "ローカルサービス",
+    "localServiceHint": "CC Switch Web ローカル Rust サービスの起動動作を管理します",
+    "launchOnStartup": "起動時に自動実行",
+    "launchOnStartupDescription": "システム起動時に CC Switch Web のローカルサービスを自動起動します",
+    "autoLaunchFailed": "自動起動の設定に失敗しました",
     "claudeCode": "Claude Code",
     "claudeCodeHint": "Claude Code 拡張の同期とローカル初回確認動作を管理します",
     "enableClaudePluginIntegration": "Claude Code 拡張に適用",

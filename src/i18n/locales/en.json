@@ -277,6 +277,11 @@
         }
       }
     },
+    "localService": "Local Service",
+    "localServiceHint": "Manage how the CC Switch Web local Rust service starts",
+    "launchOnStartup": "Launch on Startup",
+    "launchOnStartupDescription": "Automatically run the CC Switch Web local service when the system starts",
+    "autoLaunchFailed": "Failed to set auto-launch",
     "claudeCode": "Claude Code",
     "claudeCodeHint": "Manage Claude Code extension sync and local first-run confirmation behavior",
     "enableClaudePluginIntegration": "Apply to Claude Code extension",

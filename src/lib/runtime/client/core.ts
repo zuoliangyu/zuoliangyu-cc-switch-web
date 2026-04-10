@@ -38,6 +38,8 @@ import {
   getWebConfigDir,
   getWebToolVersions,
   getWebLatestReleaseInfo,
+  getWebAutoLaunchStatus,
+  setWebAutoLaunch,
   applyWebClaudePluginConfig,
   applyWebClaudeOnboardingSkip,
   clearWebClaudeOnboardingSkip,
@@ -456,6 +458,10 @@ export async function invoke<T>(
       return (await getWebLatestReleaseInfo(
         args?.currentVersion as string | undefined,
       )) as T;
+    case "set_auto_launch":
+      return (await setWebAutoLaunch(Boolean(args?.enabled))) as T;
+    case "get_auto_launch_status":
+      return (await getWebAutoLaunchStatus()) as T;
     case "apply_claude_plugin_config":
       return (await applyWebClaudePluginConfig(Boolean(args?.official))) as T;
     case "apply_claude_onboarding_skip":

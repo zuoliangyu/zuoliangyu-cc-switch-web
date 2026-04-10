@@ -77,6 +77,10 @@
   - Web 设置页新增“应用到 Claude Code 插件”开关，开启后切换 Claude 供应商时自动同步 VS Code Claude Code 插件配置
   - Web 后端新增 `POST /api/settings/claude-plugin`，按桌面版规则仅写入或清理 `~/.claude/config.json` 的 `primaryApiKey`
   - 设置持久化模型补齐 `enableClaudePluginIntegration` 字段，供应商切换链路补齐失败提示
+- 本地服务开机自启
+  - Web 设置页新增“本地服务”区块，可切换 CC Switch Web 本地 Rust 服务的开机自启
+  - Web 后端补齐 `GET/PUT /api/settings/auto-launch`，复用跨平台 `auto-launch` 能力管理系统启动项
+  - 设置持久化模型补齐 `launchOnStartup` 字段，并补齐三语文案与失败提示
 
 实现约束：
 

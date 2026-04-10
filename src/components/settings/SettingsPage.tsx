@@ -34,6 +34,7 @@ import { SkillStorageLocationSettings } from "@/components/settings/SkillStorage
 import { SkillSyncMethodSettings } from "@/components/settings/SkillSyncMethodSettings";
 import { TerminalSettings } from "@/components/settings/TerminalSettings";
 import { ClaudeCodeSettings } from "@/components/settings/ClaudeCodeSettings";
+import { LocalServiceSettings } from "@/components/settings/LocalServiceSettings";
 import { DirectorySettings } from "@/components/settings/DirectorySettings";
 import { ImportExportSection } from "@/components/settings/ImportExportSection";
 import { BackupListSection } from "@/components/settings/BackupListSection";
@@ -239,6 +240,12 @@ export function SettingsPage({
                       value={settings.preferredTerminal}
                       onChange={(terminal) =>
                         handleAutoSave({ preferredTerminal: terminal })
+                      }
+                    />
+                    <LocalServiceSettings
+                      launchOnStartup={settings.launchOnStartup ?? false}
+                      onLaunchOnStartupChange={(value) =>
+                        handleAutoSave({ launchOnStartup: value })
                       }
                     />
                     <ClaudeCodeSettings

@@ -62,6 +62,19 @@ pub fn set_app_config_dir_override_internal(path: Option<String>) -> Result<bool
     Ok(true)
 }
 
+pub fn set_auto_launch_internal(enabled: bool) -> Result<bool, String> {
+    if enabled {
+        crate::auto_launch::enable_auto_launch().map_err(|e| format!("启用开机自启失败: {e}"))?;
+    } else {
+        crate::auto_launch::disable_auto_launch().map_err(|e| format!("禁用开机自启失败: {e}"))?;
+    }
+    Ok(true)
+}
+
+pub fn get_auto_launch_status_internal() -> Result<bool, String> {
+    crate::auto_launch::is_auto_launch_enabled().map_err(|e| format!("获取开机自启状态失败: {e}"))
+}
+
 pub fn apply_claude_plugin_config_internal(official: bool) -> Result<bool, String> {
     if official {
         crate::claude_plugin::clear_claude_config().map_err(|e| e.to_string())
