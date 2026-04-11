@@ -223,6 +223,9 @@
 - 通用配置编辑引导补齐
   - Web 端 `CommonConfigEditor` 全屏面板补回桌面版的通用配置说明卡片和空状态提示
   - 同步补齐 `commonConfig.guide*` 与 `commonConfig.empty*` 三语文案，避免编辑体验继续退化成单行说明
+- Codex / Gemini 通用配置弹窗引导补齐
+  - Web 端 `CodexCommonConfigModal` 与 `GeminiCommonConfigModal` 补回桌面版同款引导卡片和空状态提示
+  - 复用既有 `commonConfig.*` 文案，不再只显示一行简短说明
 
 实现约束：
 
