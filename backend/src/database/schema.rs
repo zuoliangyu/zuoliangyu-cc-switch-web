@@ -577,7 +577,8 @@ impl Database {
             total_cost_usd TEXT NOT NULL DEFAULT '0', latency_ms INTEGER NOT NULL, first_token_ms INTEGER,
             duration_ms INTEGER, status_code INTEGER NOT NULL, error_message TEXT, session_id TEXT,
             provider_type TEXT, is_streaming INTEGER NOT NULL DEFAULT 0,
-            cost_multiplier TEXT NOT NULL DEFAULT '1.0', created_at INTEGER NOT NULL
+            cost_multiplier TEXT NOT NULL DEFAULT '1.0', created_at INTEGER NOT NULL,
+            data_source TEXT NOT NULL DEFAULT 'proxy'
         )", [])?;
 
         // 为已存在的表添加新字段
@@ -596,6 +597,12 @@ impl Database {
         )?;
         Self::add_column_if_missing(conn, "proxy_request_logs", "first_token_ms", "INTEGER")?;
         Self::add_column_if_missing(conn, "proxy_request_logs", "duration_ms", "INTEGER")?;
+        Self::add_column_if_missing(
+            conn,
+            "proxy_request_logs",
+            "data_source",
+            "TEXT NOT NULL DEFAULT 'proxy'",
+        )?;
 
         // model_pricing 表
         conn.execute(

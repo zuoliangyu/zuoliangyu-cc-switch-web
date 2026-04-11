@@ -1045,6 +1045,14 @@
     "unknownProvider": "不明なプロバイダー",
     "stream": "ストリーム",
     "nonStream": "非ストリーム",
+    "source": "ソース",
+    "dataSource": {
+      "proxy": "プロキシ",
+      "session_log": "セッションログ",
+      "codex_db": "Codex DB",
+      "codex_session": "Codex セッション",
+      "gemini_session": "Gemini セッション"
+    },
     "totalRecords": "全 {{total}} 件",
     "modelPricing": "モデル料金",
     "loadPricingError": "料金データの読み込みに失敗しました",

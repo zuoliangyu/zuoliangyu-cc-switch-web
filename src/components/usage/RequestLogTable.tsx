@@ -385,13 +385,16 @@ export function RequestLogTable({
                   <TableHead className="whitespace-nowrap">
                     {t("usage.status")}
                   </TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    {t("usage.source", { defaultValue: "Source" })}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {logs.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={11}
+                      colSpan={12}
                       className="text-center text-muted-foreground"
                     >
                       {t("usage.noData")}
@@ -519,6 +522,21 @@ export function RequestLogTable({
                         >
                           {log.statusCode}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {log.dataSource && log.dataSource !== "proxy" ? (
+                          <span className="inline-flex rounded-full px-2 py-0.5 text-[10px] bg-indigo-100 text-indigo-800">
+                            {t(`usage.dataSource.${log.dataSource}`, {
+                              defaultValue: log.dataSource,
+                            })}
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full px-2 py-0.5 text-[10px] bg-gray-100 text-gray-600">
+                            {t("usage.dataSource.proxy", {
+                              defaultValue: "Proxy",
+                            })}
+                          </span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))

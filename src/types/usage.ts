@@ -31,6 +31,7 @@ export interface RequestLog {
   statusCode: number;
   errorMessage?: string;
   createdAt: number;
+  dataSource?: string;
 }
 
 export interface PaginatedLogs {

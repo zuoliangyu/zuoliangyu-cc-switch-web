@@ -1045,6 +1045,14 @@
     "unknownProvider": "未知供应商",
     "stream": "流",
     "nonStream": "非流",
+    "source": "来源",
+    "dataSource": {
+      "proxy": "代理",
+      "session_log": "会话日志",
+      "codex_db": "Codex 数据库",
+      "codex_session": "Codex 会话日志",
+      "gemini_session": "Gemini 会话日志"
+    },
     "totalRecords": "共 {{total}} 条记录",
     "modelPricing": "模型定价",
     "loadPricingError": "加载定价数据失败",
