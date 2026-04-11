@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { configApi } from "@/lib/api";
 
+const LEGACY_STORAGE_KEY = "cc-switch:gemini-common-config-snippet";
 const DEFAULT_GEMINI_COMMON_CONFIG_SNIPPET = "{}";
 
 const GEMINI_COMMON_ENV_FORBIDDEN_KEYS = [
@@ -166,6 +167,30 @@ export function useGeminiCommonConfig({
         if (snippet && snippet.trim()) {
           if (mounted) {
             setCommonConfigSnippetState(snippet);
+          }
+        } else if (typeof window !== "undefined") {
+          try {
+            const legacySnippet =
+              window.localStorage.getItem(LEGACY_STORAGE_KEY);
+            if (legacySnippet && legacySnippet.trim()) {
+              const parsed = parseSnippetEnv(legacySnippet);
+              if (parsed.error) {
+                console.warn(
+                  "[迁移] Gemini legacy 通用配置格式不符合当前规则，跳过迁移",
+                );
+              } else {
+                await configApi.setCommonConfigSnippet("gemini", legacySnippet);
+                if (mounted) {
+                  setCommonConfigSnippetState(legacySnippet);
+                }
+                window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+                console.log(
+                  "[迁移] Gemini 通用配置已从 localStorage 迁移到统一存储",
+                );
+              }
+            }
+          } catch (legacyError) {
+            console.warn("[迁移] Gemini 通用配置迁移失败:", legacyError);
           }
         }
       } catch (error) {

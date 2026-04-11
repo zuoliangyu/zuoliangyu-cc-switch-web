@@ -229,6 +229,9 @@
 - OMO Slim Other Fields 提示补齐
   - Web 端 `OmoFormFields` 在 OMO Slim 的 `Other Fields` 区域补回桌面版提示，明确这里用于填写顶层 Slim 配置
   - 同步补齐 `omo.slimOtherFieldsHint` 三语文案，避免高级字段用途不清
+- 通用配置 legacy 迁移恢复
+  - Web 端恢复 Claude / Codex / Gemini 通用配置片段从旧 `localStorage` 键迁移到统一存储的兼容逻辑
+  - 旧用户升级到当前版本后，历史通用配置片段会自动迁移，不再因存储链路变更而丢失
 
 实现约束：
 
