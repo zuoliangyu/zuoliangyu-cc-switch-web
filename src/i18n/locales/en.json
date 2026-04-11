@@ -2427,7 +2427,9 @@
     "skill": {
       "repo": "Repository",
       "directory": "Directory",
-      "branch": "Branch"
+      "branch": "Branch",
+      "hint": "This will add the Skill repository to the list.",
+      "hintDetail": "After adding, you can install specific Skills from the Skills management page."
     }
   },
   "subscription": {

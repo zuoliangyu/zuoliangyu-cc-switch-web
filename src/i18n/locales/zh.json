@@ -2427,7 +2427,9 @@
     "skill": {
       "repo": "仓库",
       "directory": "目录",
-      "branch": "分支"
+      "branch": "分支",
+      "hint": "此操作将添加 Skill 仓库到列表。",
+      "hintDetail": "添加后，您可以在 Skills 管理界面中选择安装具体的 Skill。"
     }
   },
   "subscription": {

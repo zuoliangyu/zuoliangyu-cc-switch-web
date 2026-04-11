@@ -211,6 +211,9 @@
 - Provider 预设展示顺序对齐
   - Web 端将 Claude / Codex / Gemini / OpenCode / OpenClaw 的剩余预设排序统一回桌面端顺序
   - 供应商选择器中 `DDSHub / OpenRouter / TheRouter / LionCCAPI / E-FlowCode` 等条目的展示位置与桌面端保持一致
+- Deep Link Skill 导入提醒补齐
+  - Web 端在 Skill Deep Link 确认视图中补回桌面端同款提示块，明确说明“仅添加仓库，后续需到 Skills 管理页安装具体 Skill”
+  - 同步补齐 `deeplink.skill.hint` / `deeplink.skill.hintDetail` 三语文案
 
 实现约束：
 
