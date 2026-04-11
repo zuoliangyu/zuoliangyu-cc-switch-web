@@ -92,6 +92,13 @@ struct ValueRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct AddProviderRequest {
+    provider: Provider,
+    add_to_live: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct BackupPathRequest {
     backup_path: String,
 }
@@ -2315,10 +2322,15 @@ async fn disable_current_omo_slim(
 async fn add_provider(
     State(state): State<WebApiState>,
     Path(app): Path<String>,
-    Json(provider): Json<Provider>,
+    Json(payload): Json<AddProviderRequest>,
 ) -> Result<Json<bool>, ApiError> {
-    let added = crate::commands::add_provider_internal(state.app_state.as_ref(), app, provider)
-        .map_err(|e| ApiError::internal(format!("failed to add provider: {e}")))?;
+    let added = crate::commands::add_provider_internal(
+        state.app_state.as_ref(),
+        app,
+        payload.provider,
+        payload.add_to_live,
+    )
+    .map_err(|e| ApiError::internal(format!("failed to add provider: {e}")))?;
     Ok(Json(added))
 }
 

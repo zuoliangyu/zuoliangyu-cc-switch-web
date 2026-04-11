@@ -1385,8 +1385,12 @@ export async function deleteWebDbBackup(filename: string): Promise<void> {
 export async function addWebProvider(
   appId: AppId,
   provider: Provider,
+  addToLive?: boolean,
 ): Promise<boolean> {
-  return requestWithBody<boolean>(`/api/providers/${appId}`, "POST", provider);
+  return requestWithBody<boolean>(`/api/providers/${appId}`, "POST", {
+    provider,
+    addToLive,
+  });
 }
 
 export async function updateWebProvider(

@@ -15,7 +15,10 @@ export const useAddProviderMutation = (appId: AppId) => {
 
   return useMutation({
     mutationFn: async (
-      providerInput: Omit<Provider, "id"> & { providerKey?: string },
+      providerInput: Omit<Provider, "id"> & {
+        providerKey?: string;
+        addToLive?: boolean;
+      },
     ) => {
       let id: string;
 
@@ -36,7 +39,7 @@ export const useAddProviderMutation = (appId: AppId) => {
         id = generateUUID();
       }
 
-      const { providerKey: _providerKey, ...rest } = providerInput;
+      const { providerKey: _providerKey, addToLive, ...rest } = providerInput;
 
       const newProvider: Provider = {
         ...rest,
@@ -45,7 +48,7 @@ export const useAddProviderMutation = (appId: AppId) => {
       };
       delete (newProvider as any).providerKey;
 
-      await providersApi.add(newProvider, appId);
+      await providersApi.add(newProvider, appId, addToLive);
       return newProvider;
     },
     onSuccess: async () => {

@@ -156,6 +156,10 @@
   - Web 端编辑 OpenCode / OpenClaw provider 时，`providerKey` 改动会连同 `originalId` 一起透传到更新链路，真正支持数据库层的重命名
   - Web 后端补齐 additive provider rename 规则：已写入 live config 的 provider、以及 OMO / OMO Slim provider 仍禁止改 key
   - additive provider 编辑行为改为仅在该 provider 已存在 live config 时才回写 live，避免把仅存在数据库的 provider 误加回配置
+- 累加模式复制默认仅落库
+  - Web 端复制 OpenCode / OpenClaw provider 时，会同时读取数据库与 live config 中的已占用 key，生成新的唯一 `providerKey`
+  - 复制出的 provider 默认仅保存到数据库，不自动写入 live config，和桌面版“先复制、再决定是否加入配置”的行为保持一致
+  - Web 后端新增 `addToLive` 入参，供累加模式新增链路精确控制是否立即写入 live
 
 实现约束：
 

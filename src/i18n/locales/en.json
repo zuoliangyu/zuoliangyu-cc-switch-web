@@ -161,6 +161,7 @@
     "switchSuccess": "Switch successful!",
     "addToConfigSuccess": "Added to config",
     "removeFromConfigSuccess": "Removed from config",
+    "duplicateLiveIdsLoadFailed": "Failed to load provider keys from app config. Fix the config first and try again.",
     "switchFailedTitle": "Switch failed",
     "switchFailed": "Switch failed: {{error}}",
     "autoImported": "Default provider created from existing configuration",

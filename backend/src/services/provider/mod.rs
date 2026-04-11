@@ -167,7 +167,12 @@ impl ProviderService {
     }
 
     /// Add a new provider
-    pub fn add(state: &AppState, app_type: AppType, provider: Provider) -> Result<bool, AppError> {
+    pub fn add(
+        state: &AppState,
+        app_type: AppType,
+        provider: Provider,
+        add_to_live: bool,
+    ) -> Result<bool, AppError> {
         let mut provider = provider;
         // Normalize Claude model keys
         Self::normalize_provider_if_claude(&app_type, &mut provider);
@@ -177,7 +182,7 @@ impl ProviderService {
         // Save to database
         state.db.save_provider(app_type.as_str(), &provider)?;
 
-        // Additive mode apps (OpenCode, OpenClaw) - always write to live config
+        // Additive mode apps (OpenCode, OpenClaw) - optionally write to live config
         if app_type.is_additive_mode() {
             // OMO / OMO Slim providers use exclusive mode and write to dedicated config file.
             if matches!(app_type, AppType::OpenCode)
@@ -185,6 +190,9 @@ impl ProviderService {
             {
                 // Do not auto-enable newly added OMO / OMO Slim providers.
                 // Users must explicitly switch/apply an OMO provider to activate it.
+                return Ok(true);
+            }
+            if !add_to_live {
                 return Ok(true);
             }
             write_live_with_common_config(state.db.as_ref(), &app_type, &provider)?;

@@ -32,9 +32,11 @@ pub(crate) fn add_provider_internal(
     state: &AppState,
     app: String,
     provider: Provider,
+    add_to_live: Option<bool>,
 ) -> Result<bool, String> {
     let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
-    ProviderService::add(state, app_type, provider).map_err(|e| e.to_string())
+    ProviderService::add(state, app_type, provider, add_to_live.unwrap_or(true))
+        .map_err(|e| e.to_string())
 }
 
 pub(crate) fn update_provider_internal(

@@ -62,6 +62,7 @@ export function useProviderActions(activeApp: AppId, isProxyRunning?: boolean) {
       provider: Omit<Provider, "id"> & {
         providerKey?: string;
         suggestedDefaults?: OpenClawSuggestedDefaults;
+        addToLive?: boolean;
       },
     ) => {
       await addProviderMutation.mutateAsync(provider);

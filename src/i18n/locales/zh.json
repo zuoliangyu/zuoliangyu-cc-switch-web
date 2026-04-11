@@ -161,6 +161,7 @@
     "switchSuccess": "切换成功！",
     "addToConfigSuccess": "已添加到配置",
     "removeFromConfigSuccess": "已从配置移除",
+    "duplicateLiveIdsLoadFailed": "读取配置中的供应商标识失败，请先修复配置后再试",
     "switchFailedTitle": "切换失败",
     "switchFailed": "切换失败：{{error}}",
     "autoImported": "已从现有配置创建默认供应商",

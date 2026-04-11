@@ -367,6 +367,7 @@ export async function invoke<T>(
       return (await addWebProvider(
         args?.app as AppId,
         args?.provider as any,
+        args?.addToLive as boolean | undefined,
       )) as T;
     case "update_provider":
       return (await updateWebProvider(

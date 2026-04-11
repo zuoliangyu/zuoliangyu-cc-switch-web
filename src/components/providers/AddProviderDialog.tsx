@@ -29,6 +29,7 @@ interface AddProviderDialogProps {
     provider: Omit<Provider, "id"> & {
       providerKey?: string;
       suggestedDefaults?: OpenClawSuggestedDefaults;
+      addToLive?: boolean;
     },
   ) => Promise<void> | void;
 }
@@ -93,6 +94,7 @@ export function AddProviderDialog({
       const providerData: Omit<Provider, "id"> & {
         providerKey?: string;
         suggestedDefaults?: OpenClawSuggestedDefaults;
+        addToLive?: boolean;
       } = {
         name: values.name.trim(),
         notes: values.notes?.trim() || undefined,
