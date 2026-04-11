@@ -208,6 +208,9 @@
 - Oh My OpenCode 预设仓库地址对齐
   - Web 端将 `Oh My OpenCode` 预设官网地址改回桌面端同款 `oh-my-openagent` 仓库
   - 避免从预设卡片跳转到与桌面端不一致的项目地址
+- Provider 预设展示顺序对齐
+  - Web 端将 Claude / Codex / Gemini / OpenCode / OpenClaw 的剩余预设排序统一回桌面端顺序
+  - 供应商选择器中 `DDSHub / OpenRouter / TheRouter / LionCCAPI / E-FlowCode` 等条目的展示位置与桌面端保持一致
 
 实现约束：
 

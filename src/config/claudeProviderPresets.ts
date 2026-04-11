@@ -670,22 +670,20 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#000000",
   },
   {
-    name: "OpenRouter",
-    websiteUrl: "https://openrouter.ai",
-    apiKeyUrl: "https://openrouter.ai/keys",
+    name: "DDSHub",
+    websiteUrl: "https://www.ddshub.cc",
+    apiKeyUrl: "https://ddshub.short.gy/ccswitch",
     settingsConfig: {
       env: {
-        ANTHROPIC_BASE_URL: "https://openrouter.ai/api",
+        ANTHROPIC_BASE_URL: "https://www.ddshub.cc",
         ANTHROPIC_AUTH_TOKEN: "",
-        ANTHROPIC_MODEL: "anthropic/claude-sonnet-4.6",
-        ANTHROPIC_DEFAULT_HAIKU_MODEL: "anthropic/claude-haiku-4.5",
-        ANTHROPIC_DEFAULT_SONNET_MODEL: "anthropic/claude-sonnet-4.6",
-        ANTHROPIC_DEFAULT_OPUS_MODEL: "anthropic/claude-opus-4.6",
       },
     },
-    category: "aggregator",
-    icon: "openrouter",
-    iconColor: "#6566F1",
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "ddshub",
+    icon: "dds",
+    iconColor: "#000000",
   },
   {
     name: "E-FlowCode",
@@ -710,6 +708,56 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#000000",
   },
   {
+    name: "LionCCAPI",
+    websiteUrl: "https://vibecodingapi.ai",
+    settingsConfig: {
+      env: {
+        ANTHROPIC_BASE_URL: "https://vibecodingapi.ai",
+        ANTHROPIC_AUTH_TOKEN: "",
+      },
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "lionccapi",
+    icon: "lioncc",
+  },
+  {
+    name: "OpenRouter",
+    websiteUrl: "https://openrouter.ai",
+    apiKeyUrl: "https://openrouter.ai/keys",
+    settingsConfig: {
+      env: {
+        ANTHROPIC_BASE_URL: "https://openrouter.ai/api",
+        ANTHROPIC_AUTH_TOKEN: "",
+        ANTHROPIC_MODEL: "anthropic/claude-sonnet-4.6",
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: "anthropic/claude-haiku-4.5",
+        ANTHROPIC_DEFAULT_SONNET_MODEL: "anthropic/claude-sonnet-4.6",
+        ANTHROPIC_DEFAULT_OPUS_MODEL: "anthropic/claude-opus-4.6",
+      },
+    },
+    category: "aggregator",
+    icon: "openrouter",
+    iconColor: "#6566F1",
+  },
+  {
+    name: "TheRouter",
+    websiteUrl: "https://therouter.ai",
+    apiKeyUrl: "https://dashboard.therouter.ai",
+    settingsConfig: {
+      env: {
+        ANTHROPIC_BASE_URL: "https://api.therouter.ai",
+        ANTHROPIC_AUTH_TOKEN: "",
+        ANTHROPIC_API_KEY: "",
+        ANTHROPIC_MODEL: "anthropic/claude-sonnet-4.6",
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: "anthropic/claude-haiku-4.5",
+        ANTHROPIC_DEFAULT_SONNET_MODEL: "anthropic/claude-sonnet-4.6",
+        ANTHROPIC_DEFAULT_OPUS_MODEL: "anthropic/claude-opus-4.6",
+      },
+    },
+    category: "aggregator",
+    endpointCandidates: ["https://api.therouter.ai"],
+  },
+  {
     name: "Novita AI",
     websiteUrl: "https://novita.ai",
     apiKeyUrl: "https://novita.ai",
@@ -726,22 +774,6 @@ export const providerPresets: ProviderPreset[] = [
     category: "aggregator",
     endpointCandidates: ["https://api.novita.ai/anthropic"],
     icon: "novita",
-    iconColor: "#000000",
-  },
-  {
-    name: "DDSHub",
-    websiteUrl: "https://www.ddshub.cc",
-    apiKeyUrl: "https://ddshub.short.gy/ccswitch",
-    settingsConfig: {
-      env: {
-        ANTHROPIC_BASE_URL: "https://www.ddshub.cc",
-        ANTHROPIC_AUTH_TOKEN: "",
-      },
-    },
-    category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "ddshub",
-    icon: "dds",
     iconColor: "#000000",
   },
   {
@@ -768,6 +800,8 @@ export const providerPresets: ProviderPreset[] = [
     websiteUrl: "https://openai.com/chatgpt/pricing",
     settingsConfig: {
       env: {
+        // base_url 由代理后端强制重写为 chatgpt.com/backend-api/codex
+        // 用户无需配置
         ANTHROPIC_BASE_URL: "https://chatgpt.com/backend-api/codex",
         ANTHROPIC_MODEL: "gpt-5.4",
         ANTHROPIC_DEFAULT_HAIKU_MODEL: "gpt-5.4-mini",
@@ -802,20 +836,6 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#000000",
   },
   {
-    name: "LionCCAPI",
-    websiteUrl: "https://vibecodingapi.ai",
-    settingsConfig: {
-      env: {
-        ANTHROPIC_BASE_URL: "https://vibecodingapi.ai",
-        ANTHROPIC_AUTH_TOKEN: "",
-      },
-    },
-    category: "third_party",
-    isPartner: true,
-    partnerPromotionKey: "lionccapi",
-    icon: "lioncc",
-  },
-  {
     name: "PIPELLM",
     websiteUrl: "https://www.pipellm.ai",
     apiKeyUrl: "https://code.pipellm.ai/login?ref=uvw650za",
@@ -832,24 +852,6 @@ export const providerPresets: ProviderPreset[] = [
     },
     category: "aggregator",
     icon: "pipellm",
-  },
-  {
-    name: "TheRouter",
-    websiteUrl: "https://therouter.ai",
-    apiKeyUrl: "https://dashboard.therouter.ai",
-    settingsConfig: {
-      env: {
-        ANTHROPIC_BASE_URL: "https://api.therouter.ai",
-        ANTHROPIC_AUTH_TOKEN: "",
-        ANTHROPIC_API_KEY: "",
-        ANTHROPIC_MODEL: "anthropic/claude-sonnet-4.6",
-        ANTHROPIC_DEFAULT_HAIKU_MODEL: "anthropic/claude-haiku-4.5",
-        ANTHROPIC_DEFAULT_SONNET_MODEL: "anthropic/claude-sonnet-4.6",
-        ANTHROPIC_DEFAULT_OPUS_MODEL: "anthropic/claude-opus-4.6",
-      },
-    },
-    category: "aggregator",
-    endpointCandidates: ["https://api.therouter.ai"],
   },
   {
     name: "Xiaomi MiMo",
