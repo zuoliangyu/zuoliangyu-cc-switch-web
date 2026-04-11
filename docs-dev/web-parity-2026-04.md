@@ -214,6 +214,9 @@
 - Deep Link Skill 导入提醒补齐
   - Web 端在 Skill Deep Link 确认视图中补回桌面端同款提示块，明确说明“仅添加仓库，后续需到 Skills 管理页安装具体 Skill”
   - 同步补齐 `deeplink.skill.hint` / `deeplink.skill.hintDetail` 三语文案
+- Deep Link MCP 预览摘要补齐
+  - Web 端在 MCP Deep Link 确认视图中补回目标应用标签和服务器摘要卡片，不再只剩原始 JSON 预览
+  - 继续保留原始 JSON 预览，兼顾桌面端摘要信息和 Web 端调试可读性
 
 实现约束：
 

@@ -240,6 +240,51 @@ export function DeepLinkImportDialog() {
     return 0;
   }, [parsedConfig, request?.resource]);
 
+  const targetApps = useMemo(() => {
+    if (request?.resource !== "mcp") {
+      return [];
+    }
+    return (request.apps ?? "")
+      .split(",")
+      .map((app) => app.trim())
+      .filter(Boolean);
+  }, [request?.apps, request?.resource]);
+
+  const mcpServerSummaries = useMemo(() => {
+    if (request?.resource !== "mcp" || !parsedConfig) {
+      return [];
+    }
+
+    const servers =
+      "mcpServers" in parsedConfig &&
+      parsedConfig.mcpServers &&
+      typeof parsedConfig.mcpServers === "object"
+        ? (parsedConfig.mcpServers as Record<string, unknown>)
+        : parsedConfig;
+
+    return Object.entries(servers).map(([id, spec]) => {
+      const record =
+        spec && typeof spec === "object" && !Array.isArray(spec)
+          ? (spec as Record<string, unknown>)
+          : null;
+      const command = Array.isArray(record?.command)
+        ? record.command.join(" ")
+        : typeof record?.command === "string"
+          ? record.command
+          : null;
+      const url = typeof record?.url === "string" ? record.url : null;
+
+      return {
+        id,
+        summary: command
+          ? `Command: ${command}`
+          : url
+            ? `URL: ${url}`
+            : formatPreviewValue(spec),
+      };
+    });
+  }, [parsedConfig, request?.resource]);
+
   const providerConfigPreview = useMemo(
     () => buildProviderConfigPreview(request, parsedConfig),
     [parsedConfig, request],
@@ -618,13 +663,47 @@ export function DeepLinkImportDialog() {
 
               {request.resource === "mcp" && (
                 <div className="space-y-3">
-                  <InfoRow
-                    label={t("deeplink.mcp.targetApps")}
-                    value={request.apps ?? "-"}
-                  />
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {t("deeplink.mcp.targetApps")}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {targetApps.length > 0 ? (
+                        targetApps.map((app) => (
+                          <span
+                            key={app}
+                            className="rounded-full bg-primary/10 px-2.5 py-1 text-xs capitalize text-primary"
+                          >
+                            {app}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </div>
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {t("deeplink.mcp.serverCount", { count: mcpServerCount })}
                   </div>
+                  {mcpServerSummaries.length > 0 && (
+                    <PreviewCard title={t("deeplink.mcp.serverPreview")}>
+                      <div className="space-y-2">
+                        {mcpServerSummaries.map((server) => (
+                          <div
+                            key={server.id}
+                            className="rounded-lg border border-border bg-background/70 p-3"
+                          >
+                            <div className="text-sm font-medium">
+                              {server.id}
+                            </div>
+                            <div className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                              {server.summary}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </PreviewCard>
+                  )}
                   <PreviewCard title={t("deeplink.mcp.serverPreview")}>
                     <pre className="overflow-x-auto whitespace-pre-wrap text-xs">
                       {JSON.stringify(
