@@ -27,6 +27,12 @@ import type { DeepLinkImportRequest } from "@/lib/deeplink/types";
 
 const OPEN_EVENT = "cc-switch-open-deeplink-import";
 
+type ProviderConfigPreview =
+  | { kind: "claude"; env: Record<string, unknown> }
+  | { kind: "codex"; auth: Record<string, unknown>; tomlConfig: string }
+  | { kind: "gemini"; env: Record<string, unknown> }
+  | { kind: "generic"; raw: Record<string, unknown> };
+
 const maskValue = (key: string, value: string) => {
   const sensitive = ["TOKEN", "KEY", "SECRET", "PASSWORD"].some((token) =>
     key.toUpperCase().includes(token),
@@ -35,6 +41,65 @@ const maskValue = (key: string, value: string) => {
     return value;
   }
   return `${value.slice(0, 8)}************`;
+};
+
+const formatPreviewValue = (value: unknown) => {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (value === null || value === undefined) {
+    return "";
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+};
+
+const buildProviderConfigPreview = (
+  request: DeepLinkImportRequest | null,
+  parsedConfig: Record<string, unknown> | null,
+): ProviderConfigPreview | null => {
+  if (!request || request.resource !== "provider" || !parsedConfig) {
+    return null;
+  }
+
+  switch (request.app) {
+    case "claude": {
+      const env =
+        parsedConfig.env &&
+        typeof parsedConfig.env === "object" &&
+        !Array.isArray(parsedConfig.env)
+          ? (parsedConfig.env as Record<string, unknown>)
+          : null;
+      return env && Object.keys(env).length > 0
+        ? { kind: "claude", env }
+        : { kind: "generic", raw: parsedConfig };
+    }
+    case "codex": {
+      const auth =
+        parsedConfig.auth &&
+        typeof parsedConfig.auth === "object" &&
+        !Array.isArray(parsedConfig.auth)
+          ? (parsedConfig.auth as Record<string, unknown>)
+          : {};
+      const tomlConfig =
+        typeof parsedConfig.config === "string" ? parsedConfig.config : "";
+      return Object.keys(auth).length > 0 || tomlConfig
+        ? { kind: "codex", auth, tomlConfig }
+        : { kind: "generic", raw: parsedConfig };
+    }
+    case "gemini":
+      return Object.keys(parsedConfig).length > 0
+        ? { kind: "gemini", env: parsedConfig }
+        : { kind: "generic", raw: parsedConfig };
+    default:
+      return { kind: "generic", raw: parsedConfig };
+  }
 };
 
 const getTitleKey = (request: DeepLinkImportRequest | null) => {
@@ -174,6 +239,11 @@ export function DeepLinkImportDialog() {
     }
     return 0;
   }, [parsedConfig, request?.resource]);
+
+  const providerConfigPreview = useMemo(
+    () => buildProviderConfigPreview(request, parsedConfig),
+    [parsedConfig, request],
+  );
 
   const handleParse = () => {
     void parseAndOpen(rawValue);
@@ -371,7 +441,11 @@ export function DeepLinkImportDialog() {
                   />
                   {request.model && (
                     <InfoRow
-                      label={t("deeplink.model")}
+                      label={t(
+                        request.app === "claude"
+                          ? "deeplink.multiModel"
+                          : "deeplink.model",
+                      )}
                       value={request.model}
                       mono
                     />
@@ -406,11 +480,11 @@ export function DeepLinkImportDialog() {
                   {(request.config || request.configUrl) && (
                     <InfoRow
                       label={t("deeplink.configSource")}
-                      value={
-                        request.configUrl
-                          ? t("deeplink.configRemote")
-                          : t("deeplink.configEmbedded")
-                      }
+                      value={`${request.configUrl ? t("deeplink.configRemote") : t("deeplink.configEmbedded")}${
+                        request.configFormat
+                          ? ` (${request.configFormat.toUpperCase()})`
+                          : ""
+                      }`}
                     />
                   )}
                   {request.configUrl && (
@@ -420,11 +494,47 @@ export function DeepLinkImportDialog() {
                       mono
                     />
                   )}
-                  {parsedConfig && (
+                  {providerConfigPreview && (
                     <PreviewCard title={t("deeplink.configDetails")}>
-                      <pre className="overflow-x-auto whitespace-pre-wrap text-xs">
-                        {JSON.stringify(parsedConfig, null, 2).slice(0, 1200)}
-                      </pre>
+                      {providerConfigPreview.kind === "codex" ? (
+                        <div className="space-y-3">
+                          {Object.keys(providerConfigPreview.auth).length > 0 && (
+                            <div className="space-y-2">
+                              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {t("deeplink.configAuth")}
+                              </div>
+                              <ConfigEntryList
+                                entries={Object.entries(providerConfigPreview.auth)}
+                              />
+                            </div>
+                          )}
+                          {providerConfigPreview.tomlConfig && (
+                            <div className="space-y-2">
+                              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {t("deeplink.configToml")}
+                              </div>
+                              <pre className="max-h-24 overflow-x-auto whitespace-pre-wrap rounded bg-background p-2 font-mono text-xs">
+                                {providerConfigPreview.tomlConfig.slice(0, 300)}
+                                {providerConfigPreview.tomlConfig.length > 300
+                                  ? "..."
+                                  : ""}
+                              </pre>
+                            </div>
+                          )}
+                        </div>
+                      ) : providerConfigPreview.kind === "claude" ||
+                        providerConfigPreview.kind === "gemini" ? (
+                        <ConfigEntryList
+                          entries={Object.entries(providerConfigPreview.env)}
+                        />
+                      ) : (
+                        <pre className="overflow-x-auto whitespace-pre-wrap text-xs">
+                          {JSON.stringify(providerConfigPreview.raw, null, 2).slice(
+                            0,
+                            1200,
+                          )}
+                        </pre>
+                      )}
                     </PreviewCard>
                   )}
                   {(request.usageScript ||
@@ -628,6 +738,25 @@ function PreviewCard({
     <div className="space-y-2 rounded-lg border border-border bg-background/80 p-3">
       <div className="text-sm font-medium text-muted-foreground">{title}</div>
       {children}
+    </div>
+  );
+}
+
+function ConfigEntryList({
+  entries,
+}: {
+  entries: Array<[string, unknown]>;
+}) {
+  return (
+    <div className="space-y-1.5">
+      {entries.map(([key, value]) => (
+        <div key={key} className="grid grid-cols-2 gap-2 text-xs">
+          <span className="truncate font-mono text-muted-foreground">{key}</span>
+          <span className="truncate font-mono">
+            {maskValue(key, formatPreviewValue(value))}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

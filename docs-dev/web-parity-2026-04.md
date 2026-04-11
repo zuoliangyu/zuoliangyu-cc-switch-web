@@ -149,6 +149,9 @@
 - Deep Link Provider 预览细节
   - Web 端 Deep Link 导入弹窗补齐 provider 图标预览，并将多 endpoint 拆分为主地址与备选地址展示
   - 仅补 provider 确认视图细节，不改现有导入参数解析与保存逻辑
+- Deep Link Provider 配置预览语义化
+  - Web 端 Deep Link 导入弹窗补齐 Claude / Codex / Gemini 的分类型配置预览，不再统一退化为 JSON 文本
+  - Claude 的通用 `model` 标签改为与桌面版一致的“多模态模型”，配置来源同时展示 `JSON/TOML` 格式信息
 
 实现约束：
 
