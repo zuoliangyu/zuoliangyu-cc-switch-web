@@ -143,6 +143,9 @@
 - Deep Link 用量配置预览
   - Web 端 Deep Link 导入弹窗补齐 provider 的用量查询配置预览，覆盖启用状态、独立 API Key、独立查询地址与自动查询间隔
   - 仅补导入前确认视图，不改现有 deeplink 解析、配置合并与导入保存链路
+- Deep Link Prompt / MCP 提醒补齐
+  - Web 端 Deep Link 导入弹窗补齐 prompt 的“导入后立即启用”提醒，以及 MCP 的服务器数量与“立即写入指定应用”提醒
+  - 仅补确认信息展示，不改现有 prompt / MCP 导入逻辑
 
 实现约束：
 

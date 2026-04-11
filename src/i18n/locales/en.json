@@ -2347,11 +2347,14 @@
       "app": "App",
       "name": "Prompt Name",
       "description": "Description",
-      "contentPreview": "Content Preview"
+      "contentPreview": "Content Preview",
+      "enabledWarning": "After import, this prompt will be enabled immediately and other prompts will be disabled"
     },
     "mcp": {
       "targetApps": "Target Apps",
-      "serverPreview": "Server Preview"
+      "serverPreview": "Server Preview",
+      "serverCount": "MCP Servers ({{count}})",
+      "enabledWarning": "After import, configurations will be written to all specified apps immediately"
     },
     "skill": {
       "repo": "Repository",

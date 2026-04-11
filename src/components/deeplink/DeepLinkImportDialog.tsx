@@ -155,6 +155,25 @@ export function DeepLinkImportDialog() {
     }
   }, [request?.content]);
 
+  const mcpServerCount = useMemo(() => {
+    if (request?.resource !== "mcp" || !parsedConfig) {
+      return 0;
+    }
+    if (
+      "mcpServers" in parsedConfig &&
+      parsedConfig.mcpServers &&
+      typeof parsedConfig.mcpServers === "object"
+    ) {
+      return Object.keys(
+        parsedConfig.mcpServers as Record<string, unknown>,
+      ).length;
+    }
+    if (typeof parsedConfig === "object") {
+      return Object.keys(parsedConfig).length;
+    }
+    return 0;
+  }, [parsedConfig, request?.resource]);
+
   const handleParse = () => {
     void parseAndOpen(rawValue);
   };
@@ -446,6 +465,11 @@ export function DeepLinkImportDialog() {
                       {decodedPromptContent.length > 1200 ? "..." : ""}
                     </pre>
                   </PreviewCard>
+                  {request.enabled && (
+                    <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-300">
+                      {t("deeplink.prompt.enabledWarning")}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -455,6 +479,9 @@ export function DeepLinkImportDialog() {
                     label={t("deeplink.mcp.targetApps")}
                     value={request.apps ?? "-"}
                   />
+                  <div className="text-sm text-muted-foreground">
+                    {t("deeplink.mcp.serverCount", { count: mcpServerCount })}
+                  </div>
                   <PreviewCard title={t("deeplink.mcp.serverPreview")}>
                     <pre className="overflow-x-auto whitespace-pre-wrap text-xs">
                       {JSON.stringify(
@@ -468,6 +495,11 @@ export function DeepLinkImportDialog() {
                       ).slice(0, 1600)}
                     </pre>
                   </PreviewCard>
+                  {request.enabled && (
+                    <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-300">
+                      {t("deeplink.mcp.enabledWarning")}
+                    </div>
+                  )}
                 </div>
               )}
 

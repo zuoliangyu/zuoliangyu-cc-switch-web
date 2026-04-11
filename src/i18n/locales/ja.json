@@ -2347,11 +2347,14 @@
       "app": "アプリ",
       "name": "プロンプト名",
       "description": "説明",
-      "contentPreview": "内容プレビュー"
+      "contentPreview": "内容プレビュー",
+      "enabledWarning": "インポート後すぐにこのプロンプトが有効になり、他は無効になります"
     },
     "mcp": {
       "targetApps": "対象アプリ",
-      "serverPreview": "サーバープレビュー"
+      "serverPreview": "サーバープレビュー",
+      "serverCount": "MCP サーバー（{{count}} 件）",
+      "enabledWarning": "インポート後、指定したすべてのアプリに即座に書き込まれます"
     },
     "skill": {
       "repo": "リポジトリ",
