@@ -2396,6 +2396,7 @@
     "configSource": "設定ソース",
     "configEmbedded": "埋め込み設定",
     "configRemote": "リモート設定",
+    "configMergeError": "設定ファイルのマージに失敗しました",
     "configUrl": "設定ファイル URL",
     "configDetails": "設定プレビュー",
     "configAuth": "認証設定",

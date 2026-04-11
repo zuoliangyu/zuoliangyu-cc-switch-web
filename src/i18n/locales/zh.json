@@ -2396,6 +2396,7 @@
     "configSource": "配置来源",
     "configEmbedded": "内嵌配置",
     "configRemote": "远程配置",
+    "configMergeError": "合并配置文件失败",
     "configUrl": "配置文件 URL",
     "configDetails": "配置预览",
     "configAuth": "认证配置",

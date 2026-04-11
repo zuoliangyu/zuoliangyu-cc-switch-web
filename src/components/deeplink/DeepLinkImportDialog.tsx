@@ -156,11 +156,20 @@ export function DeepLinkImportDialog() {
     setIsParsing(true);
     try {
       const parsed = parseDeepLinkUrl(trimmed);
-      const merged = await mergeDeepLinkConfig(parsed);
       setRawValue(trimmed);
-      setRequest(merged);
       setParseError(null);
+      setRequest(parsed);
       setOpen(true);
+
+      try {
+        const merged = await mergeDeepLinkConfig(parsed);
+        setRequest(merged);
+      } catch (error) {
+        toast.error(t("deeplink.configMergeError"), {
+          description: extractErrorMessage(error),
+          closeButton: true,
+        });
+      }
     } catch (error) {
       setRawValue(trimmed);
       setRequest(null);

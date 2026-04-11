@@ -235,6 +235,9 @@
 - 认证验证码复制兼容性补齐
   - Web 端新增统一 `copyText` helper，并在 Copilot / Codex OAuth 认证区块复用
   - 验证码复制不再只依赖 `navigator.clipboard`，在受限环境下可回退到 DOM 复制方案
+- Deep Link 配置合并失败降级导入
+  - Web 端 `DeepLinkImportDialog` 改为先保留已解析出的 provider 请求，再异步尝试合并内嵌/远程配置
+  - 当配置拉取或合并失败时，会提示“合并配置文件失败”，但仍允许按原始 deeplink 信息继续导入，不再直接中断整个导入流程
 
 实现约束：
 
