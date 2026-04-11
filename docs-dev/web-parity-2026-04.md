@@ -93,6 +93,9 @@
   - Web 端补齐 `CopilotQuotaFooter` 与查询 hook，支持按绑定账号读取 GitHub Copilot Premium 配额
   - Provider 卡片重新区分 `github_copilot / codex_oauth / 官方 CLI` 三类额度 footer
   - 补齐三语 `subscription.copilotPremium` 文案，保持额度标签与桌面版一致
+- Provider 卡片动作按钮限制
+  - Web 端 `ProviderCard` 补齐桌面版同款动作裁剪逻辑，对 `official / github_copilot / codex_oauth` 不再传入无效的测试与用量配置回调
+  - `ProviderActions` 补齐可选入口的置灰展示，保持按钮布局稳定，同时明确这些供应商不支持对应动作
 
 实现约束：
 
