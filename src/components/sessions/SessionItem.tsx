@@ -47,10 +47,10 @@ export function SessionItem({
   return (
     <div
       className={cn(
-        "flex items-start gap-2 rounded-lg px-3 py-2.5 transition-all group",
+        "group flex items-start gap-2 rounded-[22px] border px-3 py-3 transition-all",
         isSelected
-          ? "bg-primary/10 border border-primary/30"
-          : "hover:bg-muted/60 border border-transparent",
+          ? "glass-card-active shadow-lg"
+          : "border-border-default bg-background/50 hover:border-border-hover hover:bg-background/70 hover:shadow-md",
       )}
     >
       {selectionMode && (
@@ -70,10 +70,10 @@ export function SessionItem({
         onClick={() => onSelect(sessionKey)}
         className="min-w-0 flex-1 text-left"
       >
-        <div className="flex items-center gap-2 mb-1">
+        <div className="mb-2 flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="shrink-0">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-background/80 shadow-sm">
                 <ProviderIcon
                   icon={getProviderIconName(session.providerId)}
                   name={session.providerId}
@@ -85,18 +85,21 @@ export function SessionItem({
               {getProviderLabel(session.providerId, t)}
             </TooltipContent>
           </Tooltip>
-          <span className="text-sm font-medium truncate flex-1">
+          <span className="flex-1 truncate text-sm font-semibold">
             {searchQuery ? highlightText(title, searchQuery) : title}
           </span>
           <ChevronRight
             className={cn(
-              "size-4 text-muted-foreground/50 shrink-0 transition-transform",
+              "size-4 shrink-0 text-muted-foreground/50 transition-transform",
               isSelected && "text-primary rotate-90",
             )}
           />
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="theme-chip-neutral inline-flex items-center rounded-full px-2.5 py-1">
+            {getProviderLabel(session.providerId, t)}
+          </span>
           <Clock className="size-3" />
           <span>
             {lastActive

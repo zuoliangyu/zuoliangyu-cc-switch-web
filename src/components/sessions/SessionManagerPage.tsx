@@ -213,9 +213,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
         selectedSession.resumeCommand,
         t("sessionManager.resumeFallbackCopied"),
       );
-      toast.error(
-        extractErrorMessage(error) || t("sessionManager.openFailed"),
-      );
+      toast.error(extractErrorMessage(error) || t("sessionManager.openFailed"));
     }
   };
 
@@ -414,15 +412,99 @@ export function SessionManagerPage({ appId }: { appId: string }) {
   return (
     <TooltipProvider>
       <div
-        className="mx-auto px-4 sm:px-6 flex flex-col h-full min-h-0"
+        className="mx-auto flex h-full w-full max-w-7xl flex-col px-4 sm:px-6"
         onWheel={(e) => e.stopPropagation()}
       >
         <div className="flex-1 overflow-hidden flex flex-col gap-4">
+          <div className="glass-card rounded-[30px] border border-border-default p-5 sm:p-6">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="space-y-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                  {t("sessionManager.workspaceLabel", {
+                    defaultValue: "Session Workspace",
+                  })}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                    {t("sessionManager.title", {
+                      defaultValue: "会话工作台",
+                    })}
+                  </h2>
+                  <span className="theme-chip-neutral inline-flex items-center rounded-full px-3 py-1 text-xs font-medium">
+                    {t("sessionManager.totalCount", {
+                      defaultValue: "{{count}} 个会话",
+                      count: filteredSessions.length,
+                    })}
+                  </span>
+                  <span className="theme-chip-tertiary inline-flex items-center rounded-full px-3 py-1 text-xs font-medium">
+                    {providerFilter === "all"
+                      ? t("sessionManager.providerFilterAll")
+                      : getProviderLabel(providerFilter, t)}
+                  </span>
+                  {search.trim() && (
+                    <span className="theme-chip-primary inline-flex items-center rounded-full px-3 py-1 text-xs font-medium">
+                      {t("sessionManager.searchSessions")}
+                    </span>
+                  )}
+                  {selectionMode && (
+                    <span className="theme-chip-warning inline-flex items-center rounded-full px-3 py-1 text-xs font-medium">
+                      {t("sessionManager.selectedCount", {
+                        defaultValue: "已选 {{count}} 项",
+                        count: selectedDeletableSessions.length,
+                      })}
+                    </span>
+                  )}
+                </div>
+                <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                  {search.trim()
+                    ? t("sessionManager.workspaceSearchDescription", {
+                        defaultValue:
+                          "正在按内容、目录和会话 ID 搜索历史记录，左侧列表与右侧详情会同步收敛到当前结果集。",
+                      })
+                    : t("sessionManager.subtitle", {
+                        defaultValue:
+                          "管理 Claude Code、Codex、OpenCode、OpenClaw 与 Gemini CLI 会话记录",
+                      })}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant={
+                    isSearchOpen || search.trim() ? "default" : "outline"
+                  }
+                  className="min-w-[8rem]"
+                  onClick={() => {
+                    setIsSearchOpen(true);
+                    setTimeout(() => searchInputRef.current?.focus(), 0);
+                  }}
+                >
+                  <Search className="mr-2 h-4 w-4" />
+                  {search.trim()
+                    ? t("sessionManager.searchSessions")
+                    : t("sessionManager.searchAction", {
+                        defaultValue: "搜索会话",
+                      })}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-w-[8rem]"
+                  onClick={() => void refetch()}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {t("common.refresh")}
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* 主内容区域 - 左右分栏 */}
-          <div className="flex-1 overflow-hidden grid gap-4 md:grid-cols-[320px_1fr]">
+          <div className="flex-1 overflow-hidden grid gap-4 md:grid-cols-[340px_1fr]">
             {/* 左侧会话列表 */}
-            <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <CardHeader className="py-2 px-3 border-b">
+            <Card className="glass-card flex flex-col flex-1 min-h-0 overflow-hidden rounded-[28px] border border-border-default shadow-xl">
+              <CardHeader className="border-b border-border-default bg-background/40 px-4 py-4">
                 {isSearchOpen ? (
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -465,9 +547,12 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                             variant="secondary"
                             size="icon"
                             className="size-7 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-950/60"
-                            aria-label={t("sessionManager.exitBatchModeTooltip", {
-                              defaultValue: "退出批量管理",
-                            })}
+                            aria-label={t(
+                              "sessionManager.exitBatchModeTooltip",
+                              {
+                                defaultValue: "退出批量管理",
+                              },
+                            )}
                             onClick={exitSelectionMode}
                           >
                             <CheckSquare className="size-3.5" />
@@ -482,13 +567,16 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                     )}
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <CardTitle className="text-sm font-medium whitespace-nowrap">
+                        <CardTitle className="text-base font-semibold whitespace-nowrap">
                           {t("sessionManager.sessionList")}
                         </CardTitle>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge
+                          variant="secondary"
+                          className="rounded-full text-xs"
+                        >
                           {filteredSessions.length}
                         </Badge>
                       </div>
@@ -541,7 +629,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-7"
+                              className="size-8 rounded-xl"
                               onClick={() => {
                                 setIsSearchOpen(true);
                                 setTimeout(
@@ -566,7 +654,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                         >
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <SelectTrigger className="size-7 p-0 justify-center border-0 bg-transparent hover:bg-muted">
+                              <SelectTrigger className="size-8 rounded-xl p-0 justify-center border-0 bg-transparent hover:bg-muted">
                                 <ProviderIcon
                                   icon={
                                     providerFilter === "all"
@@ -655,7 +743,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-7"
+                              className="size-8 rounded-xl"
                               onClick={() => void refetch()}
                             >
                               <RefreshCw className="size-3.5" />
@@ -665,8 +753,18 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                         </Tooltip>
                       </div>
                     </div>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      {selectionMode
+                        ? t("sessionManager.batchModeHint", {
+                            defaultValue: "勾选要删除的会话",
+                          })
+                        : t("sessionManager.listDescription", {
+                            defaultValue:
+                              "按最近活跃时间浏览本地会话，支持搜索、按应用筛选和批量管理。",
+                          })}
+                    </p>
                     {selectionMode && (
-                      <div className="grid gap-3 rounded-md border bg-muted/40 px-3 py-2.5">
+                      <div className="grid gap-3 rounded-2xl border border-border-default bg-background/70 px-3 py-3">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline" className="text-xs">
                             {t("sessionManager.selectedCount", {
@@ -738,20 +836,28 @@ export function SessionManagerPage({ appId }: { appId: string }) {
               </CardHeader>
               <CardContent className="flex-1 min-h-0 p-0">
                 <ScrollArea className="h-full">
-                  <div className="p-2">
+                  <div className="p-3">
                     {isLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <RefreshCw className="size-5 animate-spin text-muted-foreground" />
                       </div>
                     ) : filteredSessions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <MessageSquare className="size-8 text-muted-foreground/50 mb-2" />
-                        <p className="text-sm text-muted-foreground">
+                      <div className="rounded-[22px] border border-dashed border-border-default bg-background/50 px-5 py-12 text-center">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted/70">
+                          <MessageSquare className="size-6 text-muted-foreground" />
+                        </div>
+                        <div className="mt-4 text-base font-semibold text-foreground">
                           {t("sessionManager.noSessions")}
+                        </div>
+                        <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
+                          {t("sessionManager.noSessionsDescription", {
+                            defaultValue:
+                              "当前筛选条件下没有找到可展示的会话记录，试试切换应用或清空搜索关键字。",
+                          })}
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {filteredSessions.map((session) => {
                           const isSelected =
                             selectedKey !== null &&
@@ -784,25 +890,37 @@ export function SessionManagerPage({ appId }: { appId: string }) {
 
             {/* 右侧会话详情 */}
             <Card
-              className="flex flex-col overflow-hidden min-h-0"
+              className="glass-card flex flex-col overflow-hidden min-h-0 rounded-[28px] border border-border-default shadow-xl"
               ref={detailRef}
             >
               {!selectedSession ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8">
-                  <MessageSquare className="size-12 mb-3 opacity-30" />
-                  <p className="text-sm">{t("sessionManager.selectSession")}</p>
+                <div className="flex flex-1 items-center justify-center p-8">
+                  <div className="max-w-md rounded-[24px] border border-dashed border-border-default bg-background/55 px-8 py-12 text-center">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted/70">
+                      <MessageSquare className="size-7 text-muted-foreground" />
+                    </div>
+                    <div className="mt-4 text-lg font-semibold text-foreground">
+                      {t("sessionManager.selectSession")}
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {t("sessionManager.selectSessionDescription", {
+                        defaultValue:
+                          "从左侧选择一条会话后，这里会显示恢复命令、项目目录和完整对话记录。",
+                      })}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <>
                   {/* 详情头部 */}
-                  <CardHeader className="py-3 px-4 border-b shrink-0">
+                  <CardHeader className="shrink-0 border-b border-border-default bg-background/35 px-5 py-5">
                     <div className="flex items-start justify-between gap-4">
                       {/* 左侧：会话信息 */}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="mb-2 flex items-center gap-3">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="shrink-0">
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-background/80 shadow-sm">
                                 <ProviderIcon
                                   icon={getProviderIconName(
                                     selectedSession.providerId,
@@ -816,14 +934,14 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                               {getProviderLabel(selectedSession.providerId, t)}
                             </TooltipContent>
                           </Tooltip>
-                          <h2 className="text-base font-semibold truncate">
+                          <h2 className="truncate text-xl font-semibold tracking-tight">
                             {formatSessionTitle(selectedSession)}
                           </h2>
                         </div>
 
                         {/* 元信息 */}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <div className="theme-chip-neutral inline-flex items-center gap-1 rounded-full px-3 py-1">
                             <Clock className="size-3" />
                             <span>
                               {formatTimestamp(
@@ -843,7 +961,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                                       t("sessionManager.projectDirCopied"),
                                     )
                                   }
-                                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                  className="theme-chip-neutral inline-flex items-center gap-1 rounded-full px-3 py-1 transition-colors hover:text-foreground"
                                 >
                                   <FolderOpen className="size-3" />
                                   <span className="truncate max-w-[200px]">
@@ -874,7 +992,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                             <TooltipTrigger asChild>
                               <Button
                                 size="sm"
-                                className="gap-1.5"
+                                className="gap-1.5 rounded-xl"
                                 onClick={() => void handleResume()}
                                 disabled={!selectedSession.resumeCommand}
                               >
@@ -902,7 +1020,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                             <Button
                               size="sm"
                               variant="destructive"
-                              className="gap-1.5"
+                              className="gap-1.5 rounded-xl"
                               onClick={() =>
                                 setDeleteTargets([selectedSession])
                               }
@@ -933,32 +1051,39 @@ export function SessionManagerPage({ appId }: { appId: string }) {
 
                     {/* 恢复命令预览 */}
                     {selectedSession.resumeCommand && (
-                      <div className="mt-3 flex items-center gap-2">
-                        <div className="flex-1 rounded-md bg-muted/60 px-3 py-1.5 font-mono text-xs text-muted-foreground truncate">
-                          {selectedSession.resumeCommand}
+                      <div className="mt-4 rounded-[22px] border border-border-default bg-background/70 p-3">
+                        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          {t("sessionManager.resume", {
+                            defaultValue: "恢复会话",
+                          })}
                         </div>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7 shrink-0"
-                              onClick={() =>
-                                void handleCopy(
-                                  selectedSession.resumeCommand!,
-                                  t("sessionManager.resumeCommandCopied"),
-                                )
-                              }
-                            >
-                              <Copy className="size-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t("sessionManager.copyCommand", {
-                              defaultValue: "复制命令",
-                            })}
-                          </TooltipContent>
-                        </Tooltip>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 rounded-xl bg-muted/70 px-3 py-2 font-mono text-xs text-muted-foreground truncate">
+                            {selectedSession.resumeCommand}
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-9 shrink-0 rounded-xl"
+                                onClick={() =>
+                                  void handleCopy(
+                                    selectedSession.resumeCommand!,
+                                    t("sessionManager.resumeCommandCopied"),
+                                  )
+                                }
+                              >
+                                <Copy className="size-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t("sessionManager.copyCommand", {
+                                defaultValue: "复制命令",
+                              })}
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                       </div>
                     )}
                   </CardHeader>
@@ -968,15 +1093,20 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                     <div className="flex h-full min-w-0">
                       {/* 消息列表 */}
                       <ScrollArea className="flex-1 min-w-0">
-                        <div className="p-4 min-w-0">
-                          <div className="flex items-center gap-2 mb-3">
-                            <MessageSquare className="size-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
+                        <div className="min-w-0 p-5">
+                          <div className="mb-4 flex items-center gap-2">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-background/80 shadow-sm">
+                              <MessageSquare className="size-4 text-muted-foreground" />
+                            </div>
+                            <span className="text-sm font-semibold">
                               {t("sessionManager.conversationHistory", {
                                 defaultValue: "对话记录",
                               })}
                             </span>
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge
+                              variant="secondary"
+                              className="rounded-full text-xs"
+                            >
                               {messages.length}
                             </Badge>
                           </div>
@@ -986,14 +1116,22 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                               <RefreshCw className="size-5 animate-spin text-muted-foreground" />
                             </div>
                           ) : messages.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                              <MessageSquare className="size-8 text-muted-foreground/50 mb-2" />
-                              <p className="text-sm text-muted-foreground">
+                            <div className="rounded-[22px] border border-dashed border-border-default bg-background/55 px-5 py-12 text-center">
+                              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted/70">
+                                <MessageSquare className="size-6 text-muted-foreground" />
+                              </div>
+                              <div className="mt-4 text-base font-semibold text-foreground">
                                 {t("sessionManager.emptySession")}
+                              </div>
+                              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+                                {t("sessionManager.emptySessionDescription", {
+                                  defaultValue:
+                                    "该会话当前没有可展示的消息内容，可能只保留了元数据或索引信息。",
+                                })}
                               </p>
                             </div>
                           ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-3.5">
                               {messages.map((message, index) => (
                                 <SessionMessageItem
                                   key={`${message.role}-${index}`}

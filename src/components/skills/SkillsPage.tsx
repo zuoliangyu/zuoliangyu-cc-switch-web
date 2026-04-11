@@ -15,7 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RefreshCw, Search, Loader2 } from "lucide-react";
+import {
+  RefreshCw,
+  Search,
+  Loader2,
+  FolderGit2,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { SkillCard } from "./SkillCard";
 import { RepoManagerPanel } from "./RepoManagerPanel";
@@ -184,7 +191,9 @@ export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
       let skill: DiscoverableSkill | undefined;
 
       if (searchSource === "skillssh") {
-        const found = accumulatedResults.find((item) => item.directory === directory);
+        const found = accumulatedResults.find(
+          (item) => item.directory === directory,
+        );
         if (found) {
           skill = toDiscoverableSkill(found);
         }
@@ -304,188 +313,370 @@ export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
         : searchSource;
 
     return (
-      <div className="px-6 flex flex-col flex-1 min-h-0 overflow-hidden bg-background/50">
-        <div className="flex-1 overflow-y-auto overflow-x-hidden animate-fade-in">
-          <div className="py-4">
-            <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center">
-              <div className="inline-flex gap-1 rounded-md border border-border-default bg-background p-1 shrink-0">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={effectiveSource === "repos" ? "default" : "ghost"}
-                  className={
-                    effectiveSource === "repos"
-                      ? "shadow-sm min-w-[64px]"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted min-w-[64px]"
-                  }
-                  onClick={() => setSearchSource("repos")}
-                >
-                  {t("skills.searchSource.repos")}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={effectiveSource === "skillssh" ? "default" : "ghost"}
-                  className={
-                    effectiveSource === "skillssh"
-                      ? "shadow-sm min-w-[80px]"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted min-w-[80px]"
-                  }
-                  onClick={() => setSearchSource("skillssh")}
-                >
-                  {t("skills.searchSource.skillssh")}
-                </Button>
+      <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden px-4 sm:px-6">
+        <div className="scroll-overlay flex-1 overflow-y-auto overflow-x-hidden animate-fade-in">
+          <div className="space-y-4 py-4 sm:py-5">
+            <div className="glass-card rounded-[30px] border border-border-default p-5 sm:p-6">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div className="space-y-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                    {t("skills.workspaceLabel", {
+                      defaultValue: "Skills Workspace",
+                    })}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                      {t("skills.title", {
+                        defaultValue: "技能工作台",
+                      })}
+                    </h2>
+                    <span className="theme-chip-neutral inline-flex items-center rounded-full px-3 py-1 text-xs font-medium">
+                      {effectiveSource === "repos"
+                        ? t("skills.count", {
+                            count: filteredSkills.length,
+                          })
+                        : t("skills.count", {
+                            count: accumulatedResults.length,
+                          })}
+                    </span>
+                    <span className="theme-chip-tertiary inline-flex items-center rounded-full px-3 py-1 text-xs font-medium">
+                      {effectiveSource === "repos"
+                        ? t("skills.searchSource.repos")
+                        : t("skills.searchSource.skillssh")}
+                    </span>
+                    {effectiveSource === "repos" ? (
+                      <span className="theme-chip-success inline-flex items-center rounded-full px-3 py-1 text-xs font-medium">
+                        {t("skills.filter.installed")}：
+                        {skills.filter((skill) => skill.installed).length}
+                      </span>
+                    ) : null}
+                    {searchQuery.trim() || skillsShQuery.trim() ? (
+                      <span className="theme-chip-primary inline-flex items-center rounded-full px-3 py-1 text-xs font-medium">
+                        {t("skills.search", { defaultValue: "搜索技能" })}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                    {effectiveSource === "repos"
+                      ? searchQuery.trim()
+                        ? t("skills.workspaceSearchDescription", {
+                            defaultValue:
+                              "正在按照技能名称和仓库来源过滤结果，便于快速定位可安装项。",
+                          })
+                        : t("skills.workspaceDescription", {
+                            defaultValue:
+                              "集中浏览来自仓库的技能、确认安装状态，并在一个面板里完成来源管理与筛选。",
+                          })
+                      : skills.length === 0 && searchSource === "repos"
+                        ? t("skills.workspaceFallbackDescription", {
+                            defaultValue:
+                              "当前仓库源还没有可发现技能，已自动切换到 skills.sh 继续探索公开目录。",
+                          })
+                        : t("skills.skillssh.workspaceDescription", {
+                            defaultValue:
+                              "从 skills.sh 搜索更广泛的技能目录，按关键词逐批加载并直接安装到当前应用。",
+                          })}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-w-[8rem]"
+                    onClick={() => setRepoManagerOpen(true)}
+                  >
+                    <FolderGit2 className="mr-2 h-4 w-4" />
+                    {t("skills.repoManager", {
+                      defaultValue: "仓库管理",
+                    })}
+                  </Button>
+                  {effectiveSource === "repos" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-w-[8rem]"
+                      onClick={() => {
+                        refetchDiscoverable();
+                        refetchRepos();
+                      }}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      {t("common.refresh", { defaultValue: "刷新" })}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-card rounded-[28px] border border-border-default p-4 sm:p-5">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-background/80 shadow-sm">
+                  {effectiveSource === "repos" ? (
+                    <SlidersHorizontal className="h-5 w-5 theme-primary-text" />
+                  ) : (
+                    <Sparkles className="h-5 w-5 theme-tertiary-text" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-foreground">
+                    {effectiveSource === "repos"
+                      ? t("skills.filtersTitle", {
+                          defaultValue: "来源与筛选",
+                        })
+                      : t("skills.skillssh.discoveryTitle", {
+                          defaultValue: "公开目录搜索",
+                        })}
+                  </div>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {effectiveSource === "repos"
+                      ? t("skills.filtersDescription", {
+                          defaultValue:
+                            "按仓库、安装状态和关键字快速收敛候选技能。",
+                        })
+                      : t("skills.skillssh.discoveryDescription", {
+                          defaultValue:
+                            "输入关键词搜索 skills.sh，支持继续加载更多结果。",
+                        })}
+                  </p>
+                </div>
               </div>
 
-              {effectiveSource === "repos" ? (
-                <>
-                  <div className="relative flex-1 min-w-0">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder={t("skills.searchPlaceholder")}
-                      value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      className="pl-9 pr-3"
-                    />
-                  </div>
-                  <div className="w-full md:w-56">
-                    <Select value={filterRepo} onValueChange={setFilterRepo}>
-                      <SelectTrigger className="bg-card border shadow-sm text-foreground">
-                        <SelectValue
-                          placeholder={t("skills.filter.repo")}
-                          className="text-left truncate"
-                        />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card text-foreground shadow-lg max-h-64 min-w-[var(--radix-select-trigger-width)]">
-                        <SelectItem
-                          value="all"
-                          className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
-                        >
-                          {t("skills.filter.allRepos")}
-                        </SelectItem>
-                        {repoOptions.map((repo) => (
-                          <SelectItem
-                            key={repo}
-                            value={repo}
-                            className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
-                            title={repo}
-                          >
-                            <span className="truncate block max-w-[200px]">
-                              {repo}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="w-full md:w-36">
-                    <Select
-                      value={filterStatus}
-                      onValueChange={(value) =>
-                        setFilterStatus(value as "all" | "installed" | "uninstalled")
-                      }
-                    >
-                      <SelectTrigger className="bg-card border shadow-sm text-foreground">
-                        <SelectValue
-                          placeholder={t("skills.filter.placeholder")}
-                          className="text-left"
-                        />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card text-foreground shadow-lg">
-                        <SelectItem
-                          value="all"
-                          className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
-                        >
-                          {t("skills.filter.all")}
-                        </SelectItem>
-                        <SelectItem
-                          value="installed"
-                          className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
-                        >
-                          {t("skills.filter.installed")}
-                        </SelectItem>
-                        <SelectItem
-                          value="uninstalled"
-                          className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
-                        >
-                          {t("skills.filter.uninstalled")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {searchQuery ? (
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {t("skills.count", { count: filteredSkills.length })}
-                    </p>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <div className="relative flex-1 min-w-0">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder={t("skills.skillssh.searchPlaceholder")}
-                      value={skillsShInput}
-                      onChange={(event) => setSkillsShInput(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          handleSkillsShSearch();
-                        }
-                      }}
-                      className="pl-9 pr-3"
-                    />
-                  </div>
+              <div className="flex flex-col gap-3">
+                <div className="inline-flex w-full flex-wrap gap-1 rounded-2xl border border-border-default bg-background/80 p-1 md:w-auto">
                   <Button
+                    type="button"
                     size="sm"
-                    onClick={handleSkillsShSearch}
-                    disabled={skillsShInput.trim().length < 2 || fetchingSkillsSh}
-                    className="shrink-0"
+                    variant={effectiveSource === "repos" ? "default" : "ghost"}
+                    className={
+                      effectiveSource === "repos"
+                        ? "min-w-[7rem] rounded-xl shadow-sm"
+                        : "min-w-[7rem] rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }
+                    onClick={() => setSearchSource("repos")}
                   >
-                    {fetchingSkillsSh ? (
-                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    ) : (
-                      <Search className="h-3.5 w-3.5 mr-1.5" />
-                    )}
-                    {t("skills.search")}
+                    {t("skills.searchSource.repos")}
                   </Button>
-                </>
-              )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={
+                      effectiveSource === "skillssh" ? "default" : "ghost"
+                    }
+                    className={
+                      effectiveSource === "skillssh"
+                        ? "min-w-[7rem] rounded-xl shadow-sm"
+                        : "min-w-[7rem] rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }
+                    onClick={() => setSearchSource("skillssh")}
+                  >
+                    {t("skills.searchSource.skillssh")}
+                  </Button>
+                </div>
+
+                {effectiveSource === "repos" ? (
+                  <>
+                    <div className="grid gap-3 xl:grid-cols-[minmax(0,1.4fr)_220px_160px]">
+                      <div className="relative min-w-0">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder={t("skills.searchPlaceholder")}
+                          value={searchQuery}
+                          onChange={(event) =>
+                            setSearchQuery(event.target.value)
+                          }
+                          className="h-11 rounded-2xl border-border-default bg-background/80 pl-10 pr-3"
+                        />
+                      </div>
+                      <Select value={filterRepo} onValueChange={setFilterRepo}>
+                        <SelectTrigger className="h-11 rounded-2xl border-border-default bg-background/80 text-foreground shadow-none">
+                          <SelectValue
+                            placeholder={t("skills.filter.repo")}
+                            className="text-left truncate"
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-64 min-w-[var(--radix-select-trigger-width)] bg-card text-foreground shadow-lg">
+                          <SelectItem
+                            value="all"
+                            className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
+                          >
+                            {t("skills.filter.allRepos")}
+                          </SelectItem>
+                          {repoOptions.map((repo) => (
+                            <SelectItem
+                              key={repo}
+                              value={repo}
+                              className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
+                              title={repo}
+                            >
+                              <span className="block max-w-[200px] truncate">
+                                {repo}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={filterStatus}
+                        onValueChange={(value) =>
+                          setFilterStatus(
+                            value as "all" | "installed" | "uninstalled",
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-11 rounded-2xl border-border-default bg-background/80 text-foreground shadow-none">
+                          <SelectValue
+                            placeholder={t("skills.filter.placeholder")}
+                            className="text-left"
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card text-foreground shadow-lg">
+                          <SelectItem
+                            value="all"
+                            className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
+                          >
+                            {t("skills.filter.all")}
+                          </SelectItem>
+                          <SelectItem
+                            value="installed"
+                            className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
+                          >
+                            {t("skills.filter.installed")}
+                          </SelectItem>
+                          <SelectItem
+                            value="uninstalled"
+                            className="text-left pr-3 [&[data-state=checked]>span:first-child]:hidden"
+                          >
+                            {t("skills.filter.uninstalled")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="theme-chip-neutral inline-flex items-center rounded-full px-3 py-1 font-medium">
+                        {filterRepo === "all"
+                          ? t("skills.filter.allRepos")
+                          : filterRepo}
+                      </span>
+                      <span className="theme-chip-neutral inline-flex items-center rounded-full px-3 py-1 font-medium">
+                        {filterStatus === "all"
+                          ? t("skills.filter.all")
+                          : filterStatus === "installed"
+                            ? t("skills.filter.installed")
+                            : t("skills.filter.uninstalled")}
+                      </span>
+                      {searchQuery.trim() && (
+                        <span className="theme-chip-primary inline-flex items-center rounded-full px-3 py-1 font-medium">
+                          {t("skills.count", { count: filteredSkills.length })}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                      <div className="relative min-w-0">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder={t("skills.skillssh.searchPlaceholder")}
+                          value={skillsShInput}
+                          onChange={(event) =>
+                            setSkillsShInput(event.target.value)
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              handleSkillsShSearch();
+                            }
+                          }}
+                          className="h-11 rounded-2xl border-border-default bg-background/80 pl-10 pr-3"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={handleSkillsShSearch}
+                        disabled={
+                          skillsShInput.trim().length < 2 || fetchingSkillsSh
+                        }
+                        className="h-11 rounded-2xl px-5 lg:min-w-[8rem]"
+                      >
+                        {fetchingSkillsSh ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Search className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        {t("skills.search")}
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="theme-chip-neutral inline-flex items-center rounded-full px-3 py-1 font-medium">
+                        {skillsShQuery.trim()
+                          ? t("skills.skillssh.poweredBy")
+                          : t("skills.skillssh.searchPlaceholder")}
+                      </span>
+                      {skillsShQuery.trim() && skillsShResult ? (
+                        <span className="theme-chip-primary inline-flex items-center rounded-full px-3 py-1 font-medium">
+                          {t("skills.count", {
+                            count: skillsShResult.totalCount,
+                          })}
+                        </span>
+                      ) : null}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {effectiveSource === "repos" ? (
               loading ? (
-                <div className="flex items-center justify-center h-64">
+                <div className="glass-card flex h-64 items-center justify-center rounded-[28px] border border-border-default">
                   <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : skills.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <p className="text-lg font-medium text-foreground">
+                <div className="glass-card rounded-[28px] border border-dashed border-border-default px-6 py-12 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted/70">
+                    <FolderGit2 className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="mt-4 text-lg font-semibold text-foreground">
                     {t("skills.empty")}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  </div>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                     {t("skills.emptyDescription")}
                   </p>
-                  <Button
-                    variant="link"
-                    onClick={() => setRepoManagerOpen(true)}
-                    className="mt-3 text-sm font-normal"
-                  >
-                    {t("skills.addRepo")}
-                  </Button>
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                    <Button onClick={() => setRepoManagerOpen(true)}>
+                      <FolderGit2 className="mr-2 h-4 w-4" />
+                      {t("skills.addRepo")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSearchSource("skillssh")}
+                    >
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      {t("skills.searchSource.skillssh")}
+                    </Button>
+                  </div>
                 </div>
               ) : filteredSkills.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center">
-                  <p className="text-lg font-medium text-foreground">
+                <div className="glass-card rounded-[28px] border border-dashed border-border-default px-6 py-10 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted/70">
+                    <Search className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div className="mt-4 text-lg font-semibold text-foreground">
                     {t("skills.noResults")}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {t("skills.emptyDescription")}
+                  </div>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                    {t("skills.workspaceNoResultsHint", {
+                      defaultValue:
+                        "试试放宽仓库或安装状态筛选，或者清空关键字后重新浏览全部技能。",
+                    })}
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {filteredSkills.map((skill) => (
                     <SkillCard
                       key={skill.key}
@@ -496,70 +687,84 @@ export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
                   ))}
                 </div>
               )
+            ) : loadingSkillsSh && accumulatedResults.length === 0 ? (
+              <div className="glass-card flex h-64 items-center justify-center rounded-[28px] border border-border-default">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <span className="ml-3 text-sm text-muted-foreground">
+                  {t("skills.skillssh.loading")}
+                </span>
+              </div>
+            ) : skillsShQuery.length < 2 ? (
+              <div className="glass-card rounded-[28px] border border-dashed border-border-default px-6 py-12 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted/70">
+                  <Sparkles className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div className="mt-4 text-lg font-semibold text-foreground">
+                  {t("skills.skillssh.discoveryTitle", {
+                    defaultValue: "从 skills.sh 发现公开技能",
+                  })}
+                </div>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                  {t("skills.skillssh.searchPlaceholder")}
+                </p>
+              </div>
+            ) : accumulatedResults.length === 0 && !loadingSkillsSh ? (
+              <div className="glass-card rounded-[28px] border border-dashed border-border-default px-6 py-10 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted/70">
+                  <Search className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div className="mt-4 text-lg font-semibold text-foreground">
+                  {t("skills.skillssh.noResults", { query: skillsShQuery })}
+                </div>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                  {t("skills.skillssh.noResultsHint", {
+                    defaultValue:
+                      "可以尝试更短的关键词、英文别名，或切换回仓库来源查看私有技能源。",
+                  })}
+                </p>
+              </div>
             ) : (
               <>
-                {loadingSkillsSh && accumulatedResults.length === 0 ? (
-                  <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    <span className="ml-3 text-sm text-muted-foreground">
-                      {t("skills.skillssh.loading")}
-                    </span>
-                  </div>
-                ) : skillsShQuery.length < 2 ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-center">
-                    <Search className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                    <p className="text-sm text-muted-foreground">
-                      {t("skills.skillssh.searchPlaceholder")}
-                    </p>
-                  </div>
-                ) : accumulatedResults.length === 0 && !loadingSkillsSh ? (
-                  <div className="flex flex-col items-center justify-center h-48 text-center">
-                    <p className="text-lg font-medium text-foreground">
-                      {t("skills.skillssh.noResults", { query: skillsShQuery })}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {accumulatedResults.map((skill) => {
-                        const installed = isSkillsShInstalled(skill);
-                        return (
-                          <SkillCard
-                            key={skill.key}
-                            skill={{
-                              ...toDiscoverableSkill(skill),
-                              installed,
-                            }}
-                            installs={skill.installs}
-                            onInstall={handleInstall}
-                            onUninstall={handleUninstall}
-                          />
-                        );
-                      })}
-                    </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {accumulatedResults.map((skill) => {
+                    const installed = isSkillsShInstalled(skill);
+                    return (
+                      <SkillCard
+                        key={skill.key}
+                        skill={{
+                          ...toDiscoverableSkill(skill),
+                          installed,
+                        }}
+                        installs={skill.installs}
+                        onInstall={handleInstall}
+                        onUninstall={handleUninstall}
+                      />
+                    );
+                  })}
+                </div>
 
-                    <div className="mt-6 flex flex-col items-center gap-2">
-                      {hasMoreSkillsSh ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={fetchingSkillsSh}
-                          onClick={() =>
-                            setSkillsShOffset((prev) => prev + SKILLSSH_PAGE_SIZE)
-                          }
-                        >
-                          {fetchingSkillsSh ? (
-                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                          ) : null}
-                          {t("skills.skillssh.loadMore")}
-                        </Button>
-                      ) : null}
-                      <p className="text-xs text-muted-foreground">
-                        {t("skills.skillssh.poweredBy")}
-                      </p>
-                    </div>
-                  </>
-                )}
+                <div className="glass-card mt-2 rounded-[24px] border border-border-default px-4 py-5">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    {hasMoreSkillsSh ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={fetchingSkillsSh}
+                        onClick={() =>
+                          setSkillsShOffset((prev) => prev + SKILLSSH_PAGE_SIZE)
+                        }
+                      >
+                        {fetchingSkillsSh ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : null}
+                        {t("skills.skillssh.loadMore")}
+                      </Button>
+                    ) : null}
+                    <p className="text-xs text-muted-foreground">
+                      {t("skills.skillssh.poweredBy")}
+                    </p>
+                  </div>
+                </div>
               </>
             )}
           </div>

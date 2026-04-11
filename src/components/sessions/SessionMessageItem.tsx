@@ -38,13 +38,13 @@ export function SessionMessageItem({
     <div
       ref={setRef}
       className={cn(
-        "rounded-lg border px-3 py-2.5 relative group transition-all min-w-0",
+        "group relative min-w-0 rounded-[22px] border px-4 py-3 transition-all",
         message.role.toLowerCase() === "user"
-          ? "bg-primary/5 border-primary/20 ml-8"
+          ? "ml-6 bg-primary/6 border-primary/20 shadow-[0_10px_24px_hsl(var(--primary)/0.08)]"
           : message.role.toLowerCase() === "assistant"
-            ? "bg-blue-500/5 border-blue-500/20 mr-8"
-            : "bg-muted/40 border-border/60",
-        isActive && "ring-2 ring-primary ring-offset-2",
+            ? "mr-6 border-blue-500/20 bg-blue-500/5 shadow-[0_10px_24px_rgba(59,130,246,0.08)]"
+            : "border-border/60 bg-background/65",
+        isActive && "ring-2 ring-primary ring-offset-2 ring-offset-background",
       )}
     >
       <Tooltip>
@@ -52,7 +52,7 @@ export function SessionMessageItem({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2 size-6 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-2 right-2 size-7 rounded-xl opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
             onClick={() => onCopy(message.content)}
           >
             <Copy className="size-3" />
@@ -64,8 +64,13 @@ export function SessionMessageItem({
           })}
         </TooltipContent>
       </Tooltip>
-      <div className="flex items-center justify-between text-xs mb-1.5 pr-6">
-        <span className={cn("font-semibold", getRoleTone(message.role))}>
+      <div className="mb-2 flex items-center justify-between gap-3 pr-7 text-xs">
+        <span
+          className={cn(
+            "rounded-full bg-background/80 px-2.5 py-1 font-semibold shadow-sm",
+            getRoleTone(message.role),
+          )}
+        >
           {getRoleLabel(message.role, t)}
         </span>
         {message.ts && (
@@ -74,7 +79,7 @@ export function SessionMessageItem({
           </span>
         )}
       </div>
-      <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed min-w-0">
+      <div className="min-w-0 whitespace-pre-wrap break-words text-sm leading-7 [overflow-wrap:anywhere]">
         {searchQuery
           ? highlightText(message.content, searchQuery)
           : message.content}
