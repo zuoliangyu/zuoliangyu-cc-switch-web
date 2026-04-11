@@ -167,6 +167,9 @@
 - OpenCode / OpenClaw 测试按钮恢复
   - Web 端 Provider 列表重新为 OpenCode / OpenClaw 透传“测试模型”动作，不再错误禁用前端入口
   - 与前面已补齐的流式健康检查链路配套，用户现在可以直接从卡片触发测试
+- Token Plan 内联徽章展示
+  - Web 端 `UsageFooter` 补齐 `token_plan` 模板的 inline 专用展示，改回桌面版的 tier 百分比徽章样式
+  - 不再把多套餐 Token Plan 退化成普通首条用量文案，便于在 Provider 卡片上直接比较不同 tier 的使用率
 
 实现约束：
 

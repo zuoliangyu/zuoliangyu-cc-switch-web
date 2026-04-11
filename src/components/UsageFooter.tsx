@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { type AppId } from "@/lib/api";
 import { useUsageQuery } from "@/lib/query/queries";
 import { UsageData, Provider } from "@/types";
+import { TierBadge } from "@/components/SubscriptionQuotaFooter";
+import type { QuotaTier } from "@/types/subscription";
 
 interface UsageFooterProps {
   provider: Provider;
@@ -13,6 +15,14 @@ interface UsageFooterProps {
   isCurrent: boolean; // 是否为当前激活的供应商
   isInConfig?: boolean; // OpenCode: 是否已添加到配置
   inline?: boolean; // 是否内联显示（在按钮左侧）
+}
+
+function toQuotaTier(data: UsageData): QuotaTier {
+  return {
+    name: data.planName || "",
+    utilization: data.used || 0,
+    resetsAt: data.extra || null,
+  };
 }
 
 const UsageFooter: React.FC<UsageFooterProps> = ({
@@ -25,6 +35,8 @@ const UsageFooter: React.FC<UsageFooterProps> = ({
   inline = false,
 }) => {
   const { t } = useTranslation();
+  const isTokenPlan =
+    provider.meta?.usage_script?.templateType === "token_plan";
 
   // 统一的用量查询（自动查询仅对当前激活的供应商启用）
   // OpenCode（累加模式）：使用 isInConfig 代替 isCurrent
@@ -107,6 +119,37 @@ const UsageFooter: React.FC<UsageFooterProps> = ({
 
   // 无数据时不显示
   if (usageDataList.length === 0) return null;
+
+  if (isTokenPlan && inline) {
+    return (
+      <div className="flex flex-col items-end gap-1 text-xs whitespace-nowrap flex-shrink-0">
+        <div className="flex items-center gap-2 justify-end">
+          <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+            <Clock size={10} />
+            {lastQueriedAt
+              ? formatRelativeTime(lastQueriedAt, now, t)
+              : t("usage.never", { defaultValue: "从未更新" })}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              refetch();
+            }}
+            disabled={loading}
+            className="p-1 rounded hover:bg-muted transition-colors disabled:opacity-50 flex-shrink-0 text-muted-foreground"
+            title={t("usage.refreshUsage")}
+          >
+            <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          {usageDataList.map((data, index) => (
+            <TierBadge key={index} tier={toQuotaTier(data)} t={t} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // 内联模式：仅显示第一个套餐的核心数据（分上下两行）
   if (inline) {
