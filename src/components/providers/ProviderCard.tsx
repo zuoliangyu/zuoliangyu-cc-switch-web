@@ -327,6 +327,17 @@ export function ProviderCard({
                   <FailoverPriorityBadge priority={failoverPriority} />
                 )}
 
+              {provider.category === "third_party" && provider.meta?.isPartner && (
+                <span
+                  className="text-amber-500"
+                  title={t("provider.officialPartner", {
+                    defaultValue: "官方合作伙伴",
+                  })}
+                >
+                  ⭐
+                </span>
+              )}
+
             </div>
 
             {displayUrl && (

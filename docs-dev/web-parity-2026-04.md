@@ -118,6 +118,9 @@
   - Web 端预设元数据补齐 `isPartner / partnerPromotionKey`，覆盖桌面版已有的合作伙伴预设
   - `ApiKeySection` 与各应用表单补齐合作伙伴促销提示展示，预设选中后可直接看到注册链接对应的优惠说明
   - Provider 元数据保存时补齐合作伙伴标记与促销 key，并同步补齐三语 `partnerPromotion` 文案
+- Provider 卡片合作伙伴标识
+  - Web 端 Provider 列表补齐桌面版同款合作伙伴星标，第三方合作伙伴供应商会在卡片标题旁直接展示
+  - 星标复用现有 `provider.officialPartner` 三语文案作为提示，不改当前 Web 版卡片交互布局
 
 实现约束：
 
