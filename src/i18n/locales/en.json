@@ -2311,6 +2311,7 @@
     "providerName": "Provider Name",
     "homepage": "Homepage",
     "endpoint": "Endpoint",
+    "primaryEndpoint": "Primary",
     "apiKey": "API Key",
     "model": "Model",
     "haikuModel": "Haiku Model",

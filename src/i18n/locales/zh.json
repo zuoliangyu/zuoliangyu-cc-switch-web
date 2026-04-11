@@ -2311,6 +2311,7 @@
     "providerName": "供应商名称",
     "homepage": "主页",
     "endpoint": "接口地址",
+    "primaryEndpoint": "主",
     "apiKey": "API Key",
     "model": "模型",
     "haikuModel": "Haiku 模型",

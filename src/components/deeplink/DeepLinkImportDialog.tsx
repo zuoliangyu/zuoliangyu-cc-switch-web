@@ -5,6 +5,7 @@ import { AlertTriangle, Download, Link2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ProviderIcon } from "@/components/ProviderIcon";
 import {
   Dialog,
   DialogContent,
@@ -309,6 +310,16 @@ export function DeepLinkImportDialog() {
             <div className="max-h-[52vh] space-y-4 overflow-y-auto rounded-xl border border-border bg-muted/30 p-4">
               {request.resource === "provider" && (
                 <div className="space-y-3">
+                  {request.icon && (
+                    <div className="flex justify-center pb-1 pt-2">
+                      <ProviderIcon
+                        icon={request.icon}
+                        name={request.name || request.icon}
+                        size={80}
+                        className="drop-shadow-sm"
+                      />
+                    </div>
+                  )}
                   <InfoRow
                     label={t("deeplink.app")}
                     value={request.app ?? "-"}
@@ -322,11 +333,33 @@ export function DeepLinkImportDialog() {
                     value={request.homepage ?? "-"}
                     mono
                   />
-                  <InfoRow
-                    label={t("deeplink.endpoint")}
-                    value={request.endpoint ?? "-"}
-                    mono
-                  />
+                  <div className="grid gap-1 sm:grid-cols-[120px_1fr] sm:gap-3">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {t("deeplink.endpoint")}
+                    </div>
+                    <div className="space-y-1 text-sm font-mono break-all">
+                      {(request.endpoint ?? "-")
+                        .split(",")
+                        .map((endpoint) => endpoint.trim())
+                        .filter(Boolean)
+                        .map((endpoint, index, items) => (
+                          <div
+                            key={`${endpoint}-${index}`}
+                            className={
+                              index === 0 ? "font-medium" : "text-muted-foreground"
+                            }
+                          >
+                            {index === 0 ? "🔹 " : "└ "}
+                            {endpoint}
+                            {index === 0 && items.length > 1 && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                ({t("deeplink.primaryEndpoint")})
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
                   <InfoRow
                     label={t("deeplink.apiKey")}
                     value={

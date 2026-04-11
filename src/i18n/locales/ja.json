@@ -2311,6 +2311,7 @@
     "providerName": "プロバイダー名",
     "homepage": "ホームページ",
     "endpoint": "エンドポイント",
+    "primaryEndpoint": "メイン",
     "apiKey": "API Key",
     "model": "モデル",
     "haikuModel": "Haiku モデル",

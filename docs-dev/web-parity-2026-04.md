@@ -146,6 +146,9 @@
 - Deep Link Prompt / MCP 提醒补齐
   - Web 端 Deep Link 导入弹窗补齐 prompt 的“导入后立即启用”提醒，以及 MCP 的服务器数量与“立即写入指定应用”提醒
   - 仅补确认信息展示，不改现有 prompt / MCP 导入逻辑
+- Deep Link Provider 预览细节
+  - Web 端 Deep Link 导入弹窗补齐 provider 图标预览，并将多 endpoint 拆分为主地址与备选地址展示
+  - 仅补 provider 确认视图细节，不改现有导入参数解析与保存逻辑
 
 实现约束：
 
