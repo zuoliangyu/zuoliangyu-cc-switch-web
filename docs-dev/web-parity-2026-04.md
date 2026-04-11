@@ -217,6 +217,9 @@
 - Deep Link MCP 预览摘要补齐
   - Web 端在 MCP Deep Link 确认视图中补回目标应用标签和服务器摘要卡片，不再只剩原始 JSON 预览
   - 继续保留原始 JSON 预览，兼顾桌面端摘要信息和 Web 端调试可读性
+- OpenCode 模型拉取恢复
+  - Web 端 `OpenCode` provider 表单补回桌面版同款“拉取模型”按钮，支持直接调用现有模型拉取接口
+  - 拉取成功后可按 `ownedBy` 分组下拉选择模型 ID，不再只能手动输入
 
 实现约束：
 
