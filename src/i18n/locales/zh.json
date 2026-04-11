@@ -2275,6 +2275,7 @@
     "advancedBackgroundTask": "后台任务",
     "advancedBrowserAutomation": "浏览器自动化",
     "advancedClaudeCode": "Claude Code",
+    "slimOtherFieldsHint": "这里适合填写 OMO Slim 的顶层配置，例如 council、fallback、multiplexer、disabled_mcps 和 todoContinuation。",
     "agentDesc": {
       "sisyphus": "主编排者",
       "hephaestus": "自主深度工作者",

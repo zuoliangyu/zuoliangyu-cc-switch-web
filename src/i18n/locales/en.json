@@ -2275,6 +2275,7 @@
     "advancedBackgroundTask": "Background Tasks",
     "advancedBrowserAutomation": "Browser Automation",
     "advancedClaudeCode": "Claude Code",
+    "slimOtherFieldsHint": "Use this area for top-level OMO Slim config such as council, fallback, multiplexer, disabled_mcps, and todoContinuation.",
     "agentDesc": {
       "sisyphus": "Main orchestrator",
       "hephaestus": "Autonomous deep worker",

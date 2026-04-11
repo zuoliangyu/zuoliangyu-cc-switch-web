@@ -226,6 +226,9 @@
 - Codex / Gemini 通用配置弹窗引导补齐
   - Web 端 `CodexCommonConfigModal` 与 `GeminiCommonConfigModal` 补回桌面版同款引导卡片和空状态提示
   - 复用既有 `commonConfig.*` 文案，不再只显示一行简短说明
+- OMO Slim Other Fields 提示补齐
+  - Web 端 `OmoFormFields` 在 OMO Slim 的 `Other Fields` 区域补回桌面版提示，明确这里用于填写顶层 Slim 配置
+  - 同步补齐 `omo.slimOtherFieldsHint` 三语文案，避免高级字段用途不清
 
 实现约束：
 

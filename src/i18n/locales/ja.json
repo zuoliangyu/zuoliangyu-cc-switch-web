@@ -2275,6 +2275,7 @@
     "advancedBackgroundTask": "バックグラウンドタスク",
     "advancedBrowserAutomation": "ブラウザ自動化",
     "advancedClaudeCode": "Claude Code",
+    "slimOtherFieldsHint": "ここには council、fallback、multiplexer、disabled_mcps、todoContinuation など、OMO Slim のトップレベル設定を入力します。",
     "agentDesc": {
       "sisyphus": "メインオーケストレーター",
       "hephaestus": "自律型ディープワーカー",
