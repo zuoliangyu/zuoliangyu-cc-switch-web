@@ -87,25 +87,14 @@ pub fn transform_claude_request_for_api_format(
                 .as_ref()
                 .and_then(|m| m.provider_type.as_deref())
                 == Some("codex_oauth");
-            let mut result =
-                super::transform_responses::anthropic_to_responses(body, Some(cache_key))?;
             if is_codex_oauth {
-                result["store"] = serde_json::json!(false);
-                const REASONING_MARKER: &str = "reasoning.encrypted_content";
-                let mut includes: Vec<serde_json::Value> = result
-                    .get("include")
-                    .and_then(|v| v.as_array())
-                    .cloned()
-                    .unwrap_or_default();
-                if !includes
-                    .iter()
-                    .any(|value| value.as_str() == Some(REASONING_MARKER))
-                {
-                    includes.push(serde_json::json!(REASONING_MARKER));
-                }
-                result["include"] = serde_json::json!(includes);
+                super::transform_responses::anthropic_to_responses_for_codex_oauth(
+                    body,
+                    Some(cache_key),
+                )
+            } else {
+                super::transform_responses::anthropic_to_responses(body, Some(cache_key))
             }
-            Ok(result)
         }
         "openai_chat" => super::transform::anthropic_to_openai(body, Some(cache_key)),
         _ => Ok(body),

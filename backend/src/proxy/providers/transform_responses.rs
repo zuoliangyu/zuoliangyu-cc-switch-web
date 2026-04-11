@@ -15,6 +15,21 @@ use serde_json::{json, Value};
 ///
 /// `cache_key`: optional prompt_cache_key to inject for improved cache routing
 pub fn anthropic_to_responses(body: Value, cache_key: Option<&str>) -> Result<Value, ProxyError> {
+    anthropic_to_responses_internal(body, cache_key, false)
+}
+
+pub fn anthropic_to_responses_for_codex_oauth(
+    body: Value,
+    cache_key: Option<&str>,
+) -> Result<Value, ProxyError> {
+    anthropic_to_responses_internal(body, cache_key, true)
+}
+
+fn anthropic_to_responses_internal(
+    body: Value,
+    cache_key: Option<&str>,
+    is_codex_oauth: bool,
+) -> Result<Value, ProxyError> {
     let mut result = json!({});
 
     // NOTE: 模型映射由上游统一处理（proxy::model_mapper），格式转换层只做结构转换。
@@ -101,6 +116,36 @@ pub fn anthropic_to_responses(body: Value, cache_key: Option<&str>) -> Result<Va
     // Inject prompt_cache_key for improved cache routing on OpenAI-compatible endpoints
     if let Some(key) = cache_key {
         result["prompt_cache_key"] = json!(key);
+    }
+
+    if is_codex_oauth {
+        result["store"] = json!(false);
+
+        const REASONING_MARKER: &str = "reasoning.encrypted_content";
+        let mut includes: Vec<Value> = body
+            .get("include")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        if !includes
+            .iter()
+            .any(|v| v.as_str() == Some(REASONING_MARKER))
+        {
+            includes.push(json!(REASONING_MARKER));
+        }
+        result["include"] = json!(includes);
+
+        if let Some(obj) = result.as_object_mut() {
+            obj.remove("max_output_tokens");
+            obj.remove("temperature");
+            obj.remove("top_p");
+
+            obj.entry("instructions".to_string()).or_insert(json!(""));
+            obj.entry("tools".to_string()).or_insert(json!([]));
+            obj.entry("parallel_tool_calls".to_string())
+                .or_insert(json!(false));
+            obj.insert("stream".to_string(), json!(true));
+        }
     }
 
     Ok(result)
@@ -997,6 +1042,68 @@ mod tests {
 
         let result = anthropic_to_responses(input, None).unwrap();
         assert_eq!(result["reasoning"]["effort"], "xhigh");
+    }
+
+    #[test]
+    fn test_codex_oauth_sets_store_and_include() {
+        let input = json!({
+            "model": "gpt-5-codex",
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": "Hello"}]
+        });
+
+        let result = anthropic_to_responses_for_codex_oauth(input, None).unwrap();
+        assert_eq!(result["store"], json!(false));
+        assert_eq!(result["include"], json!(["reasoning.encrypted_content"]));
+    }
+
+    #[test]
+    fn test_codex_oauth_strips_unsupported_fields() {
+        let input = json!({
+            "model": "gpt-5-codex",
+            "max_tokens": 1024,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "messages": [{"role": "user", "content": "Hello"}]
+        });
+
+        let result = anthropic_to_responses_for_codex_oauth(input, None).unwrap();
+        assert!(result.get("max_output_tokens").is_none());
+        assert!(result.get("temperature").is_none());
+        assert!(result.get("top_p").is_none());
+    }
+
+    #[test]
+    fn test_codex_oauth_defaults_required_fields_and_forces_stream() {
+        let input = json!({
+            "model": "gpt-5-codex",
+            "max_tokens": 1024,
+            "stream": false,
+            "messages": [{"role": "user", "content": "Hello"}]
+        });
+
+        let result = anthropic_to_responses_for_codex_oauth(input, None).unwrap();
+        assert_eq!(result["instructions"], json!(""));
+        assert_eq!(result["tools"], json!([]));
+        assert_eq!(result["parallel_tool_calls"], json!(false));
+        assert_eq!(result["stream"], json!(true));
+    }
+
+    #[test]
+    fn test_non_codex_path_keeps_regular_responses_fields() {
+        let input = json!({
+            "model": "gpt-5-codex",
+            "max_tokens": 1024,
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "messages": [{"role": "user", "content": "Hello"}]
+        });
+
+        let result = anthropic_to_responses(input, None).unwrap();
+        assert_eq!(result["max_output_tokens"], json!(1024));
+        assert_eq!(result["temperature"], json!(0.7));
+        assert_eq!(result["top_p"], json!(0.9));
+        assert!(result.get("store").is_none());
     }
 
     #[test]
