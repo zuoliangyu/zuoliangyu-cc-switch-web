@@ -945,6 +945,56 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       modelCatalog: { "nvidia/moonshotai/kimi-k2.5": { alias: "Kimi" } },
     },
   },
+  {
+    name: "PIPELLM",
+    websiteUrl: "https://www.pipellm.ai",
+    apiKeyUrl: "https://code.pipellm.ai/login?ref=uvw650za",
+    settingsConfig: {
+      baseUrl: "https://cc-api.pipellm.ai",
+      apiKey: "",
+      api: "anthropic-messages",
+      models: [
+        {
+          id: "claude-opus-4-6",
+          name: "claude-opus-4-6",
+          contextWindow: 1000000,
+          cost: { input: 5, output: 25 },
+        },
+        {
+          id: "claude-sonnet-4-6",
+          name: "claude-sonnet-4-6",
+          contextWindow: 1000000,
+          cost: { input: 3, output: 15 },
+        },
+        {
+          id: "claude-haiku-4-5-20251001",
+          name: "claude-haiku-4-5-20251001",
+          contextWindow: 200000,
+          cost: { input: 0.8, output: 4 },
+        },
+      ],
+    },
+    category: "aggregator",
+    icon: "pipellm",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "pipe-...",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "pipellm/claude-opus-4-6",
+        fallbacks: ["pipellm/claude-sonnet-4-6"],
+      },
+      modelCatalog: {
+        "pipellm/claude-opus-4-6": { alias: "Opus" },
+        "pipellm/claude-sonnet-4-6": { alias: "Sonnet" },
+        "pipellm/claude-haiku-4-5-20251001": { alias: "Haiku" },
+      },
+    },
+  },
 
   // ========== Third Party Partners ==========
   {

@@ -96,6 +96,9 @@
 - Provider 卡片动作按钮限制
   - Web 端 `ProviderCard` 补齐桌面版同款动作裁剪逻辑，对 `official / github_copilot / codex_oauth` 不再传入无效的测试与用量配置回调
   - `ProviderActions` 补齐可选入口的置灰展示，保持按钮布局稳定，同时明确这些供应商不支持对应动作
+- PIPELLM 预设
+  - Web 端补齐 Claude / Codex / OpenCode / OpenClaw 的 `PIPELLM` 预设，统一默认站点、API Key 链接与基础模型配置
+  - OpenClaw 同步补齐推荐默认模型映射，便于新增预设后直接得到 `Opus / Sonnet / Haiku` 默认项
 
 实现约束：
 
