@@ -4,10 +4,35 @@
 
 ## [0.2.0] - 2026-04-11
 
-### Web 能力对齐补全
+### Provider、认证与预设能力对齐
 
-- 补齐 Deep Link 导入失败提示、子资源标题展示与配置合并失败时的降级导入行为
-- 补齐 OMO Slim Council agent 等桌面侧已存在的配置能力，继续缩小与本地仓库的差距
+- 补齐 Codex OAuth 托管认证闭环、多账号文案与 Responses 协议约束
+- 补齐 Gemini 官方 OAuth 判断、Claude 预设隐藏支持、Claude Thinking 回退展示与 adaptive thinking 到 `xhigh` 的映射修正
+- 补齐 Web 版 Provider Key 锁定逻辑、Key 编辑重命名闭环、按供应商打开终端，以及 OpenCode / OpenClaw 健康检查与测试入口
+- 补齐 additive provider live 管理标记、累加模式复制仅落库行为、Provider 卡片状态展示与动作限制
+- 补齐 OMO 提示文案、OMO Slim 高级字段提示与 OMO Slim Council agent
+- 补齐 DDSHub、LionCCAPI、Shengsuanyun、TheRouter、PIPELLM 等预设、预设图标资源与合作伙伴标识/促销链路
+- 对齐 Oh My OpenCode 预设地址、E-FlowCode 预设默认密钥、Provider 预设展示顺序与 X-Code 预设图标键
+- 修正 Anthropic 转 OpenAI 的 system 消息归一化逻辑，并恢复 OpenCode 模型拉取与通用配置迁移兼容
+
+### 用量、设置与工作流补全
+
+- 恢复用量页会话同步与数据来源概览，补齐请求日志来源列、应用过滤联动与用量页应用类型过滤
+- 补齐原生余额与 Token Plan 模板、Token Plan 内联徽章、官方额度当前态语义，以及 GitHub Copilot 额度展示
+- 补齐本地服务开机自启、首选终端设置、Claude Code 插件自动同步、首次安装确认跳过与首次使用提示
+- 补齐更新检查与版本提示、认证中心/设置页/用量页三语文案，以及模型拉取、认证标签等多语言补全
+
+### Skills、Session 与 Deep Link 对齐
+
+- 补齐 skills.sh 搜索能力、Skills 更新能力与 Skill 存储位置切换
+- 补齐会话搜索高亮、会话恢复终端，以及验证码复制兼容性
+- 补齐 Deep Link 远程配置合并、Provider 预览细节、配置预览语义化、用量配置预览与确认提醒
+- 补齐 Deep Link skill 导入提醒、mcp 预览摘要、解析失败提示、子资源标题展示，以及配置合并失败时的降级导入行为
+
+### 资源、图标与辅助体验
+
+- 补齐本地图标元数据搜索与 Web 版预设图标资源
+- 补齐通用配置编辑引导、通用配置弹窗引导与 OMO Slim 相关提示文案
 
 ### Web 界面升级
 
@@ -19,6 +44,7 @@
 
 - 仓库版本提升到 `0.2.0`
 - README、README_ZH、README_JA 同步更新当前版本与最近完成的 Web 能力/UI 升级说明
+- 补充 `0.2.0` 发布说明，归档 `0.1.3` 之后到当前版本之间的全部提交范围
 
 ## [0.1.3] - 2026-04-05
 
