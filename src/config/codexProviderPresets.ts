@@ -377,6 +377,18 @@ model_auto_compact_token_limit = 9000000`,
     iconColor: "#000000",
   },
   {
+    name: "LionCCAPI",
+    websiteUrl: "https://vibecodingapi.ai",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig(
+      "lionccapi",
+      "https://vibecodingapi.ai/v1",
+      "gpt-5.4",
+    ),
+    category: "third_party",
+    icon: "lioncc",
+  },
+  {
     name: "PIPELLM",
     websiteUrl: "https://www.pipellm.ai",
     apiKeyUrl: "https://code.pipellm.ai/login?ref=uvw650za",

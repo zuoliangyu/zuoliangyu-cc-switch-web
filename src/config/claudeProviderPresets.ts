@@ -745,6 +745,18 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#000000",
   },
   {
+    name: "LionCCAPI",
+    websiteUrl: "https://vibecodingapi.ai",
+    settingsConfig: {
+      env: {
+        ANTHROPIC_BASE_URL: "https://vibecodingapi.ai",
+        ANTHROPIC_AUTH_TOKEN: "",
+      },
+    },
+    category: "third_party",
+    icon: "lioncc",
+  },
+  {
     name: "PIPELLM",
     websiteUrl: "https://www.pipellm.ai",
     apiKeyUrl: "https://code.pipellm.ai/login?ref=uvw650za",

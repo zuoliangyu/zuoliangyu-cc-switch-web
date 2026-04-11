@@ -275,6 +275,21 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     iconColor: "#000000",
   },
   {
+    name: "LionCCAPI",
+    websiteUrl: "https://vibecodingapi.ai",
+    settingsConfig: {
+      env: {
+        GOOGLE_GEMINI_BASE_URL: "https://vibecodingapi.ai",
+        GEMINI_MODEL: "gemini-3.1-pro",
+      },
+    },
+    baseURL: "https://vibecodingapi.ai",
+    model: "gemini-3.1-pro",
+    description: "LionCCAPI",
+    category: "third_party",
+    icon: "lioncc",
+  },
+  {
     name: "TheRouter",
     websiteUrl: "https://therouter.ai",
     apiKeyUrl: "https://dashboard.therouter.ai",
