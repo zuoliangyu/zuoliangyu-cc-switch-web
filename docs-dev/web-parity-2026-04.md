@@ -137,6 +137,9 @@
 - Gemini 官方 OAuth 判断对齐
   - Web 端 Gemini 表单改为按 `partnerPromotionKey=google-official` 判断 Google 官方 OAuth 模式
   - 避免仅依赖 `category=official` 导致非官方场景误判，保持与桌面版一致的 API Key 显隐逻辑
+- OMO 提示文案对齐
+  - Web 端 Provider 预设选择器补齐 OMO 提示，明确兼容 `oh-my-openagent.jsonc / oh-my-opencode.jsonc`
+  - 仅调整用户提示，不改现有 OMO 配置写入与模型分配行为
 
 实现约束：
 
