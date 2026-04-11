@@ -383,4 +383,17 @@ base_url = "https://cc-api.pipellm.ai/v1"`,
     endpointCandidates: ["https://cc-api.pipellm.ai/v1"],
     icon: "pipellm",
   },
+  {
+    name: "TheRouter",
+    websiteUrl: "https://therouter.ai",
+    apiKeyUrl: "https://dashboard.therouter.ai",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig(
+      "therouter",
+      "https://api.therouter.ai/v1",
+      "openai/gpt-5.3-codex",
+    ),
+    endpointCandidates: ["https://api.therouter.ai/v1"],
+    category: "aggregator",
+  },
 ];

@@ -99,6 +99,9 @@
 - PIPELLM 预设
   - Web 端补齐 Claude / Codex / OpenCode / OpenClaw 的 `PIPELLM` 预设，统一默认站点、API Key 链接与基础模型配置
   - OpenClaw 同步补齐推荐默认模型映射，便于新增预设后直接得到 `Opus / Sonnet / Haiku` 默认项
+- TheRouter 预设
+  - Web 端补齐 Claude / Codex / Gemini / OpenCode / OpenClaw 的 `TheRouter` 预设，并同步桌面版默认网关地址
+  - OpenCode / OpenClaw 同步补齐多模型清单与推荐默认模型映射，方便直接启用 Sonnet、Codex、Gemini Flash 与 Qwen Coder
 
 实现约束：
 
