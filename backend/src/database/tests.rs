@@ -198,6 +198,28 @@ fn schema_migration_accepts_latest_previous_version_on_current_schema() {
 }
 
 #[test]
+fn schema_migration_v7_to_v8_compatibility_version_only() {
+    let conn = Connection::open_in_memory().expect("open memory db");
+    Database::create_tables_on_conn(&conn).expect("create tables");
+    Database::set_user_version(&conn, 7).expect("set user_version=7");
+
+    Database::apply_schema_migrations_on_conn(&conn).expect("apply v7->v8 migration");
+
+    assert_eq!(
+        Database::get_user_version(&conn).expect("version after migration"),
+        8
+    );
+    assert!(
+        Database::has_column(&conn, "skills", "content_hash").expect("check content_hash"),
+        "skills.content_hash should remain available after v7->v8 migration"
+    );
+    assert!(
+        Database::has_column(&conn, "skills", "updated_at").expect("check updated_at"),
+        "skills.updated_at should remain available after v7->v8 migration"
+    );
+}
+
+#[test]
 fn schema_migration_adds_missing_columns_for_providers() {
     let conn = Connection::open_in_memory().expect("open memory db");
 

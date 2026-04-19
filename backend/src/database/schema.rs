@@ -400,6 +400,11 @@ impl Database {
                         Self::migrate_v6_to_v7(conn)?;
                         Self::set_user_version(conn, 7)?;
                     }
+                    7 => {
+                        log::info!("迁移数据库从 v7 到 v8（发布兼容版本号对齐）");
+                        Self::migrate_v7_to_v8(conn)?;
+                        Self::set_user_version(conn, 8)?;
+                    }
                     _ => {
                         return Err(AppError::Database(format!(
                             "未知的数据库版本 {version}，无法迁移到 {SCHEMA_VERSION}"
@@ -1072,6 +1077,12 @@ impl Database {
         }
 
         log::info!("v6 -> v7 迁移完成：已添加 skills.content_hash 和 skills.updated_at");
+        Ok(())
+    }
+
+    /// v7 -> v8 迁移：兼容性版本号升级，不引入新的表结构变化
+    fn migrate_v7_to_v8(_conn: &Connection) -> Result<(), AppError> {
+        log::info!("v7 -> v8 迁移完成：已对齐发布兼容 schema 版本号");
         Ok(())
     }
 
