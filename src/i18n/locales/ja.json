@@ -2184,6 +2184,11 @@
       "maxTokens": "Max Tokens",
       "empty": "Hermes config.yaml に `model` セクションがまだ設定されていません。"
     },
+    "liveProviders": {
+      "title": "設定済み Provider 一覧",
+      "description": "Hermes の `custom_providers` に現在存在する provider 名を読み取り専用で表示します。",
+      "empty": "Hermes config.yaml に `custom_providers` セクションがまだ設定されていません。"
+    },
     "health": {
       "title": "Hermes 設定の警告を検出しました",
       "parseFailed": "config.yaml を有効な YAML として解析できません。ここで編集する前にファイルを修正してください。",

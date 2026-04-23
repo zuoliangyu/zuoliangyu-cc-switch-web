@@ -1947,6 +1947,10 @@ export async function getWebHermesModelConfig(): Promise<HermesModelConfig | nul
   return requestJson<HermesModelConfig | null>("/api/hermes/model");
 }
 
+export async function getWebHermesLiveProviderIds(): Promise<string[]> {
+  return requestJson<string[]>("/api/hermes/live-provider-ids");
+}
+
 export async function getWebHermesWebUiUrl(
   path?: string | null,
 ): Promise<string> {

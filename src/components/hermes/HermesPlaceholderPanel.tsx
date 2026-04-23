@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { Construction, ExternalLink, Layers3, Route } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useHermesModelConfig } from "@/hooks/useHermes";
+import {
+  useHermesLiveProviderIds,
+  useHermesModelConfig,
+} from "@/hooks/useHermes";
 import { ProviderIcon } from "@/components/ProviderIcon";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +17,7 @@ export function HermesPlaceholderPanel({
 }: HermesPlaceholderPanelProps) {
   const { t } = useTranslation();
   const { data: modelConfig } = useHermesModelConfig(true);
+  const { data: liveProviderIds = [] } = useHermesLiveProviderIds(true);
 
   return (
     <div className="px-6 pt-4">
@@ -98,6 +102,31 @@ export function HermesPlaceholderPanel({
               ) : (
                 <p className="mt-4 text-sm text-muted-foreground">
                   {t("hermes.summary.empty")}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-border-default bg-background/70 p-5">
+              <div className="text-sm font-medium text-foreground">
+                {t("hermes.liveProviders.title")}
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("hermes.liveProviders.description")}
+              </p>
+              {liveProviderIds.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {liveProviderIds.map((providerId) => (
+                    <span
+                      key={providerId}
+                      className="rounded-full border border-border-default bg-background/75 px-3 py-1 text-xs font-medium text-foreground"
+                    >
+                      {providerId}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {t("hermes.liveProviders.empty")}
                 </p>
               )}
             </div>

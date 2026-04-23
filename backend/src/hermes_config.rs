@@ -133,6 +133,23 @@ pub fn get_model_config() -> Result<Option<HermesModelConfig>, AppError> {
     Ok(Some(model))
 }
 
+pub fn get_live_provider_ids() -> Result<Vec<String>, AppError> {
+    let config = read_hermes_config()?;
+    let mut ids = Vec::new();
+
+    if let Some(sequence) = config.get("custom_providers").and_then(|value| value.as_sequence()) {
+        for item in sequence {
+            if let Some(name) = item.get("name").and_then(yaml_as_non_empty_str) {
+                if !ids.iter().any(|existing| existing == name) {
+                    ids.push(name.to_string());
+                }
+            }
+        }
+    }
+
+    Ok(ids)
+}
+
 fn scan_hermes_health_internal(content: &str) -> Vec<HermesHealthWarning> {
     let mut warnings = Vec::new();
 

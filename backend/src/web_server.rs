@@ -1262,6 +1262,12 @@ async fn get_hermes_model_config(
     Ok(Json(model))
 }
 
+async fn get_hermes_live_provider_ids() -> Result<Json<Vec<String>>, ApiError> {
+    let ids = crate::commands::get_hermes_live_provider_ids_internal()
+        .map_err(|e| ApiError::internal(format!("failed to load hermes live provider ids: {e}")))?;
+    Ok(Json(ids))
+}
+
 async fn scan_hermes_config_health(
 ) -> Result<Json<Vec<crate::hermes_config::HermesHealthWarning>>, ApiError> {
     let warnings = crate::commands::scan_hermes_config_health_internal()
@@ -3411,6 +3417,7 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
             get(get_hermes_memory).put(set_hermes_memory),
         )
         .route("/api/hermes/model", get(get_hermes_model_config))
+        .route("/api/hermes/live-provider-ids", get(get_hermes_live_provider_ids))
         .route("/api/hermes/web-ui-url", get(get_hermes_web_ui_url))
         .route("/api/hermes/dashboard", post(launch_hermes_dashboard))
         .route("/api/hermes/health", get(scan_hermes_config_health))

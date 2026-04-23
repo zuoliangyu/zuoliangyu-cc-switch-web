@@ -2184,6 +2184,11 @@
       "maxTokens": "Max Tokens",
       "empty": "当前尚未在 Hermes config.yaml 中配置 model 段。"
     },
+    "liveProviders": {
+      "title": "已配置 Provider 列表",
+      "description": "只读展示 Hermes `custom_providers` 中当前存在的 provider 名称。",
+      "empty": "当前尚未在 Hermes config.yaml 中配置 custom_providers。"
+    },
     "health": {
       "title": "检测到 Hermes 配置告警",
       "parseFailed": "config.yaml 无法被解析为有效 YAML，请先修复文件后再继续在这里编辑。",

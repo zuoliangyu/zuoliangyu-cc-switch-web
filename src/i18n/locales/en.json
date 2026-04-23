@@ -2184,6 +2184,11 @@
       "maxTokens": "Max Tokens",
       "empty": "The `model` section is not configured in Hermes config.yaml yet."
     },
+    "liveProviders": {
+      "title": "Configured Providers",
+      "description": "Read-only list of provider names currently present in Hermes `custom_providers`.",
+      "empty": "The `custom_providers` section is not configured in Hermes config.yaml yet."
+    },
     "health": {
       "title": "Hermes config warnings detected",
       "parseFailed": "config.yaml could not be parsed as valid YAML. Fix the file before editing it here.",

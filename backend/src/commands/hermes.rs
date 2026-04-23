@@ -49,6 +49,10 @@ pub(crate) fn get_hermes_model_config_internal(
     crate::hermes_config::get_model_config().map_err(|e| e.to_string())
 }
 
+pub(crate) fn get_hermes_live_provider_ids_internal() -> Result<Vec<String>, String> {
+    crate::hermes_config::get_live_provider_ids().map_err(|e| e.to_string())
+}
+
 pub(crate) fn scan_hermes_config_health_internal(
 ) -> Result<Vec<crate::hermes_config::HermesHealthWarning>, String> {
     crate::hermes_config::scan_hermes_config_health().map_err(|e| e.to_string())

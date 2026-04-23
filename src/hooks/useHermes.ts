@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { providersApi } from "@/lib/api/providers";
 import { hermesApi } from "@/lib/api/hermes";
 import type { HermesMemoryKind } from "@/types";
 import { extractErrorMessage } from "@/utils/errorUtils";
@@ -11,9 +12,18 @@ export const HERMES_WEB_OFFLINE_ERROR = "hermes_web_offline";
 export const hermesKeys = {
   all: ["hermes"] as const,
   health: ["hermes", "health"] as const,
+  liveProviderIds: ["hermes", "liveProviderIds"] as const,
   memory: (kind: HermesMemoryKind) => ["hermes", "memory", kind] as const,
   memoryLimits: ["hermes", "memoryLimits"] as const,
 };
+
+export function useHermesLiveProviderIds(enabled: boolean) {
+  return useQuery({
+    queryKey: hermesKeys.liveProviderIds,
+    queryFn: () => providersApi.getHermesLiveProviderIds(),
+    enabled,
+  });
+}
 
 export function useHermesHealth(enabled: boolean) {
   return useQuery({

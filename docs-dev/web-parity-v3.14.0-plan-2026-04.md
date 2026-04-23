@@ -232,10 +232,17 @@
 - 三语 locale 已补齐 Hermes model 摘要文案
 - 当前仍未接入 Hermes Provider 编辑、Session、MCP、Skills，继续保持按最小闭环拆分推进
 
+### 2026-04-23 已完成第七笔
+
+- Web 本地服务已补 Hermes `custom_providers` 名称列表读取接口
+- Hermes 占位页已补只读的已配置 Provider 列表展示
+- 三语 locale 已补齐 Hermes live provider 列表文案
+- 当前仍未接入 Hermes Provider 编辑、Session、MCP、Skills，继续保持按最小闭环拆分推进
+
 ### 第三阶段当前状态
 
-- 第三阶段已完成六笔闭环：基础承载面、Memory 面板、配置目录覆盖入口、配置健康告警、Web UI 入口、model 摘要只读面板
-- 当前已具备 Hermes 的应用入口、可见性控制、流程保护、Memory 基础闭环、自定义目录承接、配置告警提示、Web UI 跳转/启动引导与 model 摘要只读展示
+- 第三阶段已完成七笔闭环：基础承载面、Memory 面板、配置目录覆盖入口、配置健康告警、Web UI 入口、model 摘要只读面板、live provider 列表只读展示
+- 当前已具备 Hermes 的应用入口、可见性控制、流程保护、Memory 基础闭环、自定义目录承接、配置告警提示、Web UI 跳转/启动引导、model 摘要只读展示与 live provider 列表只读展示
 - 后续提交应继续按最小闭环拆分，不把 Provider、Memory、Session 混成一笔
 
 ### 计划项
