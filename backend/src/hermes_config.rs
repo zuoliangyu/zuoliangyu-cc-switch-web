@@ -10,6 +10,10 @@ pub fn get_hermes_dir() -> PathBuf {
         return override_dir;
     }
 
+    get_default_hermes_dir()
+}
+
+pub fn get_default_hermes_dir() -> PathBuf {
     get_home_dir().join(".hermes")
 }
 

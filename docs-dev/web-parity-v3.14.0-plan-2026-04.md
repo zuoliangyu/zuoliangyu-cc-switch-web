@@ -203,10 +203,17 @@
 - `config.yaml` 的 `memory` 段会被定向更新，避免覆盖其他 Hermes 配置段
 - 当前仍未接入 Hermes Provider、Session、MCP、Skills，继续保持按闭环拆分推进
 
+### 2026-04-23 已完成第三笔
+
+- 设置页已补齐 OpenClaw 与 Hermes 的配置目录覆盖入口
+- Web 本地服务已支持查询 Hermes 当前配置目录与默认配置目录
+- Hermes Memory 相关文件与 `config.yaml` 的读写会跟随自定义目录覆盖生效
+- 当前仍未接入 Hermes Provider、Session、MCP、Skills，继续保持按最小闭环拆分推进
+
 ### 第三阶段当前状态
 
-- 第三阶段已完成第一笔“基础承载面”落地
-- 当前已具备 Hermes 的应用入口、可见性控制、流程保护与 Memory 基础闭环
+- 第三阶段已完成三笔闭环：基础承载面、Memory 面板、配置目录覆盖入口
+- 当前已具备 Hermes 的应用入口、可见性控制、流程保护、Memory 基础闭环与自定义目录承接
 - 后续提交应继续按最小闭环拆分，不把 Provider、Memory、Session 混成一笔
 
 ### 计划项

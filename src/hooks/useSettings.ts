@@ -107,6 +107,8 @@ export function useSettings(): UseSettingsResult {
       sanitizeDir(data?.codexConfigDir),
       sanitizeDir(data?.geminiConfigDir),
       sanitizeDir(data?.opencodeConfigDir),
+      sanitizeDir(data?.openclawConfigDir),
+      sanitizeDir(data?.hermesConfigDir),
     );
     setRequiresRestart(false);
   }, [
@@ -132,6 +134,12 @@ export function useSettings(): UseSettingsResult {
         const sanitizedOpencodeDir = sanitizeDir(
           mergedSettings.opencodeConfigDir,
         );
+        const sanitizedOpenclawDir = sanitizeDir(
+          mergedSettings.openclawConfigDir,
+        );
+        const sanitizedHermesDir = sanitizeDir(
+          mergedSettings.hermesConfigDir,
+        );
         const { webdavSync: _ignoredWebdavSync, ...restSettings } =
           mergedSettings;
 
@@ -141,6 +149,8 @@ export function useSettings(): UseSettingsResult {
           codexConfigDir: sanitizedCodexDir,
           geminiConfigDir: sanitizedGeminiDir,
           opencodeConfigDir: sanitizedOpencodeDir,
+          openclawConfigDir: sanitizedOpenclawDir,
+          hermesConfigDir: sanitizedHermesDir,
           language: mergedSettings.language,
         };
 
@@ -260,6 +270,12 @@ export function useSettings(): UseSettingsResult {
         const sanitizedOpencodeDir = sanitizeDir(
           mergedSettings.opencodeConfigDir,
         );
+        const sanitizedOpenclawDir = sanitizeDir(
+          mergedSettings.openclawConfigDir,
+        );
+        const sanitizedHermesDir = sanitizeDir(
+          mergedSettings.hermesConfigDir,
+        );
         const previousAppDir = initialAppConfigDir;
         const previousClaudeDir = sanitizeDir(data?.claudeConfigDir);
         const previousCodexDir = sanitizeDir(data?.codexConfigDir);
@@ -274,6 +290,8 @@ export function useSettings(): UseSettingsResult {
           codexConfigDir: sanitizedCodexDir,
           geminiConfigDir: sanitizedGeminiDir,
           opencodeConfigDir: sanitizedOpencodeDir,
+          openclawConfigDir: sanitizedOpenclawDir,
+          hermesConfigDir: sanitizedHermesDir,
           language: mergedSettings.language,
         };
 

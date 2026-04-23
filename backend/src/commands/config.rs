@@ -68,6 +68,12 @@ pub(crate) fn validate_common_config_snippet(app_type: &str, snippet: &str) -> R
 }
 
 pub(crate) fn get_config_dir_internal(app: String) -> Result<String, String> {
+    if app == "hermes" {
+        return Ok(crate::hermes_config::get_hermes_dir()
+            .to_string_lossy()
+            .to_string());
+    }
+
     let dir = match AppType::from_str(&app).map_err(|e| e.to_string())? {
         AppType::Claude => config::get_claude_config_dir(),
         AppType::Codex => codex_config::get_codex_config_dir(),
@@ -80,6 +86,12 @@ pub(crate) fn get_config_dir_internal(app: String) -> Result<String, String> {
 }
 
 pub(crate) fn get_default_config_dir_internal(app: String) -> Result<String, String> {
+    if app == "hermes" {
+        return Ok(crate::hermes_config::get_default_hermes_dir()
+            .to_string_lossy()
+            .to_string());
+    }
+
     let dir = match AppType::from_str(&app).map_err(|e| e.to_string())? {
         AppType::Claude => config::get_default_claude_config_dir(),
         AppType::Codex => codex_config::get_default_codex_config_dir(),
