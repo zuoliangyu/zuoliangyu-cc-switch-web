@@ -10,6 +10,7 @@ mod database;
 mod error;
 mod gemini_config;
 mod gemini_mcp;
+mod hermes_config;
 mod mcp;
 mod openclaw_config;
 mod opencode_config;

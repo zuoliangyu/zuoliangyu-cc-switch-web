@@ -2142,6 +2142,21 @@
       "switcher": "Hermes is now visible in the main App Switcher.",
       "visibility": "The settings page can now show or hide Hermes.",
       "guard": "Switching to Hermes no longer triggers unfinished provider actions."
+    },
+    "memory": {
+      "title": "Hermes Memory",
+      "agentTab": "MEMORY.md",
+      "userTab": "USER.md",
+      "enableOn": "Enabled",
+      "enableOff": "Disabled",
+      "disabledHint": "This content is currently ignored by Hermes.",
+      "usage": "{{current}} / {{limit}} characters",
+      "overLimit": "Over limit",
+      "runtimeNote": "Hermes truncates over-budget content at runtime based on config.",
+      "saveSuccess": "Hermes memory saved",
+      "saveFailed": "Failed to save Hermes memory",
+      "toggleFailed": "Failed to update Hermes memory toggle",
+      "placeholder": "Edit {{filename}} here ..."
     }
   },
   "proxyConfig": {

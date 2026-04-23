@@ -2142,6 +2142,21 @@
       "switcher": "主界面 App Switcher 已出现 Hermes。",
       "visibility": "设置页可控制 Hermes 的显示与隐藏。",
       "guard": "切到 Hermes 时不会误触发未完成的 Provider 操作。"
+    },
+    "memory": {
+      "title": "Hermes Memory",
+      "agentTab": "MEMORY.md",
+      "userTab": "USER.md",
+      "enableOn": "已启用",
+      "enableOff": "已停用",
+      "disabledHint": "当前内容不会被 Hermes 读取",
+      "usage": "{{current}} / {{limit}} 字符",
+      "overLimit": "已超出限制",
+      "runtimeNote": "Hermes 会在运行时按配置截断超限内容。",
+      "saveSuccess": "Hermes Memory 已保存",
+      "saveFailed": "保存 Hermes Memory 失败",
+      "toggleFailed": "更新 Hermes Memory 开关失败",
+      "placeholder": "在此编辑 {{filename}} ..."
     }
   },
   "proxyConfig": {

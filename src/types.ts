@@ -292,6 +292,8 @@ export interface Settings {
   opencodeConfigDir?: string;
   // 覆盖 OpenClaw 配置目录（可选）
   openclawConfigDir?: string;
+  // 覆盖 Hermes 配置目录（可选）
+  hermesConfigDir?: string;
 
   // ===== 当前供应商 ID（设备级）=====
   // 当前 Claude 供应商 ID（优先于数据库 is_current）
@@ -564,4 +566,17 @@ export interface OpenClawToolsConfig {
   allow?: string[];
   deny?: string[];
   [key: string]: unknown; // preserve unknown fields
+}
+
+// ============================================================================
+// Hermes Agent 专属配置
+// ============================================================================
+
+export type HermesMemoryKind = "memory" | "user";
+
+export interface HermesMemoryLimits {
+  memory: number;
+  user: number;
+  memoryEnabled: boolean;
+  userEnabled: boolean;
 }

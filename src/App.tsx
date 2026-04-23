@@ -66,6 +66,7 @@ import EnvPanel from "@/components/openclaw/EnvPanel";
 import ToolsPanel from "@/components/openclaw/ToolsPanel";
 import AgentsDefaultsPanel from "@/components/openclaw/AgentsDefaultsPanel";
 import OpenClawHealthBanner from "@/components/openclaw/OpenClawHealthBanner";
+import HermesMemoryPanel from "@/components/hermes/HermesMemoryPanel";
 import { HermesPlaceholderPanel } from "@/components/hermes/HermesPlaceholderPanel";
 import { UpdateBadge } from "@/components/UpdateBadge";
 
@@ -81,7 +82,8 @@ type View =
   | "workspace"
   | "openclawEnv"
   | "openclawTools"
-  | "openclawAgents";
+  | "openclawAgents"
+  | "hermesMemory";
 
 const DRAG_BAR_HEIGHT = isWindows() || isLinux() ? 0 : 28; // px
 const HEADER_HEIGHT = 64; // px
@@ -117,6 +119,7 @@ const VALID_VIEWS: View[] = [
   "openclawEnv",
   "openclawTools",
   "openclawAgents",
+  "hermesMemory",
 ];
 
 const getInitialView = (): View => {
@@ -185,7 +188,17 @@ function App() {
   }, [activeApp, currentView]);
 
   useEffect(() => {
-    if (activeApp === "hermes" && currentView !== "providers") {
+    if (
+      activeApp === "hermes" &&
+      currentView !== "providers" &&
+      currentView !== "hermesMemory"
+    ) {
+      setCurrentView("providers");
+    }
+  }, [activeApp, currentView]);
+
+  useEffect(() => {
+    if (currentView === "hermesMemory" && activeApp !== "hermes") {
       setCurrentView("providers");
     }
   }, [activeApp, currentView]);
@@ -658,6 +671,8 @@ function App() {
           return <ToolsPanel />;
         case "openclawAgents":
           return <AgentsDefaultsPanel />;
+        case "hermesMemory":
+          return <HermesMemoryPanel />;
         default:
           if (activeApp === "hermes") {
             return <HermesPlaceholderPanel />;
@@ -824,6 +839,7 @@ function App() {
                   {currentView === "openclawTools" && t("openclaw.tools.title")}
                   {currentView === "openclawAgents" &&
                     t("openclaw.agents.title")}
+                  {currentView === "hermesMemory" && t("hermes.memory.title")}
                 </h1>
               </div>
             ) : (
@@ -1081,11 +1097,24 @@ function App() {
                               </Button>
                             </>
                           ) : activeApp === "hermes" ? (
-                            <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                              {t("hermes.placeholderToolbar", {
-                                defaultValue: "Hermes 骨架阶段",
-                              })}
-                            </div>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleViewChange("hermesMemory")
+                                }
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                title={t("hermes.memory.title")}
+                              >
+                                <Book className="w-4 h-4" />
+                              </Button>
+                              <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                                {t("hermes.placeholderToolbar", {
+                                  defaultValue: "Hermes 骨架阶段",
+                                })}
+                              </div>
+                            </>
                           ) : (
                             <>
                               <Button

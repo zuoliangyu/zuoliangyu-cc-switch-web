@@ -9,6 +9,8 @@ import type {
 import type { McpServer, McpServersMap } from "@/types";
 import type { RemoteSnapshotInfo, WebDavSyncSettings } from "@/types";
 import type {
+  HermesMemoryKind,
+  HermesMemoryLimits,
   OpenClawAgentsDefaults,
   OpenClawDefaultModel,
   OpenClawEnvConfig,
@@ -1927,6 +1929,38 @@ export async function getWebOpenClawLiveProvider(
     );
     return null;
   }
+}
+
+export async function getWebHermesMemory(
+  kind: HermesMemoryKind,
+): Promise<string> {
+  return requestJson<string>(`/api/hermes/memory/${encodeURIComponent(kind)}`);
+}
+
+export async function setWebHermesMemory(
+  kind: HermesMemoryKind,
+  content: string,
+): Promise<void> {
+  return requestWithBody<void>(
+    `/api/hermes/memory/${encodeURIComponent(kind)}`,
+    "PUT",
+    { content },
+  );
+}
+
+export async function getWebHermesMemoryLimits(): Promise<HermesMemoryLimits> {
+  return requestJson<HermesMemoryLimits>("/api/hermes/memory-limits");
+}
+
+export async function setWebHermesMemoryEnabled(
+  kind: HermesMemoryKind,
+  enabled: boolean,
+): Promise<void> {
+  return requestWithBody<void>(
+    `/api/hermes/memory/${encodeURIComponent(kind)}/enabled`,
+    "PUT",
+    { enabled },
+  );
 }
 
 export async function getWebSessions(): Promise<SessionMeta[]> {

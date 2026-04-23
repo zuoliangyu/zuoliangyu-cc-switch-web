@@ -2142,6 +2142,21 @@
       "switcher": "メイン画面の App Switcher に Hermes が表示されます。",
       "visibility": "設定画面で Hermes の表示・非表示を切り替えられます。",
       "guard": "Hermes へ切り替えても未完成の Provider 操作は発火しません。"
+    },
+    "memory": {
+      "title": "Hermes Memory",
+      "agentTab": "MEMORY.md",
+      "userTab": "USER.md",
+      "enableOn": "有効",
+      "enableOff": "無効",
+      "disabledHint": "現在の内容は Hermes に読み込まれません",
+      "usage": "{{current}} / {{limit}} 文字",
+      "overLimit": "上限超過",
+      "runtimeNote": "Hermes は設定に従って実行時に超過分を切り詰めます。",
+      "saveSuccess": "Hermes Memory を保存しました",
+      "saveFailed": "Hermes Memory の保存に失敗しました",
+      "toggleFailed": "Hermes Memory の切替更新に失敗しました",
+      "placeholder": "ここで {{filename}} を編集 ..."
     }
   },
   "proxyConfig": {

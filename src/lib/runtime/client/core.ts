@@ -52,6 +52,8 @@ import {
   getWebOpenClawLiveProvider,
   getWebOpenClawModelCatalog,
   getWebOpenClawTools,
+  getWebHermesMemory,
+  getWebHermesMemoryLimits,
   getWebOmoLocalFile,
   getWebCurrentOmoProviderId,
   disableWebCurrentOmo,
@@ -165,6 +167,8 @@ import {
   removeWebCustomEndpoint,
   removeWebProviderFromLiveConfig,
   saveWebDailyMemoryFile,
+  setWebHermesMemory,
+  setWebHermesMemoryEnabled,
   saveWebdavSyncSettings,
   setWebOpenClawAgentsDefaults,
   setWebOpenClawDefaultModel,
@@ -193,7 +197,13 @@ import {
   deleteWebUniversalProvider,
 } from "./web";
 
-type AppId = "claude" | "codex" | "gemini" | "opencode" | "openclaw";
+type AppId =
+  | "claude"
+  | "codex"
+  | "gemini"
+  | "opencode"
+  | "openclaw"
+  | "hermes";
 
 type InvokeArgs = Record<string, unknown> | undefined;
 
@@ -448,6 +458,20 @@ export async function invoke<T>(
     case "get_openclaw_live_provider":
       return (await getWebOpenClawLiveProvider(
         args?.providerId as string,
+      )) as T;
+    case "get_hermes_memory":
+      return (await getWebHermesMemory(args?.kind as any)) as T;
+    case "set_hermes_memory":
+      return (await setWebHermesMemory(
+        args?.kind as any,
+        args?.content as string,
+      )) as T;
+    case "get_hermes_memory_limits":
+      return (await getWebHermesMemoryLimits()) as T;
+    case "set_hermes_memory_enabled":
+      return (await setWebHermesMemoryEnabled(
+        args?.kind as any,
+        Boolean(args?.enabled),
       )) as T;
     case "get_tool_versions":
       return (await getWebToolVersions(

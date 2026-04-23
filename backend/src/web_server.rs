@@ -1226,6 +1226,49 @@ async fn get_openclaw_live_provider(
     Ok(Json(provider))
 }
 
+#[derive(Debug, Deserialize)]
+struct HermesMemoryUpdatePayload {
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct HermesMemoryEnabledPayload {
+    enabled: bool,
+}
+
+async fn get_hermes_memory(
+    Path(kind): Path<crate::hermes_config::MemoryKind>,
+) -> Result<Json<String>, ApiError> {
+    let content = crate::commands::get_hermes_memory_internal(kind)
+        .map_err(|e| ApiError::internal(format!("failed to load hermes memory: {e}")))?;
+    Ok(Json(content))
+}
+
+async fn set_hermes_memory(
+    Path(kind): Path<crate::hermes_config::MemoryKind>,
+    Json(payload): Json<HermesMemoryUpdatePayload>,
+) -> Result<StatusCode, ApiError> {
+    crate::commands::set_hermes_memory_internal(kind, payload.content)
+        .map_err(|e| ApiError::internal(format!("failed to save hermes memory: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn get_hermes_memory_limits(
+) -> Result<Json<crate::hermes_config::HermesMemoryLimits>, ApiError> {
+    let limits = crate::commands::get_hermes_memory_limits_internal()
+        .map_err(|e| ApiError::internal(format!("failed to load hermes memory limits: {e}")))?;
+    Ok(Json(limits))
+}
+
+async fn set_hermes_memory_enabled(
+    Path(kind): Path<crate::hermes_config::MemoryKind>,
+    Json(payload): Json<HermesMemoryEnabledPayload>,
+) -> Result<StatusCode, ApiError> {
+    crate::commands::set_hermes_memory_enabled_internal(kind, payload.enabled)
+        .map_err(|e| ApiError::internal(format!("failed to update hermes memory toggle: {e}")))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn list_sessions() -> Result<Json<Vec<crate::session_manager::SessionMeta>>, ApiError> {
     let sessions = crate::commands::list_sessions_internal()
         .await
@@ -3329,6 +3372,15 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
         .route(
             "/api/openclaw/live-provider/:provider_id",
             get(get_openclaw_live_provider),
+        )
+        .route(
+            "/api/hermes/memory/:kind",
+            get(get_hermes_memory).put(set_hermes_memory),
+        )
+        .route("/api/hermes/memory-limits", get(get_hermes_memory_limits))
+        .route(
+            "/api/hermes/memory/:kind/enabled",
+            put(set_hermes_memory_enabled),
         )
         .route("/api/sessions", get(list_sessions).delete(delete_session))
         .route("/api/sessions/messages", get(get_session_messages))

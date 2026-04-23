@@ -196,10 +196,17 @@
 - 后端本笔只补 `settings` 持久化字段与 `hermes_config_dir`，未扩 `app_config.rs`
 - Hermes Provider、Memory、Session、MCP、Skills 等专属能力留待后续提交继续推进
 
+### 2026-04-23 已完成第二笔
+
+- Hermes 已补齐 Memory 面板入口，可在 Web 中切换 `MEMORY.md` 与 `USER.md`
+- 后端已补 Hermes Memory 文件读写、限额读取与启用开关接口
+- `config.yaml` 的 `memory` 段会被定向更新，避免覆盖其他 Hermes 配置段
+- 当前仍未接入 Hermes Provider、Session、MCP、Skills，继续保持按闭环拆分推进
+
 ### 第三阶段当前状态
 
 - 第三阶段已完成第一笔“基础承载面”落地
-- 当前已具备 Hermes 的应用入口、可见性控制与流程保护
+- 当前已具备 Hermes 的应用入口、可见性控制、流程保护与 Memory 基础闭环
 - 后续提交应继续按最小闭环拆分，不把 Provider、Memory、Session 混成一笔
 
 ### 计划项

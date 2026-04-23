@@ -13,6 +13,7 @@ const visibleApps: VisibleApps = {
   gemini: true,
   opencode: true,
   openclaw: true,
+  hermes: true,
 };
 
 export const getDefaultSettings = (): Settings => ({
@@ -56,6 +57,7 @@ export const getDefaultProxyTakeoverStatus = (): ProxyTakeoverStatus => ({
   gemini: false,
   opencode: false,
   openclaw: false,
+  hermes: false,
 });
 
 export const getDefaultProxyConfig = (): ProxyConfig => ({

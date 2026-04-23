@@ -9,6 +9,7 @@ export { usageApi } from "./usage";
 export { providerRuntimeApi } from "./providerRuntime";
 export { proxyApi } from "./proxy";
 export { openclawApi } from "./openclaw";
+export { hermesApi } from "./hermes";
 export { sessionsApi } from "./sessions";
 export { workspaceApi } from "./workspace";
 export * as modelFetchApi from "./model-fetch";
