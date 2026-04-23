@@ -9,6 +9,7 @@ pub(crate) mod error;
 pub(crate) mod error_mapper;
 pub(crate) mod failover_switch;
 mod forwarder;
+pub(crate) mod gemini_url;
 pub(crate) mod handler_config;
 pub(crate) mod handler_context;
 mod handlers;

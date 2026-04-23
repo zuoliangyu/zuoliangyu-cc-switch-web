@@ -136,6 +136,18 @@
 
 目标：补齐 `v3.14.0` 中对 Web 后端最有价值的协议演进，但暂不引入 Hermes。
 
+### 2026-04-23 已完成第一笔
+
+- Claude Provider 表单已补齐 `gemini_native` 选项
+- 三语文案已补齐 Gemini Native 的提示、完整 URL 说明与代理依赖提示
+- Web 后端已引入 Gemini Native 所需的 URL 归一化、schema/请求转换、流式转换与 shadow 模块
+- Claude 代理链路已支持 `gemini_native` 的识别、鉴权、目标 URL 重写、请求转换与响应回转
+
+### 第二阶段状态
+
+- `gemini_native` 的配置与请求转发闭环已补齐
+- `Stream Check` 分类反馈仍待后续补入，适合单独一笔继续推进
+
 ### 计划项
 
 - `gemini_native` 代理能力
@@ -290,8 +302,8 @@
 
 当前第一阶段已完成，后续建议按计划继续：
 
-1. 进入第二阶段，补协议层 `gemini_native` 与相关联动
-2. 单独立项推进第三阶段 Hermes 全链路接入
+1. 继续第二阶段剩余项，补 `Stream Check` 分类反馈与默认探测模型刷新
+2. 第二阶段收口后，单独立项推进第三阶段 Hermes 全链路接入
 
 ## 备注
 

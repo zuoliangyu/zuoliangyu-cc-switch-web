@@ -13,6 +13,16 @@ use crate::proxy::error::ProxyError;
 /// Gemini 适配器
 pub struct GeminiAdapter;
 
+/// OAuth 凭证结构
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct OAuthCredentials {
+    pub access_token: String,
+    pub refresh_token: Option<String>,
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
+}
+
 impl GeminiAdapter {
     pub fn new() -> Self {
         Self
@@ -45,14 +55,19 @@ impl GeminiAdapter {
         }
     }
 
-    /// 解析 OAuth access token。
-    pub fn parse_oauth_access_token(&self, key: &str) -> Option<String> {
-        // 直接是 access_token
+    /// 解析 OAuth 凭证
+    pub fn parse_oauth_credentials(&self, key: &str) -> Option<OAuthCredentials> {
+        let key = key.trim();
+
         if key.starts_with("ya29.") {
-            return Some(key.to_string());
+            return Some(OAuthCredentials {
+                access_token: key.to_string(),
+                refresh_token: None,
+                client_id: None,
+                client_secret: None,
+            });
         }
 
-        // JSON 格式
         if key.starts_with('{') {
             if let Ok(json) = serde_json::from_str::<serde_json::Value>(key) {
                 let access_token = json
@@ -73,11 +88,13 @@ impl GeminiAdapter {
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
 
-                // 如果有 access_token 或 refresh_token，返回凭证
                 if !access_token.is_empty() || refresh_token.is_some() {
-                    let _ = client_id;
-                    let _ = client_secret;
-                    return Some(access_token);
+                    return Some(OAuthCredentials {
+                        access_token,
+                        refresh_token,
+                        client_id,
+                        client_secret,
+                    });
                 }
             }
         }
@@ -85,11 +102,21 @@ impl GeminiAdapter {
         None
     }
 
+    /// 解析 OAuth access token。
+    pub fn parse_oauth_access_token(&self, key: &str) -> Option<String> {
+        self.parse_oauth_credentials(key).map(|creds| creds.access_token)
+    }
+
     /// 从 Provider 配置中提取原始 API Key
     fn extract_key_raw(&self, provider: &Provider) -> Option<String> {
         if let Some(env) = provider.settings_config.get("env") {
             // 使用 GEMINI_API_KEY
-            if let Some(key) = env.get("GEMINI_API_KEY").and_then(|v| v.as_str()) {
+            if let Some(key) = env
+                .get("GEMINI_API_KEY")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
                 return Some(key.to_string());
             }
         }
@@ -100,6 +127,8 @@ impl GeminiAdapter {
             .get("apiKey")
             .or_else(|| provider.settings_config.get("api_key"))
             .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
         {
             return Some(key.to_string());
         }
@@ -155,11 +184,9 @@ impl ProviderAdapter for GeminiAdapter {
 
         match strategy {
             AuthStrategy::GoogleOAuth => {
-                // 解析 OAuth 凭证
-                if let Some(access_token) = self.parse_oauth_access_token(&key) {
-                    Some(AuthInfo::with_access_token(key, access_token))
+                if let Some(creds) = self.parse_oauth_credentials(&key) {
+                    Some(AuthInfo::with_access_token(key, creds.access_token))
                 } else {
-                    // 回退到普通 API Key
                     Some(AuthInfo::new(key, AuthStrategy::Google))
                 }
             }

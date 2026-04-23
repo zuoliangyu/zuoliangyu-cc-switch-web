@@ -157,6 +157,13 @@ export function useProviderActions(
             defaultValue: "使用 OpenAI Responses 接口格式",
           });
         } else if (
+          provider.meta?.apiFormat === "gemini_native" &&
+          activeApp === "claude"
+        ) {
+          proxyRequiredReason = t("notifications.proxyReasonGeminiNative", {
+            defaultValue: "使用 Gemini Native generateContent 接口格式",
+          });
+        } else if (
           provider.meta?.isFullUrl &&
           (activeApp === "claude" || activeApp === "codex")
         ) {
@@ -209,13 +216,19 @@ export function useProviderActions(
           provider.category !== "official" &&
           (isCopilotProvider ||
             provider.meta?.apiFormat === "openai_chat" ||
-            provider.meta?.apiFormat === "openai_responses")
+            provider.meta?.apiFormat === "openai_responses" ||
+            provider.meta?.apiFormat === "gemini_native")
         ) {
           // OpenAI format provider: show proxy hint
           toast.info(
             isCopilotProvider
               ? t("notifications.copilotProxyHint")
-              : t("notifications.openAIFormatHint"),
+              : provider.meta?.apiFormat === "gemini_native"
+                ? t("notifications.geminiNativeFormatHint", {
+                    defaultValue:
+                      "此供应商使用 Gemini Native generateContent 格式，需要开启代理服务才能正常使用",
+                  })
+                : t("notifications.openAIFormatHint"),
             {
               duration: 5000,
               closeButton: true,

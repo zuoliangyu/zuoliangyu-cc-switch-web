@@ -6,6 +6,7 @@
 //! - **anthropic** (默认): Anthropic Messages API 格式，直接透传
 //! - **openai_chat**: OpenAI Chat Completions 格式，需要 Anthropic ↔ OpenAI 转换
 //! - **openai_responses**: OpenAI Responses API 格式，需要 Anthropic ↔ Responses 转换
+//! - **gemini_native**: Google Gemini Native generateContent 格式，需要 Anthropic ↔ Gemini 转换
 //!
 //! ## 认证模式
 //! - **Claude**: Anthropic 官方 API (x-api-key + anthropic-version)
@@ -22,12 +23,20 @@ use crate::proxy::error::ProxyError;
 /// 供 handler/forwarder 外部使用的公开函数。
 /// 优先级：meta.apiFormat > settings_config.api_format > openrouter_compat_mode > 默认 "anthropic"
 pub fn get_claude_api_format(provider: &Provider) -> &'static str {
+    // 0) Codex OAuth 强制使用 openai_responses（不可被覆盖）
+    if let Some(meta) = provider.meta.as_ref() {
+        if meta.provider_type.as_deref() == Some("codex_oauth") {
+            return "openai_responses";
+        }
+    }
+
     // 1) Preferred: meta.apiFormat (SSOT, never written to Claude Code config)
     if let Some(meta) = provider.meta.as_ref() {
         if let Some(api_format) = meta.api_format.as_deref() {
             return match api_format {
                 "openai_chat" => "openai_chat",
                 "openai_responses" => "openai_responses",
+                "gemini_native" => "gemini_native",
                 _ => "anthropic",
             };
         }
@@ -42,6 +51,7 @@ pub fn get_claude_api_format(provider: &Provider) -> &'static str {
         return match api_format {
             "openai_chat" => "openai_chat",
             "openai_responses" => "openai_responses",
+            "gemini_native" => "gemini_native",
             _ => "anthropic",
         };
     }
@@ -66,13 +76,18 @@ pub fn get_claude_api_format(provider: &Provider) -> &'static str {
 }
 
 pub fn claude_api_format_needs_transform(api_format: &str) -> bool {
-    matches!(api_format, "openai_chat" | "openai_responses")
+    matches!(
+        api_format,
+        "openai_chat" | "openai_responses" | "gemini_native"
+    )
 }
 
 pub fn transform_claude_request_for_api_format(
     body: serde_json::Value,
     provider: &Provider,
     api_format: &str,
+    session_id: Option<&str>,
+    shadow_store: Option<&super::gemini_shadow::GeminiShadowStore>,
 ) -> Result<serde_json::Value, ProxyError> {
     let cache_key = provider
         .meta
@@ -97,6 +112,12 @@ pub fn transform_claude_request_for_api_format(
             }
         }
         "openai_chat" => super::transform::anthropic_to_openai(body, Some(cache_key)),
+        "gemini_native" => super::transform_gemini::anthropic_to_gemini_with_shadow(
+            body,
+            shadow_store,
+            Some(&provider.id),
+            session_id,
+        ),
         _ => Ok(body),
     }
 }
@@ -118,6 +139,15 @@ impl ClaudeAdapter {
     /// - ClaudeAuth: auth_mode 为 bearer_only
     /// - Claude: 默认 Anthropic 官方
     pub fn provider_type(&self, provider: &Provider) -> ProviderType {
+        if self.get_api_format(provider) == "gemini_native" {
+            return match self.extract_key(provider) {
+                Some(key) if key.starts_with("ya29.") || key.starts_with('{') => {
+                    ProviderType::GeminiCli
+                }
+                _ => ProviderType::Gemini,
+            };
+        }
+
         if self.is_codex_oauth(provider) {
             return ProviderType::CodexOAuth;
         }
@@ -341,14 +371,29 @@ impl ProviderAdapter for ClaudeAdapter {
             ));
         }
 
-        let strategy = match provider_type {
-            ProviderType::OpenRouter => AuthStrategy::Bearer,
-            ProviderType::ClaudeAuth => AuthStrategy::ClaudeAuth,
-            _ => AuthStrategy::Anthropic,
-        };
+        let key = self.extract_key(provider)?;
 
-        self.extract_key(provider)
-            .map(|key| AuthInfo::new(key, strategy))
+        match provider_type {
+            ProviderType::GeminiCli => {
+                match super::gemini::GeminiAdapter::new().parse_oauth_credentials(&key) {
+                    Some(creds) if !creds.access_token.is_empty() => {
+                        Some(AuthInfo::with_access_token(key, creds.access_token))
+                    }
+                    Some(_) => {
+                        log::warn!(
+                            "[Gemini OAuth] access_token missing or empty for provider `{}`; bearer auth may fail with 401",
+                            provider.id
+                        );
+                        Some(AuthInfo::new(key, AuthStrategy::GoogleOAuth))
+                    }
+                    None => Some(AuthInfo::new(key, AuthStrategy::GoogleOAuth)),
+                }
+            }
+            ProviderType::Gemini => Some(AuthInfo::new(key, AuthStrategy::Google)),
+            ProviderType::OpenRouter => Some(AuthInfo::new(key, AuthStrategy::Bearer)),
+            ProviderType::ClaudeAuth => Some(AuthInfo::new(key, AuthStrategy::ClaudeAuth)),
+            _ => Some(AuthInfo::new(key, AuthStrategy::Anthropic)),
+        }
     }
 
     fn build_url(&self, base_url: &str, endpoint: &str) -> String {
@@ -388,6 +433,23 @@ impl ProviderAdapter for ClaudeAdapter {
                     HeaderName::from_static("authorization"),
                     HeaderValue::from_str(&bearer).unwrap(),
                 )]
+            }
+            AuthStrategy::Google => vec![(
+                HeaderName::from_static("x-goog-api-key"),
+                HeaderValue::from_str(&auth.api_key).unwrap(),
+            )],
+            AuthStrategy::GoogleOAuth => {
+                let token = auth.access_token.as_ref().unwrap_or(&auth.api_key);
+                vec![
+                    (
+                        HeaderName::from_static("authorization"),
+                        HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
+                    ),
+                    (
+                        HeaderName::from_static("x-goog-api-client"),
+                        HeaderValue::from_static("GeminiCLI/1.0"),
+                    ),
+                ]
             }
             AuthStrategy::CodexOAuth => {
                 vec![
@@ -453,7 +515,7 @@ impl ProviderAdapter for ClaudeAdapter {
         // - "openai_responses": 需要 Anthropic ↔ OpenAI Responses API 格式转换
         matches!(
             self.get_api_format(provider),
-            "openai_chat" | "openai_responses"
+            "openai_chat" | "openai_responses" | "gemini_native"
         )
     }
 
@@ -462,7 +524,13 @@ impl ProviderAdapter for ClaudeAdapter {
         body: serde_json::Value,
         provider: &Provider,
     ) -> Result<serde_json::Value, ProxyError> {
-        transform_claude_request_for_api_format(body, provider, self.get_api_format(provider))
+        transform_claude_request_for_api_format(
+            body,
+            provider,
+            self.get_api_format(provider),
+            None,
+            None,
+        )
     }
 }
 
@@ -870,7 +938,8 @@ mod tests {
         });
 
         let transformed =
-            transform_claude_request_for_api_format(body, &provider, "openai_responses").unwrap();
+            transform_claude_request_for_api_format(body, &provider, "openai_responses", None, None)
+                .unwrap();
 
         assert_eq!(transformed["model"], "gpt-5.4");
         assert!(transformed.get("input").is_some());

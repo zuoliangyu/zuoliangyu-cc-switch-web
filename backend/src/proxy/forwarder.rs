@@ -9,7 +9,10 @@ use super::{
     failover_switch::FailoverSwitchManager,
     log_codes::fwd as log_fwd,
     provider_router::ProviderRouter,
-    providers::{get_adapter, AuthInfo, AuthStrategy, ProviderAdapter, ProviderType},
+    providers::{
+        gemini_shadow::GeminiShadowStore, get_adapter, AuthInfo, AuthStrategy, ProviderAdapter,
+        ProviderType,
+    },
     thinking_budget_rectifier::{rectify_thinking_budget, should_rectify_thinking_budget},
     thinking_rectifier::{
         normalize_thinking_type, rectify_anthropic_request, should_rectify_thinking_signature,
@@ -41,6 +44,7 @@ pub struct RequestForwarder {
     router: Arc<ProviderRouter>,
     status: Arc<RwLock<ProxyStatus>>,
     current_providers: Arc<RwLock<std::collections::HashMap<String, (String, String)>>>,
+    gemini_shadow: Arc<GeminiShadowStore>,
     /// 故障转移切换管理器
     failover_manager: Arc<FailoverSwitchManager>,
     /// Copilot 鉴权状态（显式注入，避免依赖旧运行时容器状态）
@@ -49,6 +53,8 @@ pub struct RequestForwarder {
     codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
     /// 请求开始时的"当前供应商 ID"（用于判断是否需要同步前端状态）
     current_provider_id_at_start: String,
+    /// 代理会话 ID（用于 Gemini Native shadow replay）
+    session_id: String,
     /// 整流器配置
     rectifier_config: RectifierConfig,
     /// 优化器配置
@@ -64,10 +70,12 @@ impl RequestForwarder {
         non_streaming_timeout: u64,
         status: Arc<RwLock<ProxyStatus>>,
         current_providers: Arc<RwLock<std::collections::HashMap<String, (String, String)>>>,
+        gemini_shadow: Arc<GeminiShadowStore>,
         failover_manager: Arc<FailoverSwitchManager>,
         copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
         codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
         current_provider_id_at_start: String,
+        session_id: String,
         _streaming_first_byte_timeout: u64,
         _streaming_idle_timeout: u64,
         rectifier_config: RectifierConfig,
@@ -77,10 +85,12 @@ impl RequestForwarder {
             router,
             status,
             current_providers,
+            gemini_shadow,
             failover_manager,
             copilot_auth_state,
             codex_oauth_state,
             current_provider_id_at_start,
+            session_id,
             rectifier_config,
             optimizer_config,
             non_streaming_timeout: std::time::Duration::from_secs(non_streaming_timeout),
@@ -783,7 +793,7 @@ impl RequestForwarder {
                 let api_format = resolved_claude_api_format
                     .as_deref()
                     .unwrap_or_else(|| super::providers::get_claude_api_format(provider));
-                rewrite_claude_transform_endpoint(endpoint, api_format, is_copilot)
+                rewrite_claude_transform_endpoint(endpoint, api_format, is_copilot, &mapped_body)
             } else {
                 (
                     endpoint.to_string(),
@@ -793,7 +803,9 @@ impl RequestForwarder {
                 )
             };
 
-        let url = if is_full_url {
+        let url = if matches!(resolved_claude_api_format.as_deref(), Some("gemini_native")) {
+            super::gemini_url::resolve_gemini_native_url(&base_url, &effective_endpoint, is_full_url)
+        } else if is_full_url {
             append_query_to_full_url(&base_url, passthrough_query.as_deref())
         } else {
             adapter.build_url(&base_url, &effective_endpoint)
@@ -809,6 +821,8 @@ impl RequestForwarder {
                     mapped_body,
                     provider,
                     api_format,
+                    Some(&self.session_id),
+                    Some(self.gemini_shadow.as_ref()),
                 )?
             } else {
                 adapter.transform_request(mapped_body, provider)?
@@ -1439,6 +1453,7 @@ fn rewrite_claude_transform_endpoint(
     endpoint: &str,
     api_format: &str,
     is_copilot: bool,
+    body: &Value,
 ) -> (String, Option<String>) {
     let (path, query) = split_endpoint_and_query(endpoint);
     let passthrough_query = if is_claude_messages_path(path) {
@@ -1449,6 +1464,33 @@ fn rewrite_claude_transform_endpoint(
 
     if !is_claude_messages_path(path) {
         return (endpoint.to_string(), passthrough_query);
+    }
+
+    if api_format == "gemini_native" {
+        let model =
+            super::providers::transform_gemini::extract_gemini_model(body).unwrap_or("unknown");
+        let model = super::gemini_url::normalize_gemini_model_id(model);
+        let is_stream = body
+            .get("stream")
+            .and_then(|value| value.as_bool())
+            .unwrap_or(false);
+        let target_path = if is_stream {
+            format!("/v1beta/models/{model}:streamGenerateContent")
+        } else {
+            format!("/v1beta/models/{model}:generateContent")
+        };
+
+        let rewritten_query = merge_query_params(
+            passthrough_query.as_deref(),
+            if is_stream { Some("alt=sse") } else { None },
+        );
+
+        let rewritten = match rewritten_query.as_deref() {
+            Some(query) if !query.is_empty() => format!("{target_path}?{query}"),
+            _ => target_path,
+        };
+
+        return (rewritten, rewritten_query);
     }
 
     let target_path = if is_copilot && api_format == "openai_responses" {
@@ -1467,6 +1509,26 @@ fn rewrite_claude_transform_endpoint(
     };
 
     (rewritten, passthrough_query)
+}
+
+fn merge_query_params(base_query: Option<&str>, extra_param: Option<&str>) -> Option<String> {
+    let mut params: Vec<String> = base_query
+        .into_iter()
+        .flat_map(|query| query.split('&'))
+        .filter(|pair| !pair.is_empty())
+        .filter(|pair| !pair.starts_with("alt="))
+        .map(ToString::to_string)
+        .collect();
+
+    if let Some(extra_param) = extra_param {
+        params.push(extra_param.to_string());
+    }
+
+    if params.is_empty() {
+        None
+    } else {
+        Some(params.join("&"))
+    }
 }
 
 fn append_query_to_full_url(base_url: &str, query: Option<&str>) -> String {
@@ -1597,6 +1659,7 @@ mod tests {
             "/v1/messages?beta=true&foo=bar",
             "openai_chat",
             false,
+            &serde_json::json!({}),
         );
 
         assert_eq!(endpoint, "/v1/chat/completions?foo=bar");
@@ -1609,6 +1672,7 @@ mod tests {
             "/claude/v1/messages?beta=true&x-id=1",
             "openai_responses",
             false,
+            &serde_json::json!({}),
         );
 
         assert_eq!(endpoint, "/v1/responses?x-id=1");
@@ -1617,8 +1681,12 @@ mod tests {
 
     #[test]
     fn rewrite_claude_transform_endpoint_uses_copilot_path() {
-        let (endpoint, passthrough_query) =
-            rewrite_claude_transform_endpoint("/v1/messages?beta=true&x-id=1", "anthropic", true);
+        let (endpoint, passthrough_query) = rewrite_claude_transform_endpoint(
+            "/v1/messages?beta=true&x-id=1",
+            "anthropic",
+            true,
+            &serde_json::json!({}),
+        );
 
         assert_eq!(endpoint, "/chat/completions?x-id=1");
         assert_eq!(passthrough_query.as_deref(), Some("x-id=1"));
@@ -1630,6 +1698,7 @@ mod tests {
             "/v1/messages?beta=true&x-id=1",
             "openai_responses",
             true,
+            &serde_json::json!({}),
         );
 
         assert_eq!(endpoint, "/v1/responses?x-id=1");

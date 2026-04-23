@@ -433,7 +433,14 @@ export function ClaudeFormFields({
               ? t("providerForm.apiHintResponses")
               : apiFormat === "openai_chat"
                 ? t("providerForm.apiHintOAI")
+                : apiFormat === "gemini_native"
+                  ? t("providerForm.apiHintGeminiNative")
                 : t("providerForm.apiHint")
+          }
+          fullUrlHint={
+            apiFormat === "gemini_native"
+              ? t("providerForm.fullUrlHintGeminiNative")
+              : undefined
           }
           onManageClick={() => onEndpointModalToggle(true)}
           showFullUrlToggle={true}
@@ -506,6 +513,11 @@ export function ClaudeFormFields({
                     <SelectItem value="openai_responses">
                       {t("providerForm.apiFormatOpenAIResponses", {
                         defaultValue: "OpenAI Responses API (需转换)",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="gemini_native">
+                      {t("providerForm.apiFormatGeminiNative", {
+                        defaultValue: "Gemini Native generateContent (需转换)",
                       })}
                     </SelectItem>
                   </SelectContent>

@@ -10,7 +10,8 @@
 
 use super::{
     failover_switch::FailoverSwitchManager, handlers, log_codes::srv as log_srv,
-    provider_router::ProviderRouter, types::*, ProxyError,
+    provider_router::ProviderRouter, providers::gemini_shadow::GeminiShadowStore, types::*,
+    ProxyError,
 };
 use crate::database::Database;
 use crate::proxy::providers::codex_oauth_auth::CodexOAuthManager;
@@ -42,6 +43,8 @@ pub struct ProxyState {
     pub copilot_auth_state: Arc<RwLock<CopilotAuthManager>>,
     /// Codex OAuth 鉴权状态
     pub codex_oauth_state: Arc<RwLock<CodexOAuthManager>>,
+    /// Gemini Native shadow state，用于 thoughtSignature / tool call 回放
+    pub gemini_shadow: Arc<GeminiShadowStore>,
     /// 故障转移切换管理器
     pub failover_manager: Arc<FailoverSwitchManager>,
 }
@@ -76,6 +79,7 @@ impl ProxyServer {
             provider_router,
             copilot_auth_state,
             codex_oauth_state,
+            gemini_shadow: Arc::new(GeminiShadowStore::default()),
             failover_manager,
         };
 
