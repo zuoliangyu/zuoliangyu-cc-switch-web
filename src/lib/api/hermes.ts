@@ -1,7 +1,15 @@
 import { invoke } from "@/lib/runtime/client/core";
-import type { HermesMemoryKind, HermesMemoryLimits } from "@/types";
+import type {
+  HermesHealthWarning,
+  HermesMemoryKind,
+  HermesMemoryLimits,
+} from "@/types";
 
 export const hermesApi = {
+  async scanHealth(): Promise<HermesHealthWarning[]> {
+    return await invoke("scan_hermes_config_health");
+  },
+
   async getMemory(kind: HermesMemoryKind): Promise<string> {
     return await invoke("get_hermes_memory", { kind });
   },

@@ -2161,6 +2161,17 @@
       "saveFailed": "Hermes Memory の保存に失敗しました",
       "toggleFailed": "Hermes Memory の切替更新に失敗しました",
       "placeholder": "ここで {{filename}} を編集 ..."
+    },
+    "health": {
+      "title": "Hermes 設定の警告を検出しました",
+      "parseFailed": "config.yaml を有効な YAML として解析できません。ここで編集する前にファイルを修正してください。",
+      "modelNoDefault": "model セクションにデフォルトモデルまたはデフォルト provider が設定されていません。",
+      "customProvidersNotList": "custom_providers はマッピングではなく、YAML のリスト（- で始まる項目）である必要があります。",
+      "modelProviderUnknown": "model.provider が custom_providers に存在しない provider を参照しています。",
+      "modelDefaultNotInProvider": "model.default が選択中 provider の models 一覧に含まれていません。",
+      "duplicateProviderName": "custom_providers に重複した provider 名があり、最終的に有効になるのは 1 件だけです。",
+      "duplicateProviderBaseUrl": "custom_providers に重複した base_url があり、誤って複製した可能性があります。",
+      "schemaMigratedV12": "Hermes の新しい schema では一部設定が providers 辞書へ移動しているため、現在の Web 側では読み取り専用の警告として表示します。"
     }
   },
   "proxyConfig": {

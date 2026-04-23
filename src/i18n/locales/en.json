@@ -2161,6 +2161,17 @@
       "saveFailed": "Failed to save Hermes memory",
       "toggleFailed": "Failed to update Hermes memory toggle",
       "placeholder": "Edit {{filename}} here ..."
+    },
+    "health": {
+      "title": "Hermes config warnings detected",
+      "parseFailed": "config.yaml could not be parsed as valid YAML. Fix the file before editing it here.",
+      "modelNoDefault": "No default model or provider is configured in the model section.",
+      "customProvidersNotList": "custom_providers should be a YAML list (items prefixed with '-'), not a mapping.",
+      "modelProviderUnknown": "model.provider references a provider that is not configured in custom_providers.",
+      "modelDefaultNotInProvider": "model.default is not included in the selected provider's models list.",
+      "duplicateProviderName": "custom_providers contains duplicate provider names, and only one entry will take effect.",
+      "duplicateProviderBaseUrl": "custom_providers contains duplicate base_url values, which may indicate an accidental copy.",
+      "schemaMigratedV12": "Hermes newer schema moved some entries into the providers dictionary, so the current Web side only surfaces them as read-only warnings."
     }
   },
   "proxyConfig": {

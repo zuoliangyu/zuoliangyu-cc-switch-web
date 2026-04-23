@@ -7,9 +7,19 @@ import { extractErrorMessage } from "@/utils/errorUtils";
 
 export const hermesKeys = {
   all: ["hermes"] as const,
+  health: ["hermes", "health"] as const,
   memory: (kind: HermesMemoryKind) => ["hermes", "memory", kind] as const,
   memoryLimits: ["hermes", "memoryLimits"] as const,
 };
+
+export function useHermesHealth(enabled: boolean) {
+  return useQuery({
+    queryKey: hermesKeys.health,
+    queryFn: () => hermesApi.scanHealth(),
+    staleTime: 30_000,
+    enabled,
+  });
+}
 
 export function useHermesMemory(kind: HermesMemoryKind, enabled: boolean) {
   return useQuery({

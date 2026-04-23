@@ -2161,6 +2161,17 @@
       "saveFailed": "保存 Hermes Memory 失败",
       "toggleFailed": "更新 Hermes Memory 开关失败",
       "placeholder": "在此编辑 {{filename}} ..."
+    },
+    "health": {
+      "title": "检测到 Hermes 配置告警",
+      "parseFailed": "config.yaml 无法被解析为有效 YAML，请先修复文件后再继续在这里编辑。",
+      "modelNoDefault": "model 段未配置默认模型或默认供应商。",
+      "customProvidersNotList": "custom_providers 应为 YAML 列表（使用 - 开头的条目），而不是对象映射。",
+      "modelProviderUnknown": "model.provider 引用了一个未在 custom_providers 中配置的供应商。",
+      "modelDefaultNotInProvider": "model.default 不在当前 provider 的 models 列表中。",
+      "duplicateProviderName": "custom_providers 中存在重复的 provider 名称，最终只会有一个条目生效。",
+      "duplicateProviderBaseUrl": "custom_providers 中存在重复的 base_url，可能是误复制导致。",
+      "schemaMigratedV12": "Hermes 新版 schema 已将部分配置迁移到 providers 字典中，当前 Web 端仅做只读告警展示。"
     }
   },
   "proxyConfig": {

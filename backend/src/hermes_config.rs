@@ -2,6 +2,7 @@ use crate::config::{atomic_write, get_home_dir};
 use crate::error::AppError;
 use crate::settings::get_hermes_override_dir;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -61,6 +62,15 @@ impl Default for HermesMemoryLimits {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct HermesHealthWarning {
+    pub code: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+}
+
 fn read_hermes_config() -> Result<serde_yaml::Value, AppError> {
     let path = get_hermes_config_path();
     if !path.exists() {
@@ -74,6 +84,181 @@ fn read_hermes_config() -> Result<serde_yaml::Value, AppError> {
 
     serde_yaml::from_str(&content)
         .map_err(|e| AppError::Config(format!("Failed to parse Hermes config as YAML: {e}")))
+}
+
+pub fn scan_hermes_config_health() -> Result<Vec<HermesHealthWarning>, AppError> {
+    let path = get_hermes_config_path();
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let content = fs::read_to_string(&path).map_err(|e| AppError::io(&path, e))?;
+    Ok(scan_hermes_health_internal(&content))
+}
+
+fn scan_hermes_health_internal(content: &str) -> Vec<HermesHealthWarning> {
+    let mut warnings = Vec::new();
+
+    if content.trim().is_empty() {
+        return warnings;
+    }
+
+    let config = match serde_yaml::from_str::<serde_yaml::Value>(content) {
+        Ok(value) => value,
+        Err(error) => {
+            warnings.push(hermes_warning(
+                "config_parse_failed",
+                format!("Hermes config could not be parsed as YAML: {error}"),
+                Some(get_hermes_config_path().display().to_string()),
+            ));
+            return warnings;
+        }
+    };
+
+    if let Some(model) = config.get("model") {
+        if model.get("default").is_none() && model.get("provider").is_none() {
+            warnings.push(hermes_warning(
+                "model_no_default",
+                "No default model or provider configured in 'model' section".to_string(),
+                Some("model".to_string()),
+            ));
+        }
+    }
+
+    if config
+        .get("custom_providers")
+        .and_then(|value| value.as_mapping())
+        .is_some()
+    {
+        warnings.push(hermes_warning(
+            "custom_providers_not_list",
+            "custom_providers should be a YAML list (sequence), not a mapping".to_string(),
+            Some("custom_providers".to_string()),
+        ));
+    }
+
+    let mut provider_models: HashMap<String, Vec<String>> = HashMap::new();
+    let mut name_counts: HashMap<String, usize> = HashMap::new();
+    let mut base_url_counts: HashMap<String, usize> = HashMap::new();
+
+    if let Some(sequence) = config.get("custom_providers").and_then(|value| value.as_sequence()) {
+        for item in sequence {
+            if let Some(name) = item.get("name").and_then(yaml_as_non_empty_str) {
+                *name_counts.entry(name.to_string()).or_insert(0) += 1;
+                if let Some(models) = item.get("models").and_then(|value| value.as_mapping()) {
+                    provider_models
+                        .entry(name.to_string())
+                        .or_insert_with(|| collect_mapping_string_keys(models));
+                }
+            }
+
+            if let Some(base_url) = item
+                .get("base_url")
+                .and_then(yaml_as_non_empty_str)
+                .map(|value| value.trim_end_matches('/').to_lowercase())
+                .filter(|value| !value.is_empty())
+            {
+                *base_url_counts.entry(base_url).or_insert(0) += 1;
+            }
+        }
+    }
+
+    for (name, count) in &name_counts {
+        if *count > 1 {
+            warnings.push(hermes_warning(
+                "duplicate_provider_name",
+                format!(
+                    "Duplicate provider name '{name}' in custom_providers; only one entry will be used"
+                ),
+                Some("custom_providers".to_string()),
+            ));
+        }
+    }
+
+    for (base_url, count) in &base_url_counts {
+        if *count > 1 {
+            warnings.push(hermes_warning(
+                "duplicate_provider_base_url",
+                format!(
+                    "Duplicate base_url '{base_url}' in custom_providers; possible accidental copy"
+                ),
+                Some("custom_providers".to_string()),
+            ));
+        }
+    }
+
+    if let Some(model) = config.get("model") {
+        if let Some(provider_ref) = model.get("provider").and_then(yaml_as_non_empty_str) {
+            if !name_counts.contains_key(provider_ref) {
+                warnings.push(hermes_warning(
+                    "model_provider_unknown",
+                    format!(
+                        "model.provider '{provider_ref}' does not match any configured provider"
+                    ),
+                    Some("model.provider".to_string()),
+                ));
+            } else if let Some(default_model) =
+                model.get("default").and_then(yaml_as_non_empty_str)
+            {
+                if let Some(model_ids) = provider_models.get(provider_ref) {
+                    if !model_ids.is_empty() && !model_ids.iter().any(|id| id == default_model) {
+                        warnings.push(hermes_warning(
+                            "model_default_not_in_provider",
+                            format!(
+                                "model.default '{default_model}' is not in provider '{provider_ref}' models list"
+                            ),
+                            Some("model.default".to_string()),
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    let version = config
+        .get("_config_version")
+        .and_then(|value| value.as_u64())
+        .unwrap_or(0);
+    let providers_dict_populated = config
+        .get("providers")
+        .and_then(|value| value.as_mapping())
+        .map(|mapping| !mapping.is_empty())
+        .unwrap_or(false);
+    if version >= 12 && providers_dict_populated {
+        warnings.push(hermes_warning(
+            "schema_migrated_v12",
+            "Hermes newer schema moved some entries into the 'providers' dict; CC Switch currently treats them as read-only".to_string(),
+            Some("providers".to_string()),
+        ));
+    }
+
+    warnings
+}
+
+fn hermes_warning(
+    code: &str,
+    message: String,
+    path: Option<String>,
+) -> HermesHealthWarning {
+    HermesHealthWarning {
+        code: code.to_string(),
+        message,
+        path,
+    }
+}
+
+fn yaml_as_non_empty_str(value: &serde_yaml::Value) -> Option<&str> {
+    value
+        .as_str()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+fn collect_mapping_string_keys(mapping: &serde_yaml::Mapping) -> Vec<String> {
+    mapping
+        .keys()
+        .filter_map(|key| key.as_str().map(ToString::to_string))
+        .collect()
 }
 
 fn is_top_level_key_line(line: &str) -> bool {

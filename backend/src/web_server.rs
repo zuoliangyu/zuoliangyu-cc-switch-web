@@ -1236,6 +1236,13 @@ struct HermesMemoryEnabledPayload {
     enabled: bool,
 }
 
+async fn scan_hermes_config_health(
+) -> Result<Json<Vec<crate::hermes_config::HermesHealthWarning>>, ApiError> {
+    let warnings = crate::commands::scan_hermes_config_health_internal()
+        .map_err(|e| ApiError::internal(format!("failed to scan hermes config health: {e}")))?;
+    Ok(Json(warnings))
+}
+
 async fn get_hermes_memory(
     Path(kind): Path<crate::hermes_config::MemoryKind>,
 ) -> Result<Json<String>, ApiError> {
@@ -3377,6 +3384,7 @@ pub async fn run_web_server_with_options(options: WebServerOptions) -> Result<()
             "/api/hermes/memory/:kind",
             get(get_hermes_memory).put(set_hermes_memory),
         )
+        .route("/api/hermes/health", get(scan_hermes_config_health))
         .route("/api/hermes/memory-limits", get(get_hermes_memory_limits))
         .route(
             "/api/hermes/memory/:kind/enabled",

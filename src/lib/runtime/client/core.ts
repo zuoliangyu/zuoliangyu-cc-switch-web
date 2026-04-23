@@ -52,6 +52,7 @@ import {
   getWebOpenClawLiveProvider,
   getWebOpenClawModelCatalog,
   getWebOpenClawTools,
+  getWebHermesHealth,
   getWebHermesMemory,
   getWebHermesMemoryLimits,
   getWebOmoLocalFile,
@@ -459,6 +460,8 @@ export async function invoke<T>(
       return (await getWebOpenClawLiveProvider(
         args?.providerId as string,
       )) as T;
+    case "scan_hermes_config_health":
+      return (await getWebHermesHealth()) as T;
     case "get_hermes_memory":
       return (await getWebHermesMemory(args?.kind as any)) as T;
     case "set_hermes_memory":

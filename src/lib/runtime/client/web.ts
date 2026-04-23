@@ -9,6 +9,7 @@ import type {
 import type { McpServer, McpServersMap } from "@/types";
 import type { RemoteSnapshotInfo, WebDavSyncSettings } from "@/types";
 import type {
+  HermesHealthWarning,
   HermesMemoryKind,
   HermesMemoryLimits,
   OpenClawAgentsDefaults,
@@ -1935,6 +1936,10 @@ export async function getWebHermesMemory(
   kind: HermesMemoryKind,
 ): Promise<string> {
   return requestJson<string>(`/api/hermes/memory/${encodeURIComponent(kind)}`);
+}
+
+export async function getWebHermesHealth(): Promise<HermesHealthWarning[]> {
+  return requestJson<HermesHealthWarning[]>("/api/hermes/health");
 }
 
 export async function setWebHermesMemory(

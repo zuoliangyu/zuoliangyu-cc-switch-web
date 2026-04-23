@@ -210,10 +210,17 @@
 - Hermes Memory 相关文件与 `config.yaml` 的读写会跟随自定义目录覆盖生效
 - 当前仍未接入 Hermes Provider、Session、MCP、Skills，继续保持按最小闭环拆分推进
 
+### 2026-04-23 已完成第四笔
+
+- Web 本地服务已补 Hermes `config.yaml` 的健康扫描接口
+- Hermes 视图已接入配置告警 Banner，可提示 YAML 解析失败、默认模型缺失、重复 provider 等常见问题
+- 三语 locale 已补齐 Hermes health 告警文案
+- 当前仍未接入 Hermes Provider、Session、MCP、Skills，继续保持按最小闭环拆分推进
+
 ### 第三阶段当前状态
 
-- 第三阶段已完成三笔闭环：基础承载面、Memory 面板、配置目录覆盖入口
-- 当前已具备 Hermes 的应用入口、可见性控制、流程保护、Memory 基础闭环与自定义目录承接
+- 第三阶段已完成四笔闭环：基础承载面、Memory 面板、配置目录覆盖入口、配置健康告警
+- 当前已具备 Hermes 的应用入口、可见性控制、流程保护、Memory 基础闭环、自定义目录承接与配置告警提示
 - 后续提交应继续按最小闭环拆分，不把 Provider、Memory、Session 混成一笔
 
 ### 计划项

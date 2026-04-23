@@ -29,6 +29,7 @@ import {
 } from "@/lib/api";
 import { checkAllEnvConflicts, checkEnvConflicts } from "@/lib/api/env";
 import { useProviderActions } from "@/hooks/useProviderActions";
+import { useHermesHealth } from "@/hooks/useHermes";
 import { openclawKeys, useOpenClawHealth } from "@/hooks/useOpenClaw";
 import { useProxyStatus } from "@/hooks/useProxyStatus";
 import { useAutoCompact } from "@/hooks/useAutoCompact";
@@ -66,6 +67,7 @@ import EnvPanel from "@/components/openclaw/EnvPanel";
 import ToolsPanel from "@/components/openclaw/ToolsPanel";
 import AgentsDefaultsPanel from "@/components/openclaw/AgentsDefaultsPanel";
 import OpenClawHealthBanner from "@/components/openclaw/OpenClawHealthBanner";
+import HermesHealthBanner from "@/components/hermes/HermesHealthBanner";
 import HermesMemoryPanel from "@/components/hermes/HermesMemoryPanel";
 import { HermesPlaceholderPanel } from "@/components/hermes/HermesPlaceholderPanel";
 import { UpdateBadge } from "@/components/UpdateBadge";
@@ -316,6 +318,10 @@ function App() {
       currentView === "openclawAgents");
   const { data: openclawHealthWarnings = [] } =
     useOpenClawHealth(isOpenClawView);
+  const isHermesView =
+    activeApp === "hermes" &&
+    (currentView === "providers" || currentView === "hermesMemory");
+  const { data: hermesHealthWarnings = [] } = useHermesHealth(isHermesView);
   const hasSkillsSupport = true;
   const hasSessionSupport =
     activeApp === "claude" ||
@@ -1191,6 +1197,9 @@ function App() {
       <main className="flex-1 min-h-0 flex flex-col overflow-y-auto animate-fade-in">
         {isOpenClawView && openclawHealthWarnings.length > 0 && (
           <OpenClawHealthBanner warnings={openclawHealthWarnings} />
+        )}
+        {isHermesView && hermesHealthWarnings.length > 0 && (
+          <HermesHealthBanner warnings={hermesHealthWarnings} />
         )}
         {renderContent()}
       </main>

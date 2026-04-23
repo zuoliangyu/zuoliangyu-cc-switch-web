@@ -572,6 +572,12 @@ export interface OpenClawToolsConfig {
 // Hermes Agent 专属配置
 // ============================================================================
 
+export interface HermesHealthWarning {
+  code: string;
+  message: string;
+  path?: string;
+}
+
 export type HermesMemoryKind = "memory" | "user";
 
 export interface HermesMemoryLimits {

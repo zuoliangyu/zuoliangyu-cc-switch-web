@@ -4,6 +4,11 @@ pub(crate) fn get_hermes_memory_internal(
     crate::hermes_config::read_memory(kind).map_err(|e| e.to_string())
 }
 
+pub(crate) fn scan_hermes_config_health_internal(
+) -> Result<Vec<crate::hermes_config::HermesHealthWarning>, String> {
+    crate::hermes_config::scan_hermes_config_health().map_err(|e| e.to_string())
+}
+
 pub(crate) fn set_hermes_memory_internal(
     kind: crate::hermes_config::MemoryKind,
     content: String,
