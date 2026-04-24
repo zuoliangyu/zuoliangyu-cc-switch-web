@@ -2,6 +2,52 @@
 
 本仓库从 Web 分支独立维护开始，重新以 `0.1.0` 作为初始版本。
 
+## [0.3.0] - 2026-04-24
+
+### 数据库 schema
+
+- schema 版本从 `v8` 升到 `v10`，与上游 `cc-switch` 3.14 系列对齐；新增 `v8 -> v9` 模型定价种子刷新迁移与 `v9 -> v10` Hermes 支持列迁移，解决共享 `~/.cc-switch/cc-switch.db` 时被上游升到 `v10` 后 Web 端启动报 `数据库版本过新（10），当前应用仅支持 8` 的问题
+- `mcp_servers` / `skills` 两表新增 `enabled_hermes` 列；后端 `McpApps` / `SkillApps` 同步补 `hermes` 字段，DAO 的 SELECT / INSERT / UPDATE 全部读写新列，从数据库起到前后端类型完全对齐 `hermes`
+- 迁移回归测试由 `schema_migration_v7_to_v8_compatibility_version_only` 改写为 `schema_migration_from_v7_preserves_skills_columns`，校验从 `v7` 起一路迁移到当前 `SCHEMA_VERSION` 时既保留既有列也正确落下 `enabled_hermes`
+
+### Provider、预设与界面对齐
+
+- Claude / OpenClaw / OpenCode 三端直连 Moonshot 的预设从 `kimi-k2.5` 升到 `kimi-k2.6`
+- Codex 预设新增 DDSHub 条目，与上游合作伙伴布局一致
+- `ProviderIcon` 在图标、回退首字母以及远端图片三种渲染路径上都补上 `title={name}`，悬停始终能看到供应商名称
+- `useAutoCompact` 的 `normalWidthRef` 写入移入 overflow 分支，修复最大化后还原窗口无法重新进入紧凑模式的粘死问题
+- 工具栏里所有 ghost 图标按钮统一加 `w-8 px-2`，多 App 切换时宽度不再跳动
+- `ScrollArea` 视口追加 `[&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full`，根布局加 `pb-4`，改善会话列表在滚动容器内的对齐与底部留白
+- `UsageScriptModal` 的 `getProviderCredentials` 识别 Hermes（snake_case）与 OpenClaw（camelCase）两种扁平 `settingsConfig`，BALANCE / TOKEN_PLAN 分支改为复用 `providerCredentials`
+
+### 代理与会话
+
+- 后端 `session_manager/providers/gemini.rs` 读取每个会话目录下的 `.project_root`，把项目路径回填到 `SessionMeta.project_dir`，与上游 `gemini cli resume` 行为对齐
+- `proxy/handlers.rs` 的 `should_use_claude_transform_streaming` 在 `codex_oauth + openai_responses` 组合下强制返回 `true`，即便客户端未请求流式、上游非 SSE 也会走 Claude 流式转换路径
+
+### 类型与面板
+
+- `AppId` 体系内 `hermes` 覆盖更完整：`APP_IDS`/`MCP_SKILLS_APP_IDS` 相关记录值、`McpApps`/`SkillApps`/`ProvidersByApp`/`CurrentProviderState` 等类型，以及 `McpFormModal`、`UnifiedMcpPanel`、`UnifiedSkillsPanel`、`deeplink/importer.ts`、`tests/msw/state.ts` 中的硬编码构造点，全部补齐 `hermes` 分支
+- `HermesPlaceholderPanel` 的 `providerId` 补上 `string` 类型
+- 前端 `providersApi` 新增 `getHermesLiveProviderIds`，与 `useHermes` hook 对接
+
+### 构建与工程化
+
+- `backend/src/proxy/sse.rs` 补齐 `take_sse_block` 与 `append_utf8_safe`（此前 `streaming_gemini.rs` 有 import 但没有实现），解决 `cargo check` 的 `E0432` 报错
+- `backend/Cargo.toml` 在 `reqwest` feature 列表里加上 `blocking`，修复 `commands/hermes.rs` 中 `reqwest::blocking::Client` 的 `E0433`
+- `backend/src/proxy/response_processor.rs` 的 `build_state` 测试辅助补齐 `gemini_shadow` 字段，解决 `E0063`
+- `backend/src/proxy/providers/claude.rs` 去掉 `AuthStrategy` 下已被前面分支完全覆盖的 `_ => vec![]` 分支，清除 `unreachable_pattern` 警告
+- `backend/src/proxy/providers/gemini.rs` 的 `parse_oauth_access_token` 被测试引用，改为 `#[allow(dead_code)] pub fn` 留存，既消除 `dead_code` 警告也不破坏测试
+- `scripts/dev.ps1` 把 `-Arguments @($Mode) + $ExtraArgs` 改成表达式形式 `(@($Mode) + $extras)`，并在无额外参数时 fallback 到空数组，避免 PowerShell 把 `+` 当位置参数、以及 `Start-Process` 拒收含 `$null` 的 `-ArgumentList`
+- `package.json` 加 `pnpm.overrides.baseline-browser-mapping: ^2.10.21`，解决每次 `vite` 启动打印的 `data in this module is over two months old` 警告
+- 更新检测入口 `WEB_GITHUB_REPO` 由 `zuoliangyu/zuoliangyu-cc-switch-web` 更正为 `zuoliangyu/cc-switch-web`，不再依赖 GitHub 301 重定向
+
+### 文档与版本
+
+- 仓库版本提升到 `0.3.0`
+- 默认 README 改为中文：`README.md` 现在是中文版本，英文内容迁移到 `README_EN.md`，同时删除旧的 `README_ZH.md`；三份 README 的语言切换行、`AGENTS.md` 与 `docs-dev/web-parity-v3.14.0-plan-2026-04.md` 中的命名描述一并更新
+- `README.md` / `README_EN.md` / `README_JA.md` 同步更新 `0.3.0` 版本说明
+
 ## [0.2.2] - 2026-04-19
 
 ### 修复

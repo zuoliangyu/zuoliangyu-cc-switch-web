@@ -769,7 +769,7 @@ function App() {
 
   return (
     <div
-      className="app-shell flex flex-col h-screen overflow-hidden bg-background text-foreground selection:bg-primary/30"
+      className="app-shell flex flex-col h-screen overflow-hidden bg-background text-foreground selection:bg-primary/30 pb-4"
       style={{ overflowX: "hidden", paddingTop: contentTopOffset }}
     >
       <div
@@ -1061,7 +1061,7 @@ function App() {
                                 onClick={() =>
                                   handleViewChange("workspace")
                                 }
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
                                 title={t("workspace.manage")}
                               >
                                 <FolderOpen className="w-4 h-4" />
@@ -1070,7 +1070,7 @@ function App() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewChange("sessions")}
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
                                 title={t("sessionManager.title")}
                               >
                                 <History className="w-4 h-4" />
@@ -1079,7 +1079,7 @@ function App() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewChange("openclawEnv")}
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
                                 title={t("openclaw.env.title")}
                               >
                                 <KeyRound className="w-4 h-4" />
@@ -1090,7 +1090,7 @@ function App() {
                                 onClick={() =>
                                   handleViewChange("openclawTools")
                                 }
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
                                 title={t("openclaw.tools.title")}
                               >
                                 <Shield className="w-4 h-4" />
@@ -1101,7 +1101,7 @@ function App() {
                                 onClick={() =>
                                   handleViewChange("openclawAgents")
                                 }
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
                                 title={t("openclaw.agents.title")}
                               >
                                 <Cpu className="w-4 h-4" />
@@ -1115,7 +1115,7 @@ function App() {
                                 onClick={() =>
                                   handleViewChange("hermesMemory")
                                 }
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
                                 title={t("hermes.memory.title")}
                               >
                                 <Book className="w-4 h-4" />
@@ -1147,7 +1147,7 @@ function App() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewChange("prompts")}
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
                                 title={t("prompts.manage")}
                               >
                                 <Book className="w-4 h-4" />
@@ -1171,7 +1171,7 @@ function App() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewChange("mcp")}
-                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
                                 title={t("mcp.title")}
                               >
                                 <McpIcon size={16} />

@@ -65,7 +65,8 @@ impl Database {
             id TEXT PRIMARY KEY, name TEXT NOT NULL, server_config TEXT NOT NULL,
             description TEXT, homepage TEXT, docs TEXT, tags TEXT NOT NULL DEFAULT '[]',
             enabled_claude BOOLEAN NOT NULL DEFAULT 0, enabled_codex BOOLEAN NOT NULL DEFAULT 0,
-            enabled_gemini BOOLEAN NOT NULL DEFAULT 0, enabled_opencode BOOLEAN NOT NULL DEFAULT 0
+            enabled_gemini BOOLEAN NOT NULL DEFAULT 0, enabled_opencode BOOLEAN NOT NULL DEFAULT 0,
+            enabled_hermes BOOLEAN NOT NULL DEFAULT 0
         )",
             [],
         )
@@ -93,6 +94,7 @@ impl Database {
             enabled_codex BOOLEAN NOT NULL DEFAULT 0,
             enabled_gemini BOOLEAN NOT NULL DEFAULT 0,
             enabled_opencode BOOLEAN NOT NULL DEFAULT 0,
+            enabled_hermes BOOLEAN NOT NULL DEFAULT 0,
             installed_at INTEGER NOT NULL DEFAULT 0,
             content_hash TEXT,
             updated_at INTEGER NOT NULL DEFAULT 0
@@ -404,6 +406,16 @@ impl Database {
                         log::info!("迁移数据库从 v7 到 v8（发布兼容版本号对齐）");
                         Self::migrate_v7_to_v8(conn)?;
                         Self::set_user_version(conn, 8)?;
+                    }
+                    8 => {
+                        log::info!("迁移数据库从 v8 到 v9（刷新模型定价种子）");
+                        Self::migrate_v8_to_v9(conn)?;
+                        Self::set_user_version(conn, 9)?;
+                    }
+                    9 => {
+                        log::info!("迁移数据库从 v9 到 v10（添加 Hermes Agent 支持）");
+                        Self::migrate_v9_to_v10(conn)?;
+                        Self::set_user_version(conn, 10)?;
                     }
                     _ => {
                         return Err(AppError::Database(format!(
@@ -1083,6 +1095,48 @@ impl Database {
     /// v7 -> v8 迁移：兼容性版本号升级，不引入新的表结构变化
     fn migrate_v7_to_v8(_conn: &Connection) -> Result<(), AppError> {
         log::info!("v7 -> v8 迁移完成：已对齐发布兼容 schema 版本号");
+        Ok(())
+    }
+
+    /// v8 -> v9 迁移：刷新模型定价种子数据（DELETE 后重新 seed）
+    fn migrate_v8_to_v9(conn: &Connection) -> Result<(), AppError> {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS model_pricing (
+                model_id TEXT PRIMARY KEY, display_name TEXT NOT NULL,
+                input_cost_per_million TEXT NOT NULL, output_cost_per_million TEXT NOT NULL,
+                cache_read_cost_per_million TEXT NOT NULL DEFAULT '0',
+                cache_creation_cost_per_million TEXT NOT NULL DEFAULT '0'
+            )",
+            [],
+        )
+        .map_err(|e| AppError::Database(format!("创建 model_pricing 表失败: {e}")))?;
+        conn.execute("DELETE FROM model_pricing", [])
+            .map_err(|e| AppError::Database(format!("清空模型定价失败: {e}")))?;
+        Self::seed_model_pricing(conn)?;
+        log::info!("v8 -> v9 迁移完成：已刷新全部模型定价数据");
+        Ok(())
+    }
+
+    /// v9 -> v10 迁移：为 mcp_servers 和 skills 添加 enabled_hermes 列
+    fn migrate_v9_to_v10(conn: &Connection) -> Result<(), AppError> {
+        Self::add_column_if_missing(
+            conn,
+            "mcp_servers",
+            "enabled_hermes",
+            "BOOLEAN NOT NULL DEFAULT 0",
+        )?;
+
+        // skills 表在由很旧版本迁移过来的库里可能不存在，这里做一次存在性守护
+        if Self::table_exists(conn, "skills")? {
+            Self::add_column_if_missing(
+                conn,
+                "skills",
+                "enabled_hermes",
+                "BOOLEAN NOT NULL DEFAULT 0",
+            )?;
+        }
+
+        log::info!("v9 -> v10 迁移完成：已添加 Hermes Agent 支持列");
         Ok(())
     }
 

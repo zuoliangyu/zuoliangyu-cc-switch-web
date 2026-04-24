@@ -53,7 +53,7 @@ struct GithubLatestReleaseResponse {
     published_at: Option<String>,
 }
 
-const WEB_GITHUB_REPO: &str = "zuoliangyu/zuoliangyu-cc-switch-web";
+const WEB_GITHUB_REPO: &str = "zuoliangyu/cc-switch-web";
 
 #[cfg(not(target_os = "windows"))]
 const VALID_TOOLS: [&str; 4] = ["claude", "codex", "gemini", "opencode"];

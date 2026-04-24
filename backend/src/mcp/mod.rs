@@ -47,6 +47,7 @@ pub(crate) fn merge_imported_server(
                 codex: matches!(app, AppType::Codex),
                 gemini: matches!(app, AppType::Gemini),
                 opencode: matches!(app, AppType::OpenCode),
+                hermes: false,
             },
             description: None,
             homepage: None,

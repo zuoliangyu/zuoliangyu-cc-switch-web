@@ -495,7 +495,6 @@ impl ProviderAdapter for ClaudeAdapter {
                     ),
                 ]
             }
-            _ => vec![],
         }
     }
 

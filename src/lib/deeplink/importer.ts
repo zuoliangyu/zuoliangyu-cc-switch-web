@@ -232,6 +232,7 @@ const mergeMcpApps = (apps: string | undefined) => {
     gemini: targets.includes("gemini"),
     opencode: targets.includes("opencode"),
     openclaw: targets.includes("openclaw"),
+    hermes: targets.includes("hermes"),
   };
 };
 
@@ -267,6 +268,7 @@ const importMcp = async (
               gemini: current.apps.gemini || targetApps.gemini,
               opencode: current.apps.opencode || targetApps.opencode,
               openclaw: current.apps.openclaw || targetApps.openclaw,
+              hermes: current.apps.hermes || targetApps.hermes,
             },
           }
         : {

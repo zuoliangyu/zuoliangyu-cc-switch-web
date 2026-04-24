@@ -1,209 +1,209 @@
 # CC Switch Web
 
-English | [中文](README_ZH.md) | [日本語](README_JA.md)
+中文 | [English](README_EN.md) | [日本語](README_JA.md)
 
-## Overview
+## 项目说明
 
-CC Switch Web is the web branch repository of [cc-switch](https://github.com/farion1231/cc-switch).
+CC Switch Web 是 [cc-switch](https://github.com/farion1231/cc-switch) 的 Web 分支仓库。
 
-This repository is used to carry web-oriented work around CC Switch, including web-side implementation, related experiments, and branch-specific adjustments.
+当前仓库用于承载 CC Switch 的 Web 方向相关工作，包括 Web 端实现、相关实验以及分支上的定制化调整。
 
-The current target architecture is:
+当前目标架构为：
 
-- Frontend: Web
-- Backend: local Rust service
-- Access pattern: browser opens `http://localhost:xxxx`
+- 前端：Web
+- 后端：本地 Rust 服务
+- 访问方式：浏览器访问 `http://localhost:xxxx`
 
-This direction targets Windows, macOS, Linux, and headless Linux server environments.
+这个方向面向 Windows、macOS、Linux 以及无桌面的 Linux 服务器场景。
 
-## Version
+## 当前版本
 
-The current repository version is `0.2.2`.
+当前仓库版本为 `0.3.0`。
 
-`0.2.2` aligns the packaged binaries to schema `v8` and adds the missing `v7 -> v8` compatibility migration so existing databases and `v0.2.0`-line releases converge on the same schema version safely.
+`0.3.0` 将发布包的数据库 schema 从 `v8` 提升到 `v10`，与上游 `cc-switch` 3.14 系列对齐，解决共享 `~/.cc-switch/cc-switch.db` 后被上游升到 `v10` 时 Web 端启动报 `数据库版本过新（10），当前应用仅支持 8` 的问题。新增 `v8 -> v9` 模型定价种子刷新迁移与 `v9 -> v10` Hermes 支持列迁移，`mcp_servers` / `skills` 两表加入 `enabled_hermes` 列，前后端类型对齐 `hermes` 字段。本版本同时包含一批预设升级（Kimi K2.6 直连、DDSHub Codex 预设）、代理与会话修复（Codex OAuth 响应强制流式、Gemini 会话读取 `.project_root`）、以及 UI 细节收敛（供应商图标 title、自动紧凑粘死修复、工具栏等宽、滚动容器对齐等）。
 
-This repository now treats `0.1.0` as its initial Web release baseline. Previous inherited release history has been removed from this repository and should be considered part of the upstream project history.
+当前仓库现在以 `0.1.0` 作为 Web 分支的初始发布基线。此前继承的历史发布记录已从本仓库移除，如需查看更早历史，请以上游项目记录为准。
 
-## Relationship to Upstream
+## 与上游项目的关系
 
-- Upstream project: [cc-switch](https://github.com/farion1231/cc-switch)
-- Current Web repository: [zuoliangyu/zuoliangyu-cc-switch-web](https://github.com/zuoliangyu/zuoliangyu-cc-switch-web)
-- Author: 左岚 ([Bilibili](https://space.bilibili.com/27619688))
-- This repository focuses on the Web branch direction of CC Switch
-- When project positioning or external description changes, all language README files in this repository should be updated together
+- 上游项目：[cc-switch](https://github.com/farion1231/cc-switch)
+- 当前 Web 仓库：[zuoliangyu/zuoliangyu-cc-switch-web](https://github.com/zuoliangyu/zuoliangyu-cc-switch-web)
+- 作者：左岚（[哔哩哔哩](https://space.bilibili.com/27619688)）
+- 当前仓库聚焦于 CC Switch 的 Web 分支方向
+- 如果项目定位或对外描述发生变化，仓库内各语言版本 README 需要同步更新
 
-## Notes
+## 说明
 
-If you are looking for the original CC Switch project or upstream release information, please visit the upstream repository directly.
+如果你要查看原始的 CC Switch 项目或上游发布信息，请直接访问上游仓库。
 
-## Recent Web Alignment And UI Refresh
+## 最近对齐的 Web 能力与界面升级
 
-The current Web branch has aligned the following desktop-side capabilities and completed a new round of Web UI refresh:
+当前 Web 分支已经补齐了以下桌面端能力，并完成了一轮 Web 界面层级升级：
 
-- Provider form model fetching for Claude, Codex, Gemini, and OpenClaw
-- Official subscription quota display for Claude, Codex, and Gemini
-- Managed ChatGPT (Codex OAuth) account center, Claude preset, and quota display
-- Environment variable conflict detection and cleanup entry points
-- Deep link import via `?deeplink=...` or manual `ccswitch://...` input
-- About page entry to open the latest GitHub release page
-- Refreshed workspace-style UI hierarchy for Provider, Settings, Skills, and Sessions pages
-- Refreshed related full-screen panels, repository management panel, and session TOC panel to match the new Web visual language
+- Claude、Codex、Gemini、OpenClaw 的供应商模型拉取
+- Claude、Codex、Gemini 的官方订阅额度展示
+- ChatGPT（Codex OAuth）托管账号中心、Claude 预设与额度展示
+- 环境变量冲突检测与清理入口
+- 支持通过 `?deeplink=...` 或手动输入 `ccswitch://...` 导入 Deep Link
+- About 页面新增打开 GitHub 最新发布页的入口
+- Provider、Settings、Skills、Sessions 页面已统一为新的工作台式界面层级
+- 相关全屏面板、仓库管理面板与会话目录面板也已同步到新的 Web 视觉语言
 
-## Run
+## 运行方式
 
-### Quick Commands
+### 命令速查
 
-| Scenario | Command |
+| 场景 | 命令 |
 | --- | --- |
-| Local development (`w`) | `pnpm dev` |
-| Docker foreground development (`d`) | `pnpm dev -- d` |
-| Local release build (`w`) | `pnpm build` |
-| Docker image build (`d`) | `pnpm build -- d` |
-| Project check | `.\scripts\check.ps1` |
-| Local CI check | `.\scripts\ci-check.ps1` |
-| Export artifacts on Windows | `.\scripts\package-artifacts.ps1` |
+| 本地开发（`w`） | `pnpm dev` |
+| Docker 前台开发（`d`） | `pnpm dev -- d` |
+| 本地 release 构建（`w`） | `pnpm build` |
+| Docker 镜像构建（`d`） | `pnpm build -- d` |
+| 项目检查 | `.\scripts\check.ps1` |
+| 本地 CI 检查 | `.\scripts\ci-check.ps1` |
+| Windows 本地导出产物 | `.\scripts\package-artifacts.ps1` |
 
-Script entry layout:
+脚本入口约定：
 
-- `scripts/*.mjs` contains the cross-platform main logic used directly by `pnpm` and CI
-- `scripts/*.ps1` provides thin Windows-local wrappers for PowerShell usage
-- `scripts/lib/process.mjs` and `scripts/lib/entry.ps1` hold the shared Node / PowerShell execution helpers to avoid duplicated scripting logic
+- `scripts/*.mjs` 负责跨平台主逻辑，供 `pnpm` 与 CI 直接调用
+- `scripts/*.ps1` 负责 Windows 本地入口包装，便于 PowerShell 使用
+- `scripts/lib/process.mjs` 与 `scripts/lib/entry.ps1` 分别承载 Node / PowerShell 的共享执行逻辑，避免重复维护
 
-### Local Development
+### 本地开发
 
-1. Install dependencies:
+1. 安装依赖：
 
    ```bash
    pnpm install --frozen-lockfile
    ```
 
-   Rust `1.88+` is required for the backend build and check steps.
+   后端构建与检查需要 Rust `1.88+`。
 
-2. Start development mode:
+2. 启动开发模式：
 
    ```bash
    pnpm dev
    ```
 
-   Equivalent explicit form:
+   显式写法：
 
    ```bash
    pnpm dev -- w
    ```
 
-   On Windows, you can also run:
+   Windows 下也可以直接执行：
 
    ```powershell
    .\scripts\dev.ps1 w
    ```
 
-   To pin ports explicitly, you can run:
+   如需手动指定端口，可使用：
 
    ```bash
    pnpm dev -- --frontend-port 3300 --backend-port 8890
    pnpm dev -- w -f 3300 -b 8890 --host 127.0.0.1
    ```
 
-   On Windows:
+   Windows 下也可以：
 
    ```powershell
    .\scripts\dev.ps1 w -f 3300 -b 8890
    ```
 
-3. Open [http://localhost:3000](http://localhost:3000). The frontend connects to the local Rust service at `http://127.0.0.1:8890`.
-   In local development, open the frontend dev URL instead of the backend port. `pnpm dev` disables backend static frontend hosting by default, and when a preferred port is unavailable it automatically scans forward and wires the final backend address into Vite.
+3. 打开 [http://localhost:3000](http://localhost:3000)。前端会连接本地 Rust 服务 `http://127.0.0.1:8890`。
+   本地开发模式下请打开前端开发地址，不要直接打开后端端口。`pnpm dev` 会默认禁用后端静态前端托管，并且会在端口不可用时自动向后尝试可用端口，然后把最终端口同时传给前端与后端。
 
-4. `pnpm dev` enables local request debug logs by default:
-   - Browser DevTools show frontend request/response logs
-   - The Rust service terminal shows Web API method/path/status/duration logs
-   - You can override this with `VITE_RUNTIME_DEBUG_REQUESTS=0|1` and `CC_SWITCH_WEB_DEBUG_API=0|1`
+4. `pnpm dev` 默认会打开本地调试请求日志：
+   - 浏览器控制台会打印前端请求/响应日志
+   - Rust 服务终端会打印 Web API 的 method/path/status/耗时
+   - 如需手动覆盖，可设置 `VITE_RUNTIME_DEBUG_REQUESTS=0|1` 与 `CC_SWITCH_WEB_DEBUG_API=0|1`
 
-### Local Release Binary
+### 本地 Release 二进制
 
-1. Build the embedded release binary:
+1. 构建嵌入前端资源的 release 二进制：
 
    ```bash
    pnpm build
    ```
 
-   Equivalent explicit form:
+   显式写法：
 
    ```bash
    pnpm build -- w
    ```
 
-   On Windows, you can also run:
+   Windows 下也可以直接执行：
 
    ```powershell
    .\scripts\build.ps1 w
    ```
 
-2. Output path:
+2. 输出路径：
 
-   - Windows: `backend\target\release\cc-switch-web.exe`
-   - Linux/macOS: `backend/target/release/cc-switch-web`
+   - Windows：`backend\target\release\cc-switch-web.exe`
+   - Linux/macOS：`backend/target/release/cc-switch-web`
 
-3. Run the binary directly, then open the final address printed in the terminal. The frontend static assets and Web API share the same service port. The default preferred port is `8890`:
+3. 直接运行对应二进制，然后打开终端中打印出的最终地址。发布态前端静态资源和 Web API 共用同一个服务端口，默认首选端口为 `8890`：
 
    ```bash
    ./backend/target/release/cc-switch-web --backend-port 8890
    ```
 
-   Windows:
+   Windows：
 
    ```powershell
    .\backend\target\release\cc-switch-web.exe -b 8890
    ```
 
-   If the preferred port is already in use, excluded by the OS, or denied by local policy, the service automatically scans forward and prints the actual port it bound to.
+   如端口被占用、被系统排除或无权限绑定，程序会自动尝试后续端口并输出最终监听地址。
 
-4. In local Web service mode, CC Switch Web stores its own data under the default CC Switch local config root:
+4. 在本地 Web 服务模式下，CC Switch Web 自身的数据默认写入 CC Switch 使用的本地配置根目录：
 
    ```text
    ~/.cc-switch
    ```
 
-   This includes files such as `settings.json`, `cc-switch.db`, backup data, and the unified Skills storage. Legacy `config.json` is not part of the active Web runtime data path.
+   其中包括 `settings.json`、`cc-switch.db`、备份目录以及统一 Skills 存储等内容。旧的 `config.json` 不再属于当前 Web 运行时的主数据路径。
 
-### Docker
+### Docker 运行
 
-1. Build the Docker image:
+1. 构建 Docker 镜像：
 
    ```bash
    pnpm build -- d
    ```
 
-   On Windows, you can also run:
+   Windows 下也可以直接执行：
 
    ```powershell
    .\scripts\build.ps1 d
    ```
 
-2. Run the Docker stack in the foreground:
+2. 以前台方式运行 Docker 组合：
 
    ```bash
    pnpm dev -- d
    ```
 
-   On Windows, you can also run:
+   Windows 下也可以直接执行：
 
    ```powershell
    .\scripts\dev.ps1 d
    ```
 
-   To override the exposed service port:
+   如需自定义容器端口：
 
    ```bash
    CC_SWITCH_WEB_PORT=8895 pnpm dev -- d
    ```
 
-   PowerShell:
+   PowerShell：
 
    ```powershell
    $env:CC_SWITCH_WEB_PORT=8895; .\scripts\dev.ps1 d
    ```
 
-3. If you want background mode after the image is built, use Docker directly:
+3. 如果镜像已经构建完成，想改为后台运行，请直接使用 Docker：
 
    ```bash
    docker compose up -d
@@ -211,133 +211,133 @@ Script entry layout:
    docker compose down
    ```
 
-4. Open [http://localhost:8890](http://localhost:8890) or your overridden port. The container serves the embedded frontend and API on the same port. Docker mode keeps `CC_SWITCH_WEB_PORT_SCAN_COUNT=1` by default so that published port mappings stay stable. Persistent data is stored in the `cc-switch-web-data` volume.
+4. 打开 [http://localhost:8890](http://localhost:8890) 或你自定义的端口。容器内前端和 API 也是共用同一个端口；Docker 模式默认固定 `CC_SWITCH_WEB_PORT_SCAN_COUNT=1`，避免容器内自动换端口后导致宿主机映射失效。持久化数据默认保存在 `cc-switch-web-data` volume 中。
 
-5. If you want the containerized service to manage host-side CLI config directories directly, first copy the example file:
+5. 如果你希望容器内服务直接管理宿主机上的 CLI 配置目录，先复制示例文件：
 
    ```bash
    cp docker-compose.host.example.yml docker-compose.host.yml
    ```
 
-   Then adjust the paths for your machine and run:
+   然后按你的机器修改路径，再执行：
 
    ```bash
    docker compose -f docker-compose.yml -f docker-compose.host.yml up -d
    ```
 
-   The example file is primarily for Linux servers and uses `$HOME` paths for `.claude`, `.codex`, `.gemini`, `.config/opencode`, and `.config/openclaw`.
+   当前示例文件主要面向 Linux 服务器，默认使用 `$HOME` 下的 `.claude`、`.codex`、`.gemini`、`.config/opencode`、`.config/openclaw` 目录。
 
-### Export Linux Package Inside Docker
+### Docker 内导出 Linux 包
 
-If you want a Linux release package without polluting the host build environment, use Docker Buildx directly:
+如果你希望在不干扰宿主机环境的前提下导出 Linux 发布包，可以直接使用 Docker Buildx：
 
 ```bash
 docker buildx build --target package-linux-tar --output type=local,dest=release/docker-linux .
 ```
 
-Exported archive:
+导出压缩包：
 
 ```text
 release/docker-linux/cc-switch-web-linux-x64.tar.gz
 ```
 
-If you want the unpacked directory instead:
+如果你想直接导出未压缩目录：
 
 ```bash
 docker buildx build --target package-linux-dir --output type=local,dest=release/docker-linux .
 ```
 
-Exported directory:
+导出目录：
 
 ```text
 release/docker-linux/cc-switch-web-linux-x64/
 ```
 
-The package contains the single executable `cc-switch-web`. After extracting on Linux, run that binary directly.
+目录内只包含单文件可执行程序 `cc-switch-web`，解压后直接运行即可。
 
-The exported Linux binary is built as `x86_64-unknown-linux-musl`, which reduces host-side runtime dependency issues.
+当前导出的 Linux 二进制为 `x86_64-unknown-linux-musl` 静态链接版本，可尽量减少宿主机运行库差异导致的问题。
 
-### Export Artifacts On Windows
+### Windows 本地导出产物
 
-If you are working on Windows and already have Rust plus Docker/Buildx installed locally, run:
+如果你当前在 Windows，并且本机已经安装好 Rust 与 Docker / Buildx，可以直接执行：
 
 ```powershell
 .\scripts\package-artifacts.ps1
 ```
 
-If you only want the project static checks on Windows, use:
+如果你只想执行项目静态检查，直接运行：
 
 ```powershell
 .\scripts\check.ps1
 ```
 
-It only runs the existing Node script validation, TypeScript check, and Rust check. It does not trigger any Docker build.
+它只会执行现有的 Node 脚本校验、TypeScript 检查和 Rust 检查，不会触发 Docker build。
 
-If you want to reproduce the full CI check flow locally on Windows, use:
+如果你要在 Windows 本地复现 CI 的完整检查链路，再运行：
 
 ```powershell
 .\scripts\ci-check.ps1
 ```
 
-That runs the static checks first, then the same Docker smoke check used in CI: `docker build` + container startup + `GET /api/health`. If port `8890` is already occupied, override it with:
+它会先执行静态检查，再执行与 CI 对齐的 Docker smoke check，也就是 `docker build` + 容器启动 + `GET /api/health` 检查。若本机 `8890` 端口被占用，可改用：
 
 ```powershell
 .\scripts\ci-check.ps1 -DockerSmokePort 8895
 ```
 
-If you prefer the npm script for static checks, you can still run:
+如果你更习惯走 npm script，也可以继续使用：
 
 ```powershell
 pnpm check
 ```
 
-The Windows export script now directly produces the local release-equivalent artifact set:
+Windows 本地导出脚本默认直接生成一套等价于 release 的本地产物：
 
-- Windows executable: `release\local-artifacts\windows\cc-switch-web.exe`
-- Linux release package: `release\local-artifacts\linux\cc-switch-web-linux-x64.tar.gz`
-- Docker image archive: `release\local-artifacts\docker\cc-switch-web-docker-image.tar.gz`
+- Windows 可执行文件：`release\local-artifacts\windows\cc-switch-web.exe`
+- Linux 发布包：`release\local-artifacts\linux\cc-switch-web-linux-x64.tar.gz`
+- Docker 镜像包：`release\local-artifacts\docker\cc-switch-web-docker-image.tar.gz`
 
-Details:
+其中：
 
-- The Windows artifact comes from local `cargo build --locked --release`
-- The Linux artifact comes from Docker Buildx using the `package-linux-tar` stage
-- The Docker image archive can be imported with:
+- Windows 产物来自本机 `cargo build --locked --release`
+- Linux 产物来自 Docker Buildx 的 `package-linux-tar` stage
+- Docker 镜像包可通过下面命令导入：
 
 ```powershell
 docker load -i .\release\local-artifacts\docker\cc-switch-web-docker-image.tar.gz
 ```
 
-### Linux systemd Example
+### Linux systemd 示例
 
-If you want to keep the service running on a headless Linux server, use:
+如果你要在无桌面的 Linux 服务器上长期托管服务，可以使用仓库中的示例文件：
 
 `deploy/systemd/cc-switch-web.service.example`
 
-Recommended steps:
+推荐步骤：
 
-1. Build the release binary on Linux, or copy a packaged Linux artifact into `/opt/cc-switch-web`.
+1. 在 Linux 上执行 `pnpm build` 生成二进制，或者把已打包好的 Linux 二进制放到 `/opt/cc-switch-web`。
 
-2. Copy the service file into the system directory:
+2. 复制服务文件到系统目录：
 
    ```bash
    sudo cp deploy/systemd/cc-switch-web.service.example /etc/systemd/system/cc-switch-web.service
    ```
 
-3. Adjust these fields for your machine:
+3. 按你的机器修改下面这些字段：
    - `User`
    - `Group`
    - `WorkingDirectory`
    - `HOME`
    - `ExecStart`
 
-4. Reload and start:
+4. 重新加载并启动：
 
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl enable --now cc-switch-web
    ```
 
-5. Check status and logs:
+5. 查看状态和日志：
 
    ```bash
    sudo systemctl status cc-switch-web

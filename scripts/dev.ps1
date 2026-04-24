@@ -7,4 +7,5 @@ param(
 
 . (Join-Path $PSScriptRoot "lib\entry.ps1")
 
-exit (Invoke-RepoNodeScript -ScriptPath 'scripts/dev.mjs' -Arguments @($Mode) + $ExtraArgs)
+$extras = if ($ExtraArgs) { $ExtraArgs } else { @() }
+exit (Invoke-RepoNodeScript -ScriptPath 'scripts/dev.mjs' -Arguments (@($Mode) + $extras))

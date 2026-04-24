@@ -115,7 +115,7 @@ export function HermesPlaceholderPanel({
               </p>
               {liveProviderIds.length > 0 ? (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {liveProviderIds.map((providerId) => (
+                  {liveProviderIds.map((providerId: string) => (
                     <span
                       key={providerId}
                       className="rounded-full border border-border-default bg-background/75 px-3 py-1 text-xs font-medium text-foreground"

@@ -376,4 +376,4 @@
 
 - 本文件是迁移计划，不代表上述能力已在 Web 端完成
 - 在实际代码落地后，如涉及页面行为、接口、配置或数据结构变化，需要同步补充对应文档记录
-- 若后续修改 README 任一语言版本，必须同步检查 `README.md`、`README_ZH.md`、`README_JA.md`
+- 若后续修改 README 任一语言版本，必须同步检查 `README.md`（中文，默认）、`README_EN.md`、`README_JA.md`

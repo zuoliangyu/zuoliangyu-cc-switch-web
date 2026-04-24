@@ -102,9 +102,11 @@ impl GeminiAdapter {
         None
     }
 
-    /// 解析 OAuth access token。
+    /// 解析 OAuth access token（仅供测试/旧代码引用）
+    #[allow(dead_code)]
     pub fn parse_oauth_access_token(&self, key: &str) -> Option<String> {
-        self.parse_oauth_credentials(key).map(|creds| creds.access_token)
+        self.parse_oauth_credentials(key)
+            .map(|creds| creds.access_token)
     }
 
     /// 从 Provider 配置中提取原始 API Key

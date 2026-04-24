@@ -18,6 +18,8 @@ pub struct McpApps {
     pub gemini: bool,
     #[serde(default)]
     pub opencode: bool,
+    #[serde(default)]
+    pub hermes: bool,
 }
 
 impl McpApps {
@@ -74,6 +76,8 @@ pub struct SkillApps {
     pub gemini: bool,
     #[serde(default)]
     pub opencode: bool,
+    #[serde(default)]
+    pub hermes: bool,
 }
 
 impl SkillApps {

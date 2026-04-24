@@ -199,6 +199,18 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
           apiKey: env.GEMINI_API_KEY,
           baseUrl: env.GOOGLE_GEMINI_BASE_URL,
         };
+      } else if (appId === "hermes") {
+        // Hermes: settingsConfig 顶层扁平（snake_case，对应 config.yaml）
+        return {
+          apiKey: (config as any).api_key,
+          baseUrl: (config as any).base_url,
+        };
+      } else if (appId === "openclaw") {
+        // OpenClaw: settingsConfig 顶层扁平（camelCase，对应 openclaw.json）
+        return {
+          apiKey: (config as any).apiKey,
+          baseUrl: (config as any).baseUrl,
+        };
       }
       return { apiKey: undefined, baseUrl: undefined };
     } catch (error) {
@@ -395,12 +407,8 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
     setTesting(true);
     try {
       if (selectedTemplate === TEMPLATE_TYPES.BALANCE) {
-        const config = provider.settingsConfig as Record<string, any>;
-        const baseUrl: string = config?.env?.ANTHROPIC_BASE_URL ?? "";
-        const apiKey: string =
-          config?.env?.ANTHROPIC_AUTH_TOKEN ??
-          config?.env?.ANTHROPIC_API_KEY ??
-          "";
+        const baseUrl = providerCredentials.baseUrl ?? "";
+        const apiKey = providerCredentials.apiKey ?? "";
         const { subscriptionApi } = await import("@/lib/api/subscription");
         const result = await subscriptionApi.getBalance(baseUrl, apiKey);
         if (result.success && result.data && result.data.length > 0) {
@@ -425,12 +433,8 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
       }
 
       if (selectedTemplate === TEMPLATE_TYPES.TOKEN_PLAN) {
-        const config = provider.settingsConfig as Record<string, any>;
-        const baseUrl: string = config?.env?.ANTHROPIC_BASE_URL ?? "";
-        const apiKey: string =
-          config?.env?.ANTHROPIC_AUTH_TOKEN ??
-          config?.env?.ANTHROPIC_API_KEY ??
-          "";
+        const baseUrl = providerCredentials.baseUrl ?? "";
+        const apiKey = providerCredentials.apiKey ?? "";
         const { subscriptionApi } = await import("@/lib/api/subscription");
         const quota = await subscriptionApi.getCodingPlanQuota(baseUrl, apiKey);
         if (quota.success && quota.tiers.length > 0) {

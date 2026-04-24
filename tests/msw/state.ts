@@ -63,6 +63,7 @@ const createDefaultProviders = (): ProvidersByApp => ({
   },
   opencode: {},
   openclaw: {},
+  hermes: {},
 });
 
 const createDefaultCurrent = (): CurrentProviderState => ({
@@ -71,6 +72,7 @@ const createDefaultCurrent = (): CurrentProviderState => ({
   gemini: "gemini-1",
   opencode: "",
   openclaw: "",
+  hermes: "",
 });
 
 let providers = createDefaultProviders();

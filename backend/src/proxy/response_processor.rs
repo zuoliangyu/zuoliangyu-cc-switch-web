@@ -734,6 +734,9 @@ mod tests {
                 ),
             )),
             failover_manager: Arc::new(FailoverSwitchManager::new(db)),
+            gemini_shadow: Arc::new(
+                crate::proxy::providers::gemini_shadow::GeminiShadowStore::default(),
+            ),
         }
     }
 

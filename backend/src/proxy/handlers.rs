@@ -346,7 +346,10 @@ fn should_use_claude_transform_streaming(
     }
 
     if api_format == "openai_responses" && is_codex_oauth {
-        return requested_stream || upstream_is_sse;
+        // Codex OAuth 的 Responses 即使客户端没请求流式、上游也不是 SSE，
+        // 仍需要走流式转换路径：Responses 协议下非流响应需要经过 transform
+        // 才能被 Claude 客户端消费。
+        return true;
     }
 
     requested_stream
